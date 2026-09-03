@@ -1,4 +1,4 @@
-# Agent Reproducibility Index (ARI)
+# ARI
 
 ARI is a benchmark and reference implementation for measuring whether an AI system produces the same internal representation when it is run again under controlled deployment changes.
 
@@ -6,7 +6,7 @@ This repository contains the versioned ARI and ARI-D specifications, frozen benc
 
 ## What ARI measures
 
-The embedding benchmark runs the same frozen inputs under a baseline and one or more conditions, then compares SEMQ QBIN codes produced from the embeddings.
+The embedding benchmark runs the same frozen inputs under a baseline and one or more conditions, then compares SEMQ QBIN (or SEMQ QUANT, depending on version) codes produced from the embeddings.
 
 | Metric | Meaning |
 | --- | --- |
