@@ -1,0 +1,187 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "adapters": [
+    "bharati2324/Qwen2.5-1.5B-Instruct-Code-LoRA-r16",
+    "renezander030/qwen-2.5-1.5b-de-pii-redactor"
+  ],
+  "device": "cpu",
+  "n_prompts": 48,
+  "n_new_tokens": 48,
+  "n_steps": 2265,
+  "vocab": 151936,
+  "bias_strength": -5.0,
+  "buckets": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      10
+    ],
+    [
+      11,
+      100
+    ],
+    [
+      101,
+      1000
+    ],
+    [
+      1001,
+      1000000000
+    ]
+  ],
+  "rows": [
+    {
+      "condition": "logit_bias_refusal_set",
+      "detail": "40 tokens, bias -5.0",
+      "biased_token_median_rank": 29563.5,
+      "biased_token_min_rank": 2,
+      "token_agreement": 1.0,
+      "top2_margin_delta": 0.0019119573989883065,
+      "top20_set_change": 0.012398427946945078,
+      "semq_hbar": 0.0005144608349094588,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 5.000000953674316,
+      "rank_profile": {
+        "1-2": {
+          "share": 6.62251655552458e-05,
+          "bucket_share_of_vocab": 1.3163437236731255e-05,
+          "enrichment": 5.030993376900914
+        },
+        "3-10": {
+          "share": 0.0015121412801781127,
+          "bucket_share_of_vocab": 5.265374894692502e-05,
+          "enrichment": 28.718587193142717
+        },
+        "11-100": {
+          "share": 0.012947019866050557,
+          "bucket_share_of_vocab": 0.0005923546756529065,
+          "enrichment": 21.85687122631397
+        },
+        "101-1000": {
+          "share": 0.05527593818344517,
+          "bucket_share_of_vocab": 0.005923546756529065,
+          "enrichment": 9.331561048711029
+        },
+        "1001-end": {
+          "share": 0.9301986755047709,
+          "bucket_share_of_vocab": 0.9934182813816343,
+          "enrichment": 0.936361543710532
+        }
+      }
+    },
+    {
+      "condition": "bf16",
+      "detail": "precision control, expected isotropic",
+      "token_agreement": 0.9889624724061811,
+      "top2_margin_delta": 0.0732341855764389,
+      "top20_set_change": 0.030075590340491003,
+      "semq_hbar": 0.06649579188448813,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 0.8273417949676514,
+      "rank_profile": {
+        "1-2": {
+          "share": 1.867603983380048e-05,
+          "bucket_share_of_vocab": 1.3163437236731255e-05,
+          "enrichment": 1.418781394094155
+        },
+        "3-10": {
+          "share": 6.767722701775951e-05,
+          "bucket_share_of_vocab": 5.265374894692502e-05,
+          "enrichment": 1.2853258955212887
+        },
+        "11-100": {
+          "share": 0.0007088900520332238,
+          "bucket_share_of_vocab": 0.0005923546756529065,
+          "enrichment": 1.196732432730221
+        },
+        "101-1000": {
+          "share": 0.006322453101959714,
+          "bucket_share_of_vocab": 0.005923546756529065,
+          "enrichment": 1.0673424827770568
+        },
+        "1001-end": {
+          "share": 0.9928823035791557,
+          "bucket_share_of_vocab": 0.9934182813816343,
+          "enrichment": 0.9994604711705797
+        }
+      }
+    },
+    {
+      "condition": "adapter_merged",
+      "detail": "bharati2324/Qwen2.5-1.5B-Instruct-Code-LoRA-r16",
+      "token_agreement": 0.8887417218543047,
+      "top2_margin_delta": 1.0516597032546997,
+      "top20_set_change": 0.261870728836629,
+      "semq_hbar": 0.8935347066081966,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 17.304641723632812,
+      "rank_profile": {
+        "1-2": {
+          "share": 1.9017984810692875e-05,
+          "bucket_share_of_vocab": 1.3163437236731255e-05,
+          "enrichment": 1.4447582700987165
+        },
+        "3-10": {
+          "share": 5.0770714531350195e-05,
+          "bucket_share_of_vocab": 5.265374894692502e-05,
+          "enrichment": 0.9642374103794029
+        },
+        "11-100": {
+          "share": 0.00041036732142725723,
+          "bucket_share_of_vocab": 0.0005923546756529065,
+          "enrichment": 0.6927729927596862
+        },
+        "101-1000": {
+          "share": 0.003551944586335259,
+          "bucket_share_of_vocab": 0.005923546756529065,
+          "enrichment": 0.5996313918549265
+        },
+        "1001-end": {
+          "share": 0.995967899392896,
+          "bucket_share_of_vocab": 0.9934182813816343,
+          "enrichment": 1.0025665100582966
+        }
+      }
+    },
+    {
+      "condition": "adapter_merged",
+      "detail": "renezander030/qwen-2.5-1.5b-de-pii-redactor",
+      "token_agreement": 0.9479028697571744,
+      "top2_margin_delta": 0.460975706577301,
+      "top20_set_change": 0.14697117659768782,
+      "semq_hbar": 0.39447910913111317,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 12.639228820800781,
+      "rank_profile": {
+        "1-2": {
+          "share": 2.4688932114186388e-05,
+          "bucket_share_of_vocab": 1.3163437236731255e-05,
+          "enrichment": 1.8755687948505115
+        },
+        "3-10": {
+          "share": 7.813270957647042e-05,
+          "bucket_share_of_vocab": 5.265374894692502e-05,
+          "enrichment": 1.4838964202763263
+        },
+        "11-100": {
+          "share": 0.0007537327049229516,
+          "bucket_share_of_vocab": 0.0005923546756529065,
+          "enrichment": 1.2724348028352621
+        },
+        "101-1000": {
+          "share": 0.006525556077695318,
+          "bucket_share_of_vocab": 0.005923546756529065,
+          "enrichment": 1.1016298758007954
+        },
+        "1001-end": {
+          "share": 0.9926178895756911,
+          "bucket_share_of_vocab": 0.9934182813816343,
+          "enrichment": 0.9991943053385024
+        }
+      }
+    }
+  ]
+}

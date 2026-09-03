@@ -1,0 +1,25 @@
+{
+  "condition": "time",
+  "batches": [
+    "together_same.jsonl.gz",
+    "together_same_t2.jsonl.gz"
+  ],
+  "cross_pairs_per_prompt": "k x k",
+  "exact_generation": {
+    "mean": 0.435,
+    "ci": [
+      0.373,
+      0.4983
+    ]
+  },
+  "first_divergence": {
+    "mean": 0.663,
+    "ci": [
+      0.6124,
+      0.7111
+    ]
+  },
+  "fingerprints_batch_a": [],
+  "fingerprints_batch_b": [],
+  "fingerprints_shared": 0
+}

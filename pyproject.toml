@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ari-benchmark"
+version = "0.1.0"
+description = "Agent Reproducibility Index (ARI) — reference implementation, scorer, and benchmark harness"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "The SEMQ Group" }]
+keywords = ["reproducibility", "embeddings", "benchmark", "ARI", "SEMQ", "AI-governance"]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+scoring = ["jsonschema>=4.20"]
+apis = ["openai>=1.0", "cohere>=5.0", "voyageai>=0.2", "google-genai>=0.3"]
+selfhosted = ["sentence-transformers>=3.0", "torch>=2.0"]
+data = ["datasets>=2.0"]
+# The SEMQ QBIN probe (`semq`) is required to compute codes. It is the SEMQ SDK —
+# public on PyPI once the SDK ships; `pip install semq` at that point.
+
+[project.urls]
+Homepage = "https://github.com/The-SEMQ-Group/semq-ari-benchmark"
+Leaderboard = "https://github.com/The-SEMQ-Group/ari-leaderboard"
+
+[tool.setuptools.packages.find]
+include = ["ari*"]

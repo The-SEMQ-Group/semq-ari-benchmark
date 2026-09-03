@@ -1,0 +1,9 @@
+model,mach_a10g_vs_t4,mach_t4_vs_cpu,mach_a10g_vs_cpu
+bge-large-en-v1.5,1.0,1.0,1.0
+bge-m3,1.0,1.0,1.0
+multilingual-e5-large,1.0,1.0,1.0
+all-mpnet-base-v2,0.9961,1.0,0.9961
+all-MiniLM-L6-v2,0.998,1.0,0.998
+nomic-embed-text-v1.5,1.0,1.0,1.0
+mxbai-embed-large-v1,1.0,0.5371,0.5371
+snowflake-arctic-embed-l,0.998,1.0,0.998

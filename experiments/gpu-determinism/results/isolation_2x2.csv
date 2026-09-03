@@ -1,0 +1,9 @@
+model,proc_tf32off_nondet,proc_tf32off_det,proc_tf32on_nondet,proc_tf32on_det
+bge-large-en-v1.5,1.0000,1.0000,0.8301,0.8301
+bge-m3,1.0000,1.0000,0.6406,0.6406
+multilingual-e5-large,1.0000,1.0000,0.6699,0.6699
+all-mpnet-base-v2,1.0000,1.0000,0.7930,0.7930
+all-MiniLM-L6-v2,1.0000,1.0000,0.8770,0.8770
+nomic-embed-text-v1.5,1.0000,1.0000,0.7305,0.7305
+mxbai-embed-large-v1,1.0000,1.0000,0.7930,0.7930
+snowflake-arctic-embed-l,1.0000,1.0000,0.6582,0.6582

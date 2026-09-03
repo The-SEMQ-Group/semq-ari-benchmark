@@ -1,0 +1,40 @@
+{
+  "n_inputs": 1000,
+  "resamples": 3,
+  "n_observations": 3000,
+  "probe_backend": "semq",
+  "conditions": {
+    "same": {
+      "HER": 0.852,
+      "HER_ci95": [
+        0.834333,
+        0.869667
+      ],
+      "Hbar_mean": 0.476,
+      "per_resample_HER": [
+        0.849,
+        0.837,
+        0.87
+      ]
+    },
+    "proc": {
+      "HER": 0.851,
+      "HER_ci95": [
+        0.833333,
+        0.868342
+      ],
+      "Hbar_mean": 0.535,
+      "per_resample_HER": [
+        0.851,
+        0.856,
+        0.846
+      ]
+    }
+  },
+  "findings": {
+    "within_session_deterministic": false,
+    "proc_HER": 0.851,
+    "proc_vs_same_ci_overlap": true
+  },
+  "agent": "text-embedding-3-large"
+}

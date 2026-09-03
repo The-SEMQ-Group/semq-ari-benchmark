@@ -1,0 +1,14 @@
+{
+  "registry_version": "0.1",
+  "description": "Ed25519 public keys whose signatures the ARI leaderboard accepts. A signature only says who signed if the key is checked against a list decided in advance, so this file is that list. leaderboard/scoring/score.py marks a row `attested` only when its attestation verifies against a key named here; every other row is `self-reported`.",
+  "how_to_add": "Publish the public key somewhere a reader can check it independently (org site, keybase, DNS TXT), then add it here in the same pull request as the first report it signs. Never add a key generated for one run: a verifier checks the key against a registry it already trusts, so a key that appears with its own first signature proves nothing.",
+  "signers": [
+    {
+      "public_key": "vN3pVHCbdCVTx08Q6CmxNo2gmqDf4sgPjVqTOF73BXw=",
+      "identity": "alias/semq-ari-attestation (KMS us-east-2 127348475353)",
+      "holder": "The SEMQ Group — ARI leaderboard operator",
+      "custody": "AWS KMS ECC_NIST_EDWARDS25519; the private key never leaves the HSM and every signature lands in CloudTrail. Provisioned as code in semq-infra (kms/create-signing-key.sh).",
+      "added": "2026-08-28"
+    }
+  ]
+}

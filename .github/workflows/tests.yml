@@ -1,0 +1,55 @@
+name: tests
+
+# Runs the pytest suite. The existing validate-submissions check only runs the
+# scorer over the submissions, so before this nothing ran the tests -- a report
+# generator / scorer contract break, or a regression in the harness statistics
+# or the attestation binding, could land green.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write # only the optional CodeArtifact step below uses this
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the package and public test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[scoring]" pytest cryptography
+
+      # semq is not on public PyPI yet -- it lives in CodeArtifact. Until a CI
+      # role with CodeArtifact read exists, this is skipped and the attestation
+      # tests skip with it (their pytest.importorskip("semq") handles that). Set
+      # the CODEARTIFACT_ROLE_ARN repository variable to an OIDC role that can
+      # read the semq domain, and semq installs so the attestation round-trip
+      # runs instead of skipping.
+      - name: Configure AWS for CodeArtifact
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.CODEARTIFACT_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Install semq from CodeArtifact
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        run: |
+          aws codeartifact login --tool pip --domain semq --repository semq-sdk --region us-east-2
+          python -m pip install semq
+
+      # -rs prints the reason for every skip, so a run without semq says so
+      # plainly (the attestation tests report as skipped) rather than looking
+      # fully green while silently covering less.
+      - name: Run tests
+        run: pytest -v -rs

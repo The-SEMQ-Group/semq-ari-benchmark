@@ -1,0 +1,53 @@
+# The trigger is `pull_request`, NOT `pull_request_target`. The latter
+# gives fork code the repository secrets.
+
+name: pr-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: Pull request number to review.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number || inputs.pr-number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    # A fork cannot read the role ARN secret, so the job would fail.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # diffs base...head; needs a merge base
+
+      - uses: The-SEMQ-Group/semq-infra/.github/actions/pr-review@main
+        with:
+          role-arn: ${{ secrets.AWS_PR_REVIEW_ROLE_ARN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ github.event.pull_request.number || inputs.pr-number }}
+          # Empty on a manual run; the action then asks the GitHub API.
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          pr-body: ${{ github.event.pull_request.body }}
+          prompt-path: .github/pr-review-prompt.md
+          tripwire-paths: |
+            spec/
+            data/
+            ari/
+            .github/workflows/
+            .github/pr-review-prompt.md

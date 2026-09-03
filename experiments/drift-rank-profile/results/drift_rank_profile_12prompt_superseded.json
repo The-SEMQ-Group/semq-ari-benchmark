@@ -1,0 +1,106 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "adapters": [
+    "bharati2324/Qwen2.5-1.5B-Instruct-Code-LoRA-r16",
+    "renezander030/qwen-2.5-1.5b-de-pii-redactor"
+  ],
+  "device": "cpu",
+  "n_prompts": 12,
+  "n_steps": 384,
+  "vocab": 151936,
+  "bias_strength": -5.0,
+  "buckets": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      10
+    ],
+    [
+      11,
+      100
+    ],
+    [
+      101,
+      1000
+    ],
+    [
+      1001,
+      1000000000
+    ]
+  ],
+  "rows": [
+    {
+      "condition": "logit_bias_refusal_set",
+      "detail": "40 tokens, bias -5.0",
+      "biased_token_median_rank": 30318.5,
+      "biased_token_min_rank": 3,
+      "token_agreement": 1.0,
+      "top2_margin_delta": 0.0,
+      "top20_set_change": 0.011386183261183258,
+      "semq_hbar": 0.0005145738446889919,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 5.000000953674316,
+      "rank_profile": {
+        "1-2": 0.0,
+        "3-10": 0.0013020833721384406,
+        "11-100": 0.012239583767950535,
+        "101-1000": 0.0491536445915699,
+        "1001-end": 0.937304675579071
+      }
+    },
+    {
+      "condition": "bf16",
+      "detail": "precision control, expected isotropic",
+      "token_agreement": 0.9869791666666666,
+      "top2_margin_delta": 0.07321576029062271,
+      "top20_set_change": 0.02721410533910534,
+      "semq_hbar": 0.06602608719022045,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 0.6409893035888672,
+      "rank_profile": {
+        "1-2": 1.8855900634662248e-05,
+        "3-10": 6.830917118350044e-05,
+        "11-100": 0.0006996933370828629,
+        "101-1000": 0.0062316665425896645,
+        "1001-end": 0.9929814338684082
+      }
+    },
+    {
+      "condition": "adapter_merged",
+      "detail": "bharati2324/Qwen2.5-1.5B-Instruct-Code-LoRA-r16",
+      "token_agreement": 0.8645833333333334,
+      "top2_margin_delta": 1.0798112154006958,
+      "top20_set_change": 0.2657030353096383,
+      "semq_hbar": 0.9166885714489434,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 13.774171829223633,
+      "rank_profile": {
+        "1-2": 1.925062679219991e-05,
+        "3-10": 5.08870325575117e-05,
+        "11-100": 0.00039503799052909017,
+        "101-1000": 0.003486880101263523,
+        "1001-end": 0.996047854423523
+      }
+    },
+    {
+      "condition": "adapter_merged",
+      "detail": "renezander030/qwen-2.5-1.5b-de-pii-redactor",
+      "token_agreement": 0.9453125,
+      "top2_margin_delta": 0.4677185118198395,
+      "top20_set_change": 0.14101660718508544,
+      "semq_hbar": 0.39272977876649817,
+      "semq_her": 0.0,
+      "max_abs_dlogit": 8.495862007141113,
+      "rank_profile": {
+        "1-2": 2.6212104785372503e-05,
+        "3-10": 7.58710375521332e-05,
+        "11-100": 0.0007350076921284199,
+        "101-1000": 0.00631127692759037,
+        "1001-end": 0.9928516149520874
+      }
+    }
+  ]
+}

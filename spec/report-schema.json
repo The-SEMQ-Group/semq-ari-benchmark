@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/The-SEMQ-Group/semq-ari-benchmark/blob/main/spec/report-schema.json",
+  "title": "ARI Report v0.1",
+  "description": "Third-party-verifiable Agent Reproducibility Index report. Carries per-condition HER/Hbar, the aggregate ARI, an optional (s,b,kappa) fingerprint, and an environment manifest required by spec/condition-set.md.",
+  "type": "object",
+  "required": [
+    "agent_id",
+    "ari_version",
+    "probe_calibration",
+    "input_set",
+    "input_content_hash",
+    "environment",
+    "results_per_condition",
+    "ARI",
+    "audit_hashes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Stable identifier of the agent/model under test, e.g. 'openai/text-embedding-3-large'."
+    },
+    "ari_version": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "probe_calibration": {
+      "type": "string",
+      "description": "Canonical probe id, e.g. 'ARI-Canonical-v0.1'.",
+      "examples": [
+        "ARI-Canonical-v0.1"
+      ]
+    },
+    "input_set": {
+      "type": "string",
+      "description": "Canonical input set id, e.g. 'ARI-Bench-v0.1'.",
+      "examples": [
+        "ARI-Bench-v0.1"
+      ]
+    },
+    "input_content_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 over the ordered input records — pins the exact inputs the report was produced on. Enforced by leaderboard/scoring/score.py: the hash must equal the input set's published content hash, or the hash of a prefix of it. A prefix run is accepted but recorded as `comparable: false` on the leaderboard, because a reduced run and a full run are not the same measurement."
+    },
+    "measured_at": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Date the measurement was taken (YYYY-MM-DD). The leaderboard shows this per row, so a reader can tell a fresh number from a stale one. Carried from the report rather than stamped at scoring time, because when a row was scored is not when it was measured."
+    },
+    "agent_class": {
+      "type": "string",
+      "enum": [
+        "self_hosted",
+        "api",
+        "vendor",
+        "rehosted",
+        "platform"
+      ],
+      "default": "self_hosted",
+      "description": "Determines how 'same' is validated. self_hosted: deterministic agent, 'same' is the probe-purity control and must be 1.0. api: black-box agent that may itself be non-deterministic, so 'same' is a measured within-session-determinism axis (any value in [0,1]). Absent → self_hosted. Decoding classes: 'vendor' (closed model served by its maker), 'rehosted' (open weights served by a third party), 'platform' (a proxy door in front of a vendor model). For all three, 'same' is a measured floor, never required to be 1.0."
+    },
+    "encoder_fingerprint": {
+      "type": "object",
+      "description": "The (s, b, kappa) model fingerprint. Optional but recommended; lets verifiers predict E[H](sigma) = kappa * sqrt(2*dim/pi) * sigma without re-running the sweep.",
+      "properties": {
+        "dim": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "s": {
+          "type": "number",
+          "description": "99th-percentile calibration scale."
+        },
+        "b": {
+          "type": "number",
+          "description": "Linear-regime power-law slope (~1)."
+        },
+        "kappa": {
+          "type": "number",
+          "description": "Angular concentration multiplier, typically in [1.48, 3.06]."
+        }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "description": "Environment manifest for the baseline condition E0. Required for third-party verifiability (spec/condition-set.md).",
+      "required": [
+        "blas",
+        "threads",
+        "hardware",
+        "precision",
+        "library_versions"
+      ],
+      "properties": {
+        "blas": {
+          "type": "string",
+          "examples": [
+            "OpenBLAS",
+            "MKL",
+            "Apple Accelerate"
+          ]
+        },
+        "threads": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Thread count; 0 = provider-internal/unknown (black-box API)."
+        },
+        "hardware": {
+          "type": "string",
+          "examples": [
+            "x86_64 Intel Xeon",
+            "Apple M2",
+            "NVIDIA L40S"
+          ]
+        },
+        "precision": {
+          "type": "string",
+          "enum": [
+            "fp32",
+            "fp16",
+            "bf16",
+            "mixed",
+            "provider-internal"
+          ],
+          "description": "Numeric precision; 'provider-internal' when unknown (black-box API)."
+        },
+        "library_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "examples": [
+            {
+              "torch": "2.3.1",
+              "transformers": "4.44.0"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "results_per_condition": {
+      "type": "object",
+      "description": "One entry per measured condition (spec/condition-set.md). Each condition either reports a single result directly (v0.1 shape, an implicit 'semq' detector) or nests one or more named detectors under 'detectors' (multi-detector shape, see $defs/conditionResult). For agent_class=self_hosted, 'same' is the probe-purity control and must be 1.0 for the 'semq' detector; for agent_class=api, 'same' is a measured within-session-determinism axis (any value in [0,1]).",
+      "propertyNames": {
+        "enum": [
+          "same",
+          "proc",
+          "mach",
+          "prec",
+          "lib",
+          "conc",
+          "time",
+          "batch"
+        ]
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/conditionResult"
+      }
+    },
+    "ARI": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Aggregate index: mean HER over the present comparable-core conditions {proc, conc, time}. mach/prec/lib are reported per-condition as diagnostics but are not averaged into ARI (they are not measurable for a black-box API, so folding them in would break cross-class comparability)."
+    },
+    "drift_spectrum": {
+      "type": "object",
+      "description": "Optional per-condition histogram of per-input Hamming distances.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "audit_hashes": {
+      "type": "object",
+      "description": "SHA-256 digest of the code matrix per condition (inputs in fixed ARI-Bench order). Compact, order-sensitive audit record; a third party re-running the protocol recomputes the same digest per condition (exactly for a deterministic agent).",
+      "propertyNames": {
+        "enum": [
+          "same",
+          "proc",
+          "mach",
+          "prec",
+          "lib",
+          "conc",
+          "time",
+          "batch"
+        ]
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      }
+    },
+    "layer": {
+      "type": "string",
+      "enum": [
+        "representation",
+        "decoding"
+      ],
+      "default": "representation",
+      "description": "Which ARI layer this report measures. Determines the headline detector the scorer re-checks: representation -> detectors.semq.HER; decoding -> detectors.exact_generation.value. Absent -> representation."
+    }
+  },
+  "$defs": {
+    "detectorResult": {
+      "type": "object",
+      "description": "One detector's result for one condition, plus the metadata needed to judge what it can see.",
+      "required": [
+        "HER",
+        "Hbar",
+        "criterion_type",
+        "bytes_of_reference_state",
+        "unit"
+      ],
+      "properties": {
+        "HER": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Hash Equality Rate."
+        },
+        "Hbar": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mean Hamming drift in bits."
+        },
+        "HER_ci": {
+          "type": "array",
+          "description": "95% bootstrap CI [low, high].",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "criterion_type": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "interval",
+            "threshold"
+          ],
+          "description": "Whether a verdict needs calibration: 'exact' (bit/vector equality — no calibration needed), 'interval' (a bounded overlap measure), 'threshold' (needs a calibrated null floor, e.g. cosine similarity, before a verdict can be read off it)."
+        },
+        "bytes_of_reference_state": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bytes of reference state that must be retained per unit to evaluate this detector (e.g. a SEMQ code's packed size, or dim*4 for a raw fp32 vector). An integer derived from the encoder/detector, never a hardcoded constant."
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "code",
+            "vector",
+            "ranked_list"
+          ],
+          "description": "What this detector compares: a SEMQ code, a raw embedding vector, or a ranked retrieval list."
+        }
+      },
+      "additionalProperties": false
+    },
+    "conditionResult": {
+      "type": "object",
+      "oneOf": [
+        {
+          "description": "v0.1 shape: a single implicit 'semq' result directly on the condition.",
+          "required": [
+            "HER",
+            "Hbar"
+          ],
+          "properties": {
+            "HER": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Hash Equality Rate."
+            },
+            "Hbar": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Mean Hamming drift in bits."
+            },
+            "HER_ci": {
+              "type": "array",
+              "description": "95% bootstrap CI [low, high].",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "achieved_in_flight": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md §6). Recorded so a capped row is not read as if it ran at 64."
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "Multi-detector shape: one or more named detectors, each with its own result and metadata.",
+          "required": [
+            "detectors"
+          ],
+          "properties": {
+            "detectors": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/detectorResult"
+                  },
+                  {
+                    "$ref": "#/$defs/genericDetectorResult"
+                  }
+                ],
+                "description": "Which form applies follows from the detector, not the layer: the 'semq' probe reports detectorResult (HER/Hbar over codes); sequence-level detectors (exact_generation, first_divergence, topk_logprob_overlap) report genericDetectorResult (a bounded value over completions)."
+              }
+            },
+            "achieved_in_flight": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md §6). Recorded so a capped row is not read as if it ran at 64."
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "genericDetectorResult": {
+      "type": "object",
+      "description": "A sequence-level detector's result for one condition (decoding layer): a bounded value instead of the semq HER/Hbar pair.",
+      "required": [
+        "value",
+        "criterion_type",
+        "bytes_of_reference_state",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "The detector's bounded statistic (e.g. byte-identical pair rate, mean normalized first-divergence position)."
+        },
+        "value_ci": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "95% bootstrap CI [low, high] over inputs."
+        },
+        "criterion_type": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "interval",
+            "threshold"
+          ],
+          "description": "Whether a verdict needs calibration: 'exact' (bit/vector equality — no calibration needed), 'interval' (a bounded overlap measure), 'threshold' (needs a calibrated null floor, e.g. cosine similarity, before a verdict can be read off it)."
+        },
+        "bytes_of_reference_state": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bytes of reference state a verifier needs. Sequence detectors need none: 0."
+        },
+        "unit": {
+          "type": "string",
+          "description": "What one comparison unit is, e.g. 'completion_pair', 'byte_position'."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

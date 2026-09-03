@@ -1,0 +1,52 @@
+{
+  "condition": "time",
+  "batches": [
+    "salesforce_same.jsonl.gz",
+    "salesforce_same_t2.jsonl.gz"
+  ],
+  "cross_pairs_per_prompt": "k x k",
+  "exact_generation": {
+    "mean": 0.1092,
+    "ci": [
+      0.0577,
+      0.1658
+    ]
+  },
+  "first_divergence": {
+    "mean": 0.2282,
+    "ci": [
+      0.1693,
+      0.2895
+    ]
+  },
+  "fingerprints_batch_a": [
+    "fp_194711edce",
+    "fp_5ace699842",
+    "fp_5b6abc5941",
+    "fp_79b520a473",
+    "fp_8156e398b1",
+    "fp_8c012bb801",
+    "fp_8c60972de7",
+    "fp_af8966b59d",
+    "fp_c23e83d968",
+    "fp_eef938a27b",
+    "fp_f56c486beb",
+    "fp_f5d25cc737"
+  ],
+  "fingerprints_batch_b": [
+    "fp_194711edce",
+    "fp_3aad0add9c",
+    "fp_5ace699842",
+    "fp_5b6abc5941",
+    "fp_79b520a473",
+    "fp_8156e398b1",
+    "fp_8c012bb801",
+    "fp_8c60972de7",
+    "fp_af8966b59d",
+    "fp_c23e83d968",
+    "fp_eef938a27b",
+    "fp_f56c486beb",
+    "fp_f5d25cc737"
+  ],
+  "fingerprints_shared": 12
+}

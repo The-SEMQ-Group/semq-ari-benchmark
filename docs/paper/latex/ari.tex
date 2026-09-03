@@ -1,0 +1,359 @@
+\documentclass{article}
+\usepackage[final,sglblindworkshop]{neurips_2026}
+\workshoptitle{Machine Learning for Systems}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\hypersetup{hidelinks}
+\usepackage{placeins}
+
+
+\title{ARI: Measuring Reproducibility in Deployed ML Systems}
+
+\author{%
+  Ilona Bodnar \\
+  The SEMQ Group \\
+  \texttt{ilona@thesemqgroup.ai} \\
+  \And
+  Andres Mac Allister \\
+  The SEMQ Group \\
+  \texttt{andres@thesemqgroup.ai} \\
+  \And
+  Manny Ko \\
+  The SEMQ Group \\
+  \texttt{manny@thesemqgroup.ai} \\
+}
+
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.8}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{4}
+\setlength{\textfloatsep}{9pt plus 2pt minus 2pt}
+\setlength{\intextsep}{9pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{7pt}
+\setlength{\belowcaptionskip}{4pt}
+\renewcommand{\arraystretch}{0.90}
+\AtBeginDocument{%
+  \setlength\abovedisplayskip{4pt plus 1pt minus 1pt}%
+  \setlength\belowdisplayskip{4pt plus 1pt minus 1pt}%
+  \setlength\abovedisplayshortskip{2pt}%
+  \setlength\belowdisplayshortskip{2pt}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Two identical requests to the same embedding API can return numerically different vectors, yet the frequency and magnitude of this variation are generally not reported by providers. We introduce the AI Reproducibility Index (ARI), a black-box protocol that converts vector outputs into deterministic codes and measures their agreement across execution conditions. Across five commercial embedding APIs, mean exact-code agreement ranges from 0.169 to 1.000. In controlled retrieval experiments, precision and serving changes alter the codes of 47–100\% of documents while Recall@10 remains statistically indistinguishable from baseline. Under synthetic injected perturbations that preserve Recall@10 at 0.988, 11.5\% of 15-hop retrieval trajectories diverge; under bf16, less than 1\% per-token divergence changes 20.8–35.4\% of complete greedy generations. ARI exposes representation-level variation that endpoint quality metrics can otherwise miss.
+
+
+\end{abstract}
+
+\section{Introduction}\label{sec1}
+
+Reproducibility in deployed inference depends on execution conditions. Changes in numerical precision, hardware configuration, and batching can alter even greedy model outputs [1, 2], and a nominally fixed stack may vary further when its computation is not batch invariant [1]. This paper excludes sampling randomness and studies variation introduced by numerical execution and serving behavior. In our experiments (\S3.2, \S3.3), such changes range from small floating-point differences to per-component perturbations on the order of $10^{-4}$.
+
+Conventional task metrics may not detect this variation. Retrieval quality, for example, can remain unchanged even when representations and ranked lists differ. Hosted API users also lack the backend visibility needed to attribute observed changes to a particular mechanism. The consequence is most noticeable where a system stores a discretization of an embedding rather than the embedding itself, as with semantic IDs in sequence and recommendation models [3]: the stored symbol either matches or does not, and there is no tolerance in which upstream drift can be absorbed.
+
+ARI serves as a common protocol for measuring representation-level reproducibility in systems that expose vector-valued outputs. It standardizes the perturbation conditions, frozen input set, deterministic probe, and reporting rule needed to compare representation drift without serving-internal access. Prior work documents numerical variation in hosted embeddings [4], studies reproducibility across vector-retrieval configurations [5], and makes LLM inference deterministic by construction [6]. ARI addresses a complementary measurement problem: comparing representation-level drift across deployed systems under common, externally inducible conditions, including hosted APIs whose serving internals are unavailable.
+
+\section{The ARI protocol}\label{sec2}
+
+\textbf{Definitions.} For representation-level measurement, the system being tested is $A:\mathcal{X}\to\mathbb{R}^{d}$, mapping an input to an embedding or per-step logit vector. A baseline run holds the specified user-controlled execution axes fixed, and each comparison condition varies one such axis. On self-hosted systems, this can approximate a single-variable intervention. For hosted APIs, backend state is unobservable, so drift is reported as associated with the experimental condition rather than attributed to a specific backend mechanism.
+
+\textbf{The probe.} A deterministic quantizer $Q$ turns each output vector into a code with two bits per dimension, recording each coordinate's sign and whether its magnitude exceeds half a calibrated scale. Because $Q$ is bit-deterministic, it contributes no disagreement of its own, and it operates independently on each coordinate, so observed drift can be traced to specific dimensions. Appendix~\ref{app:calib} gives the quantizer, the calibration rule, and the response model fitted per architecture.
+
+\begin{table}[H]
+\centering\caption{ARI execution conditions. \texttt{proc}, \texttt{conc} and \texttt{time} form the externally observable core; the others are controls and self-hosted diagnostics.}\label{tab:conditions}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lll}
+\toprule
+id & varied condition & variation potentially exposed \\
+\midrule
+\texttt{same} & immediate repeat & within-session repeatability \\
+\texttt{proc} & fresh process & process-dependent execution (self-hosted); client state (API) \\
+\texttt{conc} & concurrent burst & load-associated batching, composition, routing, queueing \\
+\texttt{time} & wall-clock gap $>24$\,h & time-associated drift; backend cause unobserved \\
+\texttt{prec} & precision or compute mode & TF32, bf16, fp16, int8 (self-hosted diagnostic) \\
+\texttt{mach}, \texttt{lib} & host; library version & hardware/library drift (self-hosted diagnostics) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Metrics.} ARI has two metrics. ARI-HER measures how often a model produces exactly the same code across repeated runs, concurrent requests, and different times, with HER being the fraction of inputs whose codes match exactly. Because exact agreement can depend on factors such as vector dimension and the sensitivity of the quantizer, HER is not always directly comparable across models. ARI therefore also reports ARI-$\hat\sigma$, which converts the observed disagreement into a normalized estimate of its magnitude. Appendix~\ref{app:calib} describes this calibration and normalization procedure, and Appendix~\ref{app:panel} reports the normalized results. Some tests necessarily differ across providers because their internal systems are not accessible, and the protocol cannot capture backend changes that are not externally observable.
+
+\textbf{Scope and reporting.} Each condition compares one pair of executions over the 1{,}000 frozen inputs, so bootstrap intervals quantify uncertainty across inputs, not across independent realizations of the serving environment. Three independent \texttt{same} and \texttt{proc} realizations on text-embedding-3-large produced between-realization standard deviations of 0.017 and 0.005, respectively, against a within-run confidence-interval half-width of 0.018; \texttt{conc} and \texttt{time} are unreplicated (Appendix~\ref{app:selfhosted}). We apply the protocol to embeddings (ARI-R) and to per-step logits (ARI-D, teacher-forced on the baseline token sequence so every condition sees identical prefixes); agent outcomes are analyzed separately, without quantization. Reports carry a hash-pinned 1,000-item BEIR slice [7], an environment manifest, a result digest, and an Ed25519 signature (Appendices~\ref{app:calib}--\ref{app:verif}).
+
+\section{Results}\label{sec3}
+
+\subsection{Exact-code agreement varies widely across commercial embedding APIs}
+
+Five commercial APIs, one protocol, frozen inputs, $n=1{,}000$; \texttt{time} at a ${\sim}76$h gap, \texttt{conc} a 64-way burst vs calm, except for one rate-limited provider tested at 16-way concurrency:
+
+\begin{table}[H]
+\centering\caption{Exact-code agreement across commercial embedding APIs. ARI-HER is strict whole-code repeatability, not a dimension-normalized score (Appendix~\ref{app:panel}).}\label{tab:panel}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrl}
+\toprule
+provider / model & \texttt{same} & \texttt{proc} & \texttt{conc} & \texttt{time} & \textbf{ARI-HER} & 95\% CI \\
+\midrule
+gemini-embedding-001 & 1.000 & 1.000 & 1.000 & 1.000 & \textbf{1.000} & [1.000, 1.000] \\
+text-embedding-3-large & 0.859 & 0.862 & 0.851 & 0.822 & \textbf{0.845} & [0.822, 0.866] \\
+mistral-embed & 0.734 & 0.753 & 0.791 & \textbf{0.554} & \textbf{0.699} & [0.672, 0.727] \\
+voyage-4-large & 0.571 & 0.615 & \textbf{0.209} & 0.676 & \textbf{0.500} & [0.472, 0.528] \\
+embed-v4.0 & 0.133 & 0.146 & 0.130 & 0.232 & \textbf{0.169} & [0.147, 0.194] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Reproducibility varies substantially across systems under the same protocol. Different conditions expose different failures: one system records 0.209 under the concurrency condition, versus 0.615 under the fresh-process condition, while another falls to 0.554 only after the multi-day interval. Because exact agreement penalizes wider codes, the normalized bounds of the two lowest systems overlap, leaving their ordering unresolved (Appendix~\ref{app:panel}). Additional controls are in Appendices~\ref{app:resid} and~\ref{app:selfhosted}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figure1.pdf}\vspace{-3pt}
+\caption{The measurement gap and its downstream cost. \textbf{Left:} on BEIR SciFact, process, thread and batch changes leave every code intact, while precision and compute-mode changes alter the codes of 47--100\% of documents, yet no $\Delta$Recall@10 interval excludes zero (values printed below the panel). \textbf{Right:} per-hop noise small enough to pass the predefined retrieval-quality threshold ($\sigma=10^{-3}$, recall@10 $=0.988$) diverts 11.5\% of 15-hop trajectories; at $\sigma=0$ divergence is 0 at every depth.}
+\label{fig:overview}
+\end{figure}
+
+\subsection{Recall@10 can remain unchanged under large representation drift}
+
+BEIR SciFact (5{,}183 documents, 300 judged queries), all-MiniLM-L6-v2; reference fp32/CPU/4-thread/batch-32, every other condition changing one thing in a fresh process. Intervals are a paired bootstrap over queries, 10{,}000 resamples; per-condition values are in Appendix~\ref{app:scifact}.
+
+Under bf16 and int8, HER falls to 0 while the Recall@10 intervals include zero; a fresh process, a single thread, and batch sizes of 8 and 128 each leave every code intact (HER $=1.000$), so the probe does not respond indiscriminately to the control conditions. Relative to the CPU fp32 reference, GPU fp32 with TF32 enabled changes 47\% of document codes while \(\Delta R@10=0\).
+
+Turning TF32 off restores 0.9992, and a 2x2 over TF32 $\times$ \texttt{use\_deterministic\_algorithms} isolates it (HER 1.000 off, 0.749 on; the flag has no effect): this is consistent with TF32's reduced mantissa amplifying otherwise smaller numerical differences beyond the probe threshold.
+
+Comparing stored top-10 lists also detects many of these changes: bf16 alters 55\% of lists and int8 alters all of them. Unlike HER, however, this approach requires reference queries and rankings, covers only the stored query distribution, and can register inconsequential tie-order changes. 
+
+\vspace{-7pt}\subsection{Small per-step divergence compounds into outcome divergence}
+
+\textbf{Iterative retrieval (controlled stress test).} A self-avoiding nearest-neighbor walk over NFCorpus (3{,}633 documents) embeds the query at each hop and steps to the nearest unvisited document --- an LLM-free iterative-RAG model. We inject \emph{synthetic} isotropic Gaussian per-hop noise over 15-hop walks (100 seeds $\times$ 30 runs), with $\sigma=10^{-3}$ the largest value still passing the standard check (recall@10 $=0.988\ge0.98$); trajectory divergence then grows monotonically with depth to 11.5\% by hop 15, and at $\sigma=0$ it is 0 at every depth. Actual GPU residuals can be structured rather than isotropic [8], so this establishes possible accumulation, not a prediction of API behavior.
+
+\textbf{Decoding.} The same protocol one layer up, on the full-vocabulary logit vector at each greedy step (48 prompts, totaling ${\sim}2{,}265$ scored decoding steps per model, fp32 reference, same GPU):
+
+\begin{table}[H]
+\centering\caption{Decoding-layer (ARI-D) reproducibility under precision changes, on Llama-3.1-8B (control and TF32) and across Llama-3.1-8B, Qwen2.5-7B and Mistral-7B (bf16).}\label{tab:decoding}\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrr}
+\toprule
+condition & token agreement & HER & generations identical \\
+\midrule
+TF32 off (control) & 100.00\% & 1.0000 & 48/48 \\
+\textbf{TF32 on} & 100.00\% & 0.0000 & 48/48 \\
+\textbf{bf16} & 99.21--99.52\% & 0.0000 & \textbf{31--38 of 48} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under TF32 every logit code changes while every generated token stays identical; under bf16 fewer than 1\% of tokens change, but 20.8--35.4\% of complete generations differ. Controls and the saturation caveat on whole-code equality at this vocabulary width are in Appendix~\ref{app:deccontrol}.
+
+Among the decoding statistics tested, the quantizer and top-2 logit margin remained sensitive and reproducible at small perturbations; the margin is cheaper but covers only top-ranked logits (Appendix~\ref{app:adversarial}).
+
+\textbf{Limitations.} Our API estimates are based on a single realization of each execution condition, except for the three \texttt{proc} realizations of Appendix~\ref{app:selfhosted}, and therefore do not estimate long-run provider drift rates. The trajectory experiment uses synthetic isotropic noise rather than measured API residuals, and the decoding experiments compare serving configurations on one machine under greedy decoding, leaving drift-vs-sampling separation above temperature 0 untested. ARI also measures representation change rather than whether that change is operationally harmful. Appendix~\ref{app:limits} lists further limitations, while Appendix~\ref{app:adversarial} reports three preliminary claims narrowed by adversarial testing.
+
+\section{Conclusion}\label{sec5}
+
+Rank-based task metrics do not fully characterize representation-level reproducibility. Under one protocol, five commercial APIs span ARI-HER 0.169 to 1.000; precision changes alter 47–100\% of codes with no distinguishable Recall@10 change; and small local differences compound into trajectory- and generation-level divergence. ARI makes this measurable without access to serving internals by separating exact repeatability from calibrated drift magnitude. It complements rather than replaces task evaluation: representation changes may be harmless, and these API measurements are point-in-time observations, not long-run rates. Reproducibility is a property of the deployed system, not something inferable from model identity or endpoint quality alone.\label{bodyend}
+
+
+\section*{References}
+\small
+
+[1] He, H. and Thinking Machines Lab.
+Defeating Nondeterminism in LLM Inference.
+\emph{Thinking Machines Lab: Connectionism}, September 2025.
+\url{https://doi.org/10.64434/tml.20250910}.
+
+[2] Yuan, J., Li, H., Ding, X., Xie, W., Li, Y.-J., Zhao, W.,
+Wan, K., Shi, J., Hu, X., and Liu, Z.
+Understanding and Mitigating Numerical Sources of Nondeterminism
+in LLM Inference.
+\emph{arXiv preprint arXiv:2506.09501}, 2025.
+\url{https://arxiv.org/abs/2506.09501}.
+
+[3] Rajput, S., Mehta, N., Singh, A., Keshavan, R. H., Vu, T.,
+Heldt, L., Hong, L., Tay, Y., Tran, V. Q., Samost, J., Kula, M.,
+Chi, E. H., and Sathiamoorthy, M.
+Recommender Systems with Generative Retrieval.
+In \emph{Advances in Neural Information Processing Systems 36
+(NeurIPS)}, 2023.
+\url{https://proceedings.neurips.cc/paper_files/paper/2023/hash/20dcab0f14046a5c6b02b61da9f13229-Abstract-Conference.html}.
+
+[4] OpenAI.
+Embeddings with OpenAI ``text-embedding-ada-002'' Are Not Deterministic.
+\texttt{openai/openai-python}, issue \#868, 2023.
+\url{https://github.com/openai/openai-python/issues/868}.
+
+[5] Wang, B., Zhao, D., Tallent, N. R., and Guo, L.
+On the Reproducibility Limitations of RAG Systems.
+\emph{arXiv preprint arXiv:2509.18869}, 2025.
+\url{https://arxiv.org/abs/2509.18869}.
+
+[6] Gond, R., Kamath, A. K., Basu, A., Ramjee, R., and Panwar, A.
+LLM-42: Enabling Determinism in LLM Inference with Verified Speculation.
+\emph{arXiv preprint arXiv:2601.17768}, 2026.
+\url{https://arxiv.org/abs/2601.17768}.
+
+[7] Thakur, N., Reimers, N., R{\"u}ckl{\'e}, A., Srivastava, A., and Gurevych, I.
+BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models.
+In \emph{Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks}, 2021.
+\url{https://arxiv.org/abs/2104.08663}.
+
+[8] Yashwanth, T. S.
+On the Structure of Floating-Point Noise in Batch-Invariant GPU
+Matrix Multiplication.
+\emph{arXiv preprint arXiv:2511.00025}, 2025.
+\url{https://arxiv.org/abs/2511.00025}.
+
+[9] Ahmad, W. U., Ludwig, N., Majumdar, S., and Ginsburg, B.
+Open-SWE-Traces: Advancing Dual-Mode Multilingual Distillation for Software Engineering Agents.
+\emph{arXiv preprint arXiv:2606.16038}, 2026.
+\url{https://arxiv.org/abs/2606.16038}.
+
+[10] The SEMQ Group.
+ARI: An Auditable Retrieval Instability Harness.
+Software repository, 2026.
+\url{https://github.com/The-SEMQ-Group/semq-ari-benchmark}.
+Version \texttt{e9c55407755940cb38b4fd1403266ef4fc03bfc5}.
+
+\normalsize
+\appendix
+
+\section{Probe and calibration specifics}\label{app:calib}
+
+\textbf{The quantizer.} $Q$ is a four-level symmetric scalar quantizer (SEMQ QUANT) with one model-specific scale $s$, calibrated once as the 99th percentile of absolute coordinate values pooled over a published reference batch. Each coordinate becomes two semantically defined indicators, $Q_s(x_j)=\bigl(\mathbf 1[x_j\ge0],\,\mathbf 1[|x_j|\ge s/2]\bigr)$ --- sign and magnitude region --- for exactly two bits per dimension; the interior edge falls at $s/2$ because two equal-width magnitude bins partition $[0,s]$. With $P=Q\circ A$, all reported quantities are computed on the codes $P(x)$.
+
+\textbf{Response model.} Let $\rho$ be the coordinate change fraction: the fraction of coordinates whose two-bit code differs. Within the calibrated regime,
+\[
+\mathbb E[\rho]=\kappa\sqrt{2d/\pi}\,\sigma^{b},
+\qquad
+\hat{\sigma}=\left(\frac{\rho}{\kappa\sqrt{2d/\pi}}\right)^{\!1/b},
+\]
+with $b$ and $\kappa$ fitted per model; across 13 architectures the exponents have mean $0.979$ and standard deviation $0.028$, and $\kappa\in[0.37,0.76]$. ARI-$\hat\sigma$ averages $\rho$ over the core conditions and inverts once, equivalently pooling all comparisons; inverting per condition and averaging differs by under $1\%$ and preserves the ordering. $\hat\sigma$ is a per-coordinate scale: it normalizes the probe-response model's dependence on dimension and sensitivity, not the vector-level perturbation, which at fixed $\sigma$ grows as $\sqrt d$. It is not a direct estimate of arbitrary serving noise.
+
+\textbf{Calibration model.} Noise is added to the raw representation before any re-normalization: re-normalizing would fold $\sigma$ back onto the unit sphere and mask the linear regime. $\sigma$ is dimensionless, a per-coordinate standard deviation expressed as a fraction of the mean representation norm over the reference batch; the corresponding vector-level perturbation grows as $\sigma\sqrt d$, so $\hat\sigma$ should be read as a per-coordinate scale rather than a relative $L_2$ magnitude.
+
+\textbf{From bits to coordinates.} Reports currently store $\bar H$, the mean changed-bit count, from which the coordinate change fraction follows only up to the exact bound $\bar H/2d\le\rho\le\bar H/d$: a changed coordinate flips one of its two indicators or both. Rather than assume the low-drift limit $\rho\approx\bar H/d$, we propagate both endpoints, so every $\hat\sigma$ we report is an interval and no comparison rests on the conversion. Serializing $\rho=\tfrac1d\sum_j\mathbf 1[Q(x_j)\neq Q(x_j')]$ directly, and refitting $(b,\kappa)$ against it, removes the interval entirely; that is a v0.2 change to the report schema and the published fingerprints. The reference implementation compares packed bytes (four coordinates each) and the signer registry stores fingerprints in that convention, $4\kappa$; $\hat\sigma$ is invariant to the choice, since the constant rescales $\rho$ and $\kappa$ together.
+
+\textbf{Sensitivity spread.} Measured influence spread is 1.00 for quantile binning versus about 16 for a block-microscaled format like NVFP4, whose shared per-block scale smears one perturbed dimension across its whole block. A diagonal sensitivity Jacobian is what lets drift attribute back to specific dimensions.
+
+\section{Verifiability details}\label{app:verif}
+
+The frozen input set is a 1{,}000-item BEIR slice spanning medical, scientific and financial domains, pinned by content hash. Each report carries per-condition HER, $\bar H$ and bootstrap CI, an environment manifest, and a SHA-256 audit digest over the code matrix in fixed input order. The Ed25519 signature covers a canonical JSON serialization (fixed key order and separators) of a manifest that carries the report's SHA-256 alongside the input digest, so the signature attests to the result and the input set jointly; signing only the input digest would attest to neither HER nor $\bar H$. The signing key is held in AWS KMS and listed in a public signer registry, and the verifier runs on the Python standard library without importing the ARI implementation --- a verification requiring the publisher's software is not independent.
+
+\section{Outcome-layer reproducibility (ARI-E)}\label{app:arie}
+
+ARI-E applies the same discipline --- repeat, control, attribute --- to agent outcomes on \texttt{nvidia/Open-SWE-Traces} [9]: two scaffolds (SWE-agent, OpenHands) crossed with two models over ${\sim}18{,}000$ SWE-bench-style instances, up to three rollouts each, graded by each repository's own test suite. An outcome is the repository's own test verdict, which the agent never saw; a benchmark graded by a judge would measure the judge.
+
+The estimator is an agreement gap, not a corrected success rate. On instances with at least two rollouts per side, let $D_{\text{cross}}$ be the rate at which paired verdicts differ across the two conditions and $D_{\text{self}}$ the rate at which repeated rollouts differ within one; we report $\Delta=D_{\text{cross}}-D_{\text{self}}$.
+
+\begin{table}[h]
+\centering\caption{Self-consistency and cross-condition agreement across four scaffold and model contrasts.}\label{tab:arie}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrl}
+\toprule
+contrast & cases & self-consistency & cross agreement & $\Delta$ & 95\% CI \\
+\midrule
+scaffold, model = Qwen3.5-122B & 10{,}788 & 0.874 & 0.785 & \textbf{+0.089} & [+0.083, +0.094] \\
+scaffold, model = Minimax-M2.5 & 12{,}195 & 0.899 & 0.849 & \textbf{+0.050} & [+0.044, +0.052] \\
+model, scaffold = SWE-agent & 10{,}674 & 0.880 & 0.839 & \textbf{+0.041} & [+0.039, +0.046] \\
+model, scaffold = OpenHands & 11{,}933 & 0.892 & 0.833 & \textbf{+0.059} & [+0.054, +0.062] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$\Delta$ is descriptive, not causal. It assumes rollouts within a condition are exchangeable, so that $D_{\text{self}}$ estimates the disagreement a fixed condition generates against itself; it is defined only where both sides have at least two rollouts, since one rollout gives no self-consistency control; and it does not estimate a scaffold's effect on task success. It answers a narrower question: how much of the disagreement between two conditions exceeds what either produces against itself. About 22\% of rows were ungraded and dropped.
+
+\section{Full SciFact condition table}\label{app:scifact}
+
+Per-condition retrieval quality and representation agreement behind Figure~\ref{fig:overview} (left). Intervals are a paired bootstrap over queries, 10{,}000 resamples; "sig." means the interval excludes zero. The aggregate metric is blind but result lists are not --- int8 changes every top-10 list and bf16 changes 55\% --- so list diffing also detects these events, at the cost of a stored top-$k$, coverage limited to saved queries, and tie-order churn mixed in with real drift.
+
+\begin{table}[h]
+\centering\caption{Retrieval quality and representation agreement under execution and precision changes.}\label{tab:scifact}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrlcrr}
+\toprule
+condition & $\Delta$R@10 & 95\% CI & sig. & top-10 same & HER \\
+\midrule
+new proc / 1 thread / batch 8 / batch 128 & $+0.0000$ & [$+0.0000$, $+0.0000$] & no & 100.00\% & 1.0000 \\
+GPU fp32, TF32 off & $+0.0000$ & [$+0.0000$, $+0.0000$] & no & 100.00\% & 0.9992 \\
+GPU fp32, \textbf{TF32 on} & $+0.0000$ & [$+0.0000$, $+0.0000$] & no & 96.33\% & \textbf{0.5267} \\
+\textbf{bf16} & $+0.0033$ & [$+0.0000$, $+0.0100$] & no & 45.00\% & \textbf{0.0000} \\
+\textbf{int8} & $-0.0061$ & [$-0.0278$, $+0.0156$] & no & 0.00\% & \textbf{0.0000} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Normalized panel ordering}\label{app:panel}
+
+Recomputing the API panel as the noise-equivalent perturbation of \S2, over the externally observable set $\{\texttt{proc},\texttt{conc},\texttt{time}\}$, using the per-model $(d,b,\kappa)$ in the coordinate convention. The reports store $\bar H$ in bits, so each $\hat\sigma$ is given as the interval induced by the exact bound $\bar H/2d\le\rho\le\bar H/d$ (Appendix~\ref{app:calib}).
+
+\begin{table}[h]
+\centering\caption{The API panel under dimension- and sensitivity-normalized $\hat\sigma$.}\label{tab:normalized}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+model & $d$ & $\kappa$ & $b$ & ARI-HER & $\bar H$ & $\hat\sigma$ \\
+\midrule
+gemini-embedding-001 & 3072 & 0.637 & 0.990 & 1.000 & 0.000 & $0$ \\
+text-embedding-3-large & 3072 & 0.413 & 0.932 & 0.845 & 1.363 & $[0.53,\,1.12]\times10^{-5}$ \\
+mistral-embed & 1024 & 0.371 & 0.915 & 0.699 & 1.349 & $[2.84,\,6.07]\times10^{-5}$ \\
+voyage-4-large & 1024 & 0.622 & 0.979 & 0.500 & 9.566 & $[2.46,\,4.99]\times10^{-4}$ \\
+embed-v4.0 & 1536 & 0.664 & 0.995 & 0.169 & 12.200 & $[1.84,\,3.68]\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Every adjacent pair among the top three separates: the intervals for gemini, text-embedding-3-large and mistral-embed are disjoint, and mistral-embed is disjoint from both remaining systems. The two lowest are not separated --- voyage-4-large spans $[2.46,4.99]\times10^{-4}$ and embed-v4.0 $[1.84,3.68]\times10^{-4}$, which overlap --- so $\hat\sigma$ \emph{does not resolve an ordering between them}. Their point estimates happen to reverse relative to ARI-HER, but that reversal is not evidence; the defensible statement is that HER's three-fold gap between the two overstates a difference in drift magnitude that the normalized metric cannot establish either way. Under the vector-level alternative $\hat\eta=\sqrt d\,\hat\sigma$ the same pairs separate and the same pair does not. Real serving residuals need not be isotropic, so these values support separation and rough magnitude, not precise recovery of backend noise.
+
+\section{Condition replication, cache control, and the self-hosted panel}\label{app:selfhosted}
+
+\textbf{Condition replication.} The panel reports one execution pair per condition. For one provider, a separate pilot re-ran text-embedding-3-large over 1{,}000 inputs in three independent fresh-context realizations. The pilot calibrates its own probe scale rather than using the published fingerprint, so its absolute values are not interchangeable with the panel row; the quantity of interest is the spread across its own realizations.
+
+\begin{table}[H]
+\centering\caption{A separate pilot run (Appendix~\ref{app:selfhosted}) performed three independent realizations of two conditions on text-embedding-3-large, pilot run, $n=1{,}000$.}\label{tab:replication}\footnotesize\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lllr}
+\toprule
+condition & HER per realization & sd across realizations & within-run CI half-width \\
+\midrule
+\texttt{proc} & 0.851, 0.856, 0.846 & 0.005 & 0.018 \\
+\texttt{same} & 0.849, 0.837, 0.870 & 0.017 & 0.018 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For \texttt{proc}, realization-to-realization variation is roughly a quarter of the input-set interval, so on this provider the single-realization estimate is stable. \texttt{same} scatters as widely as the input-set interval itself. This does not generalize: \texttt{conc} was never repeated, so the 0.209 burst reading on voyage-4-large remains a single load event and we cannot say whether it is a stable property or one routing outcome; and \texttt{time} was repeated only at a different gap, where mistral-embed read 0.753 at 19h against 0.554 at ${\sim}76$h.
+
+\textbf{The 1.000 is not a cache.} 150 novel inputs, each a real text with a unique nonce appended so the provider cannot have seen it before, held gemini-embedding-001 at HER 1.000 while a control provider read 0.807 on the same inputs. The \texttt{time} condition independently rules out a short-TTL cache: the gap is ${\sim}76$h.
+
+\textbf{Self-hosted panel.} Eight open models read 1.000 across \texttt{proc}, \texttt{conc} and \texttt{time}, including with BLAS threads unpinned under multithreaded OpenBLAS, and every one collapses to HER $\le 0.094$ under a bf16 serving change. Across the tested self-hosted models, pinning precision eliminated the measured core-condition drift; this is a statement about the tested models, not deployment advice.
+
+\section{Float-level residuals}\label{app:resid}
+
+Of 30 texts embedded in two separated passes against one drifting provider, 3 differed; where they differed, about 2{,}300 of 3{,}072 dimensions changed at magnitude ${\sim}10^{-4}$. This is consistent with backend-level numerical variation rather than isolated last-bit differences, though without provider telemetry we cannot attribute it to a specific mechanism.
+
+\section{Decoding controls}\label{app:deccontrol}
+
+Controls hold on all three models: fresh process, single thread, and TF32 off each read HER 1.0000 with 48/48 generations identical. The model whose vocabulary fits one probe context behaves like the two that require chunking, so the chunked probe path introduces no artifact.
+
+The TF32 row also shows the cost of strictness read in reverse. Over a ${\sim}100$k-token vocabulary, whole-code equality is stringent enough that HER saturates at zero on differences that leave every emitted token unchanged; at this width $\bar H$ and $\hat\sigma$, not HER alone, carry the comparison between conditions. Per-token divergence under bf16 is 0.48--0.79\%, and the 20.8--35.4\% of complete generations that differ is a 26--45x amplification of it, because a flipped token changes the subsequent prefix and can propagate divergence through later decoding.
+
+\section{Alternative probes and scope of the quantizer}\label{app:adversarial}
+
+\textbf{Against simpler statistics.} At the decoding layer we compared the probe with the obvious alternatives under injected logit noise, over $\sigma\in[10^{-4},1]$. KL and JS are second order in the perturbation and are not instruments in the small-$\sigma$ regime at all: at $\sigma=10^{-4}$, KL reads $-5.1\times10^{-10}$, zero to numerical precision and with the wrong sign, where the probe reads $1.33\times10^{-4}$. Top-$20$ set change is sub-linear and token flip is a threshold detector. Two statistics are linear and bit-exact under regrouping of the arithmetic --- the probe and the top-2 logit margin --- while KL moves $4.6\%$ and JS $363\%$ when the same quantity is computed two algebraically equivalent ways. That is the operative distinction: a published KL value is not a number a third party can recompute and confirm, and a code is. It separates the probe from the float-valued alternatives, but not from the top-2 margin.
+
+Additional ablations show that the quantizer is not the only viable probe. At the decoding layer, an 8-byte top-2 logit margin recovers 86\% of the quantizer's signal while storing roughly 1/2000th as much state, and is equally reproducible. The quantizer remains more sensitive to changes below the top-ranked tokens: under token suppression, it detected substantial drift at ranks 3--10 even when the generated token was unchanged. ARI-D is useful when subtle internal drift matters, while a top-2 margin is a cheaper monitor when only output-relevant changes matter. A frozen product-quantization codebook can also serve as a deterministic probe, and other deterministic discretization schemes are possible. Quantile binning's advantage is therefore not that alternatives cannot work, but that it is cheap to verify: its behavior follows from a simple declared rule and one calibration scalar rather than a learned codebook containing thousands of values. 
+
+
+\section{Remaining limitations}\label{app:limits}
+
+\texttt{mach} and \texttt{lib} are unmeasured for the self-hosted panel; one provider's \texttt{conc} ran at burst 16 rather than 64 due to rate limits; GPU coverage is two architectures. Drift rates are input-distribution dependent, which is exactly why the input set is frozen and hash-pinned. Reports are attested by the leaderboard operator's own key, so attestation proves integrity and origin without making the operator a neutral party. About 22\% of ARI-E rows were ungraded and dropped; if grading failure tracks task difficulty, the surviving set is easier than the whole.
+
+\section*{Reproducibility statement}
+
+The specification (probe, calibration rule, condition set, report schema, per-model fingerprints), the frozen 1{,}000-item input set with its content hash, the reference implementation, the independent verifier, and every experiment's protocol with machine-readable results are in the accompanying repository [10]; each experiment directory carries a reproduce command. Figures are generated from the experiments' own JSON output, so no figure recomputes a number independently of the table it illustrates. Code is Apache-2.0; the specification and input set are CC-BY-4.0, with BEIR text retaining its original licenses.
+
+\end{document}
