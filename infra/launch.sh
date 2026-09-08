@@ -180,8 +180,14 @@ is only launchable inside its window; 'scheduled' means it has not opened yet." 
     say "  overriding INSTANCE_TYPE=$INSTANCE_TYPE with the block's $CR_TYPE"
     INSTANCE_TYPE="$CR_TYPE"
   fi
+  # Targeting the reservation is necessary but not sufficient: RunInstances
+  # rejects a capacity-block reservation as "market type (purchasing) option
+  # is not valid" unless the request also declares the capacity-block market.
+  # Prepaid block capacity is its own market, not on-demand aimed at a
+  # reservation.
   CR_ARG=(--capacity-reservation-specification \
-          "CapacityReservationTarget={CapacityReservationId=$CAPACITY_RESERVATION}")
+          "CapacityReservationTarget={CapacityReservationId=$CAPACITY_RESERVATION}" \
+          --instance-market-options "MarketType=capacity-block")
   AZS=("$CR_AZ")           # the block lives in one zone; do not sweep
 else
   CR_ARG=(--region "$REGION")   # no-op filler; empty arrays break bash 3.2 -u
