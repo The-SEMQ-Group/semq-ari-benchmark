@@ -33,7 +33,7 @@ sudo -u ubuntu $VP/pip install -q --upgrade pip wheel
 # The Deep Learning AMI ships a CUDA driver; install a matching torch wheel.
 sudo -u ubuntu $VP/pip install -q torch --index-url https://download.pytorch.org/whl/cu121
 sudo -u ubuntu $VP/pip install -q \
-  transformers sentence-transformers datasets scikit-learn accelerate peft
+  transformers sentence-transformers datasets scikit-learn accelerate peft einops
 
 # semq carries the QBIN probe, and ari/probe.py imports it to compute codes, so
 # an experiment that needs codes cannot run without it. It resolves from
