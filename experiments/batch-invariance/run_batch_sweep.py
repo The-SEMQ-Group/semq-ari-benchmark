@@ -69,11 +69,17 @@ def compare(dir_a, dir_b):
     return her, r.stdout.strip()
 
 
-def publish(path: Path, dest: str | None):
-    """Best effort copy to S3. An upload failure must never stop the sweep."""
+def publish(path: Path, dest: str | None, region: str = "us-east-2"):
+    """Best effort copy to S3. An upload failure must never stop the sweep.
+
+    The region is explicit. The results bucket lives in us-east-2 while these
+    runs launch in us-east-1, and an s3 cp that inherits the instance region
+    fails with PermanentRedirect against a bucket in another one.
+    """
     if not dest:
         return
-    cmd = ["aws", "s3", "cp", str(path), f"{dest.rstrip('/')}/{path.name}", "--only-show-errors"]
+    cmd = ["aws", "s3", "cp", str(path), f"{dest.rstrip('/')}/{path.name}",
+           "--region", region, "--only-show-errors"]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if r.returncode:
@@ -89,6 +95,8 @@ def main() -> int:
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--out", default=os.path.expanduser("~/batch_out"))
     ap.add_argument("--publish-s3", default=None)
+    ap.add_argument("--publish-region", default="us-east-2",
+                    help="region of the results bucket, not of the instance")
     a = ap.parse_args()
 
     if a.models == "all":
@@ -131,7 +139,7 @@ def main() -> int:
             # Written and published per cell, not at the end. A run that only saves on
             # completion loses everything to a shutdown that lands mid-sweep.
             spath.write_text(json.dumps(summary, indent=2) + "\n")
-            publish(spath, a.publish_s3)
+            publish(spath, a.publish_s3, a.publish_region)
 
     print(f"\n-> {spath}")
     for key, c in summary["cells"].items():
