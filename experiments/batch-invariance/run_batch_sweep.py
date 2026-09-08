@@ -97,6 +97,8 @@ def main() -> int:
     ap.add_argument("--publish-s3", default=None)
     ap.add_argument("--publish-region", default="us-east-2",
                     help="region of the results bucket, not of the instance")
+    ap.add_argument("--batches", default=",".join(str(b) for b in BATCHES),
+                    help="comma list; must contain the reference batch 32")
     a = ap.parse_args()
 
     if a.models == "all":
@@ -110,9 +112,15 @@ def main() -> int:
             print(f"ERROR: no canonical scale for {m}. Add it from "
                   f"spec/fingerprints-v0.1.csv before running."); return 1
 
+    batches = [int(x) for x in a.batches.split(",") if x.strip()]
+    if REFERENCE_BATCH not in batches:
+        print(f"ERROR: --batches must contain the reference batch "
+              f"{REFERENCE_BATCH}; got {batches}"); return 1
+
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    summary = {"label": a.label, "n": a.n, "reference_batch": REFERENCE_BATCH, "cells": {}}
+    summary = {"label": a.label, "n": a.n, "reference_batch": REFERENCE_BATCH,
+               "batches": batches, "cells": {}}
     spath = out / "summary.json"
 
     for model in models:
@@ -120,12 +128,21 @@ def main() -> int:
         for cell, tf32, det in CELLS:
             key = f"{slug}__cell{cell}"
             dirs = {}
-            for b in BATCHES:
+            for b in batches:
                 tag = f"{slug}__{a.label}_cell{cell}_b{b}"
                 dirs[b] = capture(model, tag, tf32, det, b, a.n, out)
+                # The code matrix is the capture. A summary records what this
+                # run concluded; only codes.npy lets a later run compare this
+                # hardware against another one, which is what the mach
+                # condition needs. The 2026-09-08 run published the summary
+                # alone and the matrices went with the volume, so Hopper could
+                # not be added to the cross-GPU table without repeating it.
+                for f in ("codes.npy", "meta.json"):
+                    publish(dirs[b] / f, (a.publish_s3 + "/captures/" + tag)
+                            if a.publish_s3 else None, a.publish_region)
 
             rows = []
-            for b in BATCHES:
+            for b in batches:
                 if b == REFERENCE_BATCH:
                     continue
                 her, report = compare(dirs[REFERENCE_BATCH], dirs[b])
