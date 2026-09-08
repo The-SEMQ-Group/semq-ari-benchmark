@@ -42,11 +42,15 @@ class _SemqProbe(Probe):
 
     @classmethod
     def calibrate(cls, X: np.ndarray) -> "_SemqProbe":
-        import semq  # SEMQ SDK — private index today, public PyPI once the SDK ships
+        # Built through semq_compat, which resolves the operator name across SDK
+        # versions. Constructing the Context here instead is what broke the
+        # 2026-09-08 run: the published wheel renamed the operator to
+        # SEMQ_OP_QUANT and this line still asked for SEMQ_OP_QBIN.
+        from ari.semq_compat import quant_context
 
         dim = int(X.shape[1])
         ref = np.ascontiguousarray(X, dtype=np.float32)
-        ctx = semq.Context(max_dim=dim, op=semq.SEMQ_OP_QBIN, qbin_n_bins=N_BINS)
+        ctx = quant_context(max_dim=dim, n_bins=N_BINS)
         s = ctx.calibrate(ref, percentile=PERCENTILE / 100.0)
         return cls(ctx, s)
 
@@ -106,9 +110,9 @@ def fixed_scale_codes(vectors: np.ndarray, s: float, dim: int) -> np.ndarray:
     """Encode with a **fixed** QBIN scale `s` (no re-calibration), so codes are bit-comparable
     across separate runs / machines against a baseline calibrated once. This is the shared
     encode path for the capture tools (proc / conc / time / mach). Requires the `semq` SDK."""
-    import semq
+    from ari.semq_compat import quant_context
 
-    ctx = semq.Context(max_dim=dim, op=semq.SEMQ_OP_QBIN, qbin_n_bins=N_BINS, qbin_scale_max=s)
+    ctx = quant_context(max_dim=dim, n_bins=N_BINS, scale_max=s)
     try:
         return np.ascontiguousarray(
             ctx.batch_encode(np.ascontiguousarray(vectors, dtype=np.float32)), dtype=np.uint8)
