@@ -1,7 +1,9 @@
 # Batch Invariance — does batch size change the codes on GPU?
 
-**Status: scaffolded, not yet run.** Target hardware is `p5.48xlarge` (8x H100 80GB, Hopper).
-This document fixes the design *before* the run.
+**Status: run on H100 (Hopper).** At true fp32 both encoders are batch invariant, HER
+1.0000. The only disagreement is with TF32 on, at batch 1 only: 0.9470 on MiniLM and
+0.9990 on bge-large. H1, H3 and H4 confirmed, H2 refuted. Results:
+[`RESULTS.md`](RESULTS.md). This document fixed the design *before* the run.
 
 ## The question
 
