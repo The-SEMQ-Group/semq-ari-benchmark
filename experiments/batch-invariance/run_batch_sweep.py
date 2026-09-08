@@ -33,6 +33,12 @@ S = {
     "Snowflake/snowflake-arctic-embed-l": 0.082256,
 }
 DEFAULT_MODELS = ["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-large-en-v1.5"]
+# BAAI/bge-m3 ships pytorch_model.bin and no safetensors. transformers 5.x
+# refuses to torch.load a .bin under torch < 2.6 (CVE-2025-32434), and the
+# bootstrap pins torch 2.5.1 for cu121. Upgrading torch to reach one model
+# would change the kernels for every other model in the table, which is the
+# quantity this experiment measures, so the model is left out instead.
+NO_SAFETENSORS = {"BAAI/bge-m3"}
 
 BATCHES = [1, 8, 32, 128, 512]
 REFERENCE_BATCH = 32
@@ -91,7 +97,8 @@ def publish(path: Path, dest: str | None, region: str = "us-east-2"):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--label", required=True, help="hardware tag, for example h100")
-    ap.add_argument("--models", default="default", help="'default', 'all', or one model id")
+    ap.add_argument("--models", default="default",
+                    help="'default', 'all', or a comma list of model ids")
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--out", default=os.path.expanduser("~/batch_out"))
     ap.add_argument("--publish-s3", default=None)
@@ -102,11 +109,11 @@ def main() -> int:
     a = ap.parse_args()
 
     if a.models == "all":
-        models = list(S)
+        models = [m for m in S if m not in NO_SAFETENSORS]
     elif a.models == "default":
         models = DEFAULT_MODELS
     else:
-        models = [a.models]
+        models = [m.strip() for m in a.models.split(",") if m.strip()]
     for m in models:
         if m not in S:
             print(f"ERROR: no canonical scale for {m}. Add it from "
