@@ -16,7 +16,7 @@ bundles) and stage 2 aggregates them; the seams are the `encode_condition` /
 from __future__ import annotations
 
 import argparse
-import subprocess
+import json
 import sys
 from pathlib import Path
 
@@ -89,12 +89,23 @@ def run_mock_panel(inputs: InputSet | None = None, dim: int = 256, probe_backend
     )
 
 
-def _validate_with_scorer(report_path: Path) -> int:
-    scorer = Path(__file__).resolve().parents[1] / "leaderboard" / "scoring" / "score.py"
-    if not scorer.exists():
-        print(f"(scorer not found at {scorer} — skipping validation)")
-        return 0
-    return subprocess.call([sys.executable, str(scorer), str(report_path)])
+def _validate_schema(report_path: Path) -> int:
+    """Validate local report structure; leaderboard scoring is a separate step."""
+    try:
+        import jsonschema
+    except ImportError:
+        print('Validation requires jsonschema. Install ".[scoring]" or ".[dev]".', file=sys.stderr)
+        return 1
+    schema_path = Path(__file__).resolve().parents[1] / "spec" / "report-schema.json"
+    try:
+        schema = json.loads(schema_path.read_text())
+        instance = json.loads(report_path.read_text())
+        jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(instance)
+    except (OSError, ValueError, jsonschema.ValidationError, jsonschema.SchemaError) as exc:
+        print(f"Schema validation failed: {exc}", file=sys.stderr)
+        return 1
+    print("Report schema valid (leaderboard scoring and attestation not checked).")
+    return 0
 
 
 def main(argv=None) -> int:
@@ -102,7 +113,7 @@ def main(argv=None) -> int:
     ap.add_argument("--inputs", type=Path, help="ARI-Bench JSONL; omit for the dry-run sample")
     ap.add_argument("--out", type=Path, default=Path("report.json"))
     ap.add_argument("--probe-backend", choices=["auto", "semq", "mock"], default="mock")
-    ap.add_argument("--validate", action="store_true", help="run score.py on the output")
+    ap.add_argument("--validate", action="store_true", help="validate against the local report schema")
     args = ap.parse_args(argv)
 
     inputs = load_ari_bench(args.inputs) if args.inputs else sample_inputs()
@@ -110,7 +121,7 @@ def main(argv=None) -> int:
     report.write_report(args.out, rep)
     print(f"ARI = {rep['ARI']:.4f}  ({rep['agent_id']}, {len(inputs)} inputs)  -> {args.out}")
     print(f"input-set content hash: {inputs.content_hash[:16]}…")
-    return _validate_with_scorer(args.out) if args.validate else 0
+    return _validate_schema(args.out) if args.validate else 0
 
 
 if __name__ == "__main__":

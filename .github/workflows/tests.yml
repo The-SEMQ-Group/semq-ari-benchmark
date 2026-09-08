@@ -27,7 +27,7 @@ jobs:
       - name: Install the package and public test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[scoring]" pytest cryptography
+          python -m pip install -e ".[dev]"
 
       # semq is not on public PyPI yet -- it lives in CodeArtifact. Until a CI
       # role with CodeArtifact read exists, this is skipped and the attestation
@@ -53,3 +53,9 @@ jobs:
       # fully green while silently covering less.
       - name: Run tests
         run: pytest -v -rs
+
+      - name: Validate the documented mock pipeline
+        run: python -m ari.run --out /tmp/ari-report.json --validate
+
+      - name: Build the package
+        run: python -m build

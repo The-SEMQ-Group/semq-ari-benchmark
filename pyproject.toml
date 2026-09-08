@@ -14,6 +14,7 @@ keywords = ["reproducibility", "embeddings", "benchmark", "ARI", "SEMQ", "AI-gov
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
+dev = ["jsonschema>=4.20", "pytest>=7", "cryptography>=41", "build>=1"]
 scoring = ["jsonschema>=4.20"]
 apis = ["openai>=1.0", "cohere>=5.0", "voyageai>=0.2", "google-genai>=0.3"]
 selfhosted = ["sentence-transformers>=3.0", "torch>=2.0"]

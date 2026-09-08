@@ -1,67 +1,97 @@
-# ARI Harness
+# ARI harness
 
-Runs the ARI protocol on an agent under the canonical condition set and emits a signed
-[ARI report](../spec/report-schema.json) that the leaderboard scorer (in the
-[ari-leaderboard](https://github.com/The-SEMQ-Group/ari-leaderboard) repo) validates and appends.
-
-> **Status: implemented.** Orchestration, metrics, and report assembly run **end-to-end** on
-> the mock agent (no SDK/credentials) *and* on the real **`semq` probe** (binding verified
-> against `semq==1.2.0`: QBIN n=2 calibrate → bit-packed codes, discrete-attractor `same`=1.0
-> confirmed). The API agents and capture tools ([`tools/`](tools/)) produced all 13 leaderboard
-> rows. `ari/run.py` is the mock end-to-end demo; the real captures use the tools in `tools/`.
-
-## Architecture — two stages, so the panel fans out across instances
-
-```
-stage 1  encode      inputs ──(agent)──> embeddings ──(SEMQ QBIN probe)──> codes
-         (per env)   run wherever the environment lives: a given instance / precision /
-                     library / region / API session. Emits a code bundle per condition.
-
-stage 2  aggregate   diff each condition's codes vs the baseline (`same`) ──> HER, H̄,
-                     bootstrap CIs ──> assemble the signed ARI report JSON.
-```
-
-This split is what makes the real multi-instance panel work: `mach` means "run stage 1 on a
-second instance", `prec` means "run stage 1 in fp16", etc. — then stage 2 collects the
-bundles and diffs them. The seams are `run.encode_condition` (stage 1) and
-`run.aggregate_report` (stage 2).
+The harness encodes inputs, compares condition codes, and writes report JSON.
+Use the [root setup procedure](../README.md#build-and-test) before these commands.
+Run commands from the repository root.
 
 ## Modules
 
-| module | role |
+| Module | Purpose |
 | --- | --- |
-| `probe.py` | The canonical SEMQ QBIN probe. Binds to the `semq` SDK; falls back to a deterministic reference mock when the SDK is absent. |
-| `agents.py` | `Agent` backends — `MockAgent` (deterministic, for tests), `SentenceTransformerAgent` (self-hosted), and `OpenAIAgent`/`VoyageAgent`/`CohereAgent` (API stubs). |
-| `inputs.py` | ARI-Bench loader + content-hash pin. |
-| `metrics.py` | per-input HE / Hamming → HER / H̄ with bootstrap CIs. |
-| `report.py` | assemble the report dict (ARI over the *present* averaged conditions), compute audit hashes, write JSON. |
-| `run.py` | orchestrator + CLI; `run_mock_panel()` is the end-to-end mock path. |
+| `agents.py` | Mock, embedding API, and local model adapters. |
+| `probe.py` | Canonical SEMQ probe and development mock. |
+| `inputs.py` | Input loading and content hashes. |
+| `metrics.py` | Equality, Hamming distance, and bootstrap intervals. |
+| `report.py` | Report assembly and condition digests. |
+| `run.py` | Mock pipeline and local schema validation. |
+| `harness.py` | Trajectory agreement and harness-effect measurement. |
+| `attest.py`, `kms_signer.py` | Artifact attestation and signature creation. |
+| `verify_report.py` | Signature and attestation verification. |
 
-## Run it
+Capture and aggregation are separate stages.
+Capture each condition in its required environment. Compare the resulting codes against a common baseline with a fixed calibration.
+Report generation does not sign a report automatically.
 
-```bash
-# end-to-end on the mock agent, then validate with the leaderboard scorer
-python -m ari.run --out report.json --validate
-
-# with the frozen ARI-Bench slice (JSONL of {input_id, text})
-python -m ari.run --inputs data/ari-bench-v0.1.jsonl --out report.json --validate
-```
-
-Install the probe from the SEMQ SDK to use `--probe-backend semq` (private package index
-today; public PyPI once the SDK ships).
+## Validate the local pipeline
 
 ```bash
-python ../tests/test_end_to_end.py     # smoke test: mock report is schema-valid + scorer-passing
+python -m ari.run --out /tmp/ari-report.json --validate
 ```
 
-## What's stubbed (integration TODOs)
+The command writes JSON and validates it against `spec/report-schema.json`.
+A validation error returns a nonzero exit status.
+This is a development check. Submit real reports through the separate leaderboard repository.
 
-- ~~**`semq` probe binding**~~ — **done** (`probe._SemqProbe`, verified against `semq==1.2.0`).
-- ~~**OpenAI client**~~ — **wired** (`agents.OpenAIAgent`: pinned model/dimensions,
-  one-input-per-request, `encode_fresh` for the `proc` condition; reads `OPENAI_API_KEY`).
-  **Voyage / Cohere** clients still to wire.
-- **API `proc` realisation** — fresh-context resampling implemented as a pilot
-  (`tools/proc_pilot.py`), validated offline; run it against OpenAI on AWS to freeze K /
-  window and confirm the levers (see [deployed-agent-panel](../experiments/deployed-agent-panel/README.md)).
-- **Real condition runners** — stage-1 execution on distinct AWS instances / precisions /
-  library envs (the mock simulates these).
+## Install the canonical probe
+
+The public development dependencies do not include `semq`.
+The repository's CI installs it from AWS CodeArtifact when an authorized role is configured.
+With AWS CLI credentials that can read the SDK repository:
+
+```bash
+aws codeartifact login --tool pip --domain semq --repository semq-sdk --region us-east-2
+python -m pip install semq
+python -m pip show semq
+```
+
+The login command changes the local pip index configuration.
+Record the installed SDK version with each capture. Use an approved wheel if you cannot access CodeArtifact.
+Without SDK access, use the mock pipeline. Do not label mock reports as canonical measurements.
+The capture backend requires the QBIN interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
+
+## Capture a real model
+
+Install the dependencies for the selected adapter:
+
+```bash
+python -m pip install -e ".[apis]"
+```
+
+Set the provider credential in your environment. For OpenAI, the variable is `OPENAI_API_KEY`.
+Then run:
+
+```bash
+python ari/tools/run_report.py --agent openai --inputs data/ari-bench-v0.1.jsonl --probe-backend semq
+```
+
+This command makes billed API calls. It measures `same` and `proc`, then writes JSON under `leaderboard/submissions/`.
+That local directory is a capture output location. It is not the separate leaderboard repository.
+Do not use the legacy `--submit` option; it expects a scorer that is absent from this checkout.
+
+For a local embedding model:
+
+```bash
+python -m pip install -e ".[selfhosted]"
+python ari/tools/run_report.py --agent bge --model BAAI/bge-large-en-v1.5 --inputs data/ari-bench-v0.1.jsonl --probe-backend semq
+```
+
+This command downloads model weights and starts a second process for `proc`.
+Check memory requirements before selecting a larger model.
+
+## Complete the condition set
+
+The basic capture does not measure `conc` or `time`.
+Use the tools below with the [panel protocol](../experiments/deployed-agent-panel/README.md).
+Read each tool's `--help` before execution.
+
+| Tool | Purpose |
+| --- | --- |
+| `tools/proc_pilot.py` | Repeated API calls with persistent and fresh clients. |
+| `tools/conc_probe.py` | API concurrency captures. |
+| `tools/capture_time_baseline.py` | Baseline for later time comparisons. |
+| `tools/selfhosted_conc_time.py` | Local model concurrency and time captures. |
+| `tools/gpu_capture.py` | GPU condition captures. |
+
+Preserve the input order, baseline calibration, model revision, environment, and audit digests.
+Check the output conditions before comparing reports.
+See [CONTRIBUTING.md](../CONTRIBUTING.md#submit-a-report) for submission steps.

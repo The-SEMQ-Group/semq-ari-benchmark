@@ -1,36 +1,24 @@
-# ARI-E on real harnesses: does the scaffold or the model decide the outcome?
+# Harness-effect results
 
-**Status: run.** Script: [`run.py`](run.py). Machine-readable:
-[`results/harness_effect.json`](results/harness_effect.json).
+This experiment compares SWE-agent and OpenHands on two models in the Open-SWE-Traces dataset.
+Data: [harness_effect.json](results/harness_effect.json). Implementation: [run.py](run.py).
 
-**Headline: the scaffold decides more of the outcome than the model does, and a naive
-comparison overstates that by two to four times.** Removing the agent's own noise cuts the
-apparent scaffold effect from 21.5 points to 8.9.
+The analysis uses `resolved == 1` as a successful outcome.
+It includes cases with at least two graded rollouts on each side of a comparison.
+The dataset contains up to three rollouts per cell.
 
-This is the first ARI-E measurement, and it uses harnesses nobody here built.
+## Comparisons
 
-## Setup
-
-[`nvidia/Open-SWE-Traces`](https://huggingface.co/datasets/nvidia/Open-SWE-Traces) ran two
-agent scaffolds, **SWE-agent** and **OpenHands**, with two models, **Qwen3.5-122B** and
-**Minimax-M2.5**, over about 18,000 SWE-bench-style instances. Each cell holds up to three
-rollouts of each instance. That crossing is what makes this possible:
+Both comparisons use the same agreement estimator.
 
 | contrast | what changes | what stays fixed |
 | --- | --- | --- |
 | **harness effect** | the scaffold | the model, the task, the grader |
 | **model effect** | the model | the scaffold, the task, the grader |
 
-Both use the same estimator on the same instances, so they can sit side by side.
+## Measured effects
 
-An outcome is `resolved == 1`, which comes from running the repository's own tests against
-the agent's patch. The agent never saw that test. A benchmark whose verdict came from a
-judge would measure the judge.
-
-Only instances with at least two rollouts on both sides are used, because one rollout
-gives no self-consistency control.
-
-## Results
+Intervals are bootstrap intervals over cases. Each reported interval excludes zero.
 
 | contrast | cases | self-consistency | cross agreement | **ARI-E effect** | 95% CI |
 | --- | ---: | ---: | ---: | ---: | :--- |
@@ -39,17 +27,9 @@ gives no self-consistency control.
 | model, scaffold = SWE-agent | 10,674 | 0.880 | 0.839 | **+0.041** | [+0.039, +0.046] |
 | model, scaffold = OpenHands | 11,933 | 0.892 | 0.833 | **+0.059** | [+0.054, +0.062] |
 
-**Mean scaffold effect +0.069. Mean model effect +0.050.** Every interval excludes zero.
+## Adjustment for self-disagreement
 
-## Reading
-
-**1. Agents disagree with themselves 10 to 13 percent of the time.** Self-consistency runs
-between 0.873 and 0.907. Two rollouts of one scaffold, one model and one instance reach
-different verdicts about one time in nine. Any comparison that ignores this attributes that
-noise to whatever it happens to be comparing.
-
-**2. The control removes most of the apparent effect.** This is the result that justifies
-the metric:
+ARI-E subtracts cross-harness agreement from mean self-consistency. It is not a pass-rate difference.
 
 | contrast | apparent disagreement | agent's own noise | ARI-E effect | share removed |
 | --- | ---: | ---: | ---: | ---: |
@@ -58,51 +38,30 @@ the metric:
 | model, SWE-agent | 0.161 | 0.120 | +0.041 | **74%** |
 | model, OpenHands | 0.167 | 0.108 | +0.059 | **65%** |
 
-A report that diffs two scaffolds and stops would say the scaffold changed 21.5% of
-outcomes on Qwen. The attributable figure is 8.9%. **The naive number is 2.4 times too
-large**, and on the model contrasts it is nearly 4 times too large.
+## Interpretation and limits
 
-**3. The scaffold matters more than the model, but not overwhelmingly.** The mean scaffold
-effect is 1.4 times the mean model effect. That supports the direction of the published
-claim without supporting its strongest form. On this dataset the two are the same order of
-magnitude.
+The mean scaffold effect was +0.069; the mean model effect was +0.050.
+Their ratio was approximately 1.4 for these pairs and cases.
+The adjustment removed 59–74 percent of the unadjusted disagreement.
+Qwen's scaffold effect was +0.089; Minimax's was +0.050.
+These differences show that the effect depends on the model-harness pair.
 
-**4. Scaffold and model interact.** The scaffold effect is +0.089 with Qwen3.5 and +0.050
-with Minimax. Pass rates show why: Qwen3.5 scores 46.8% under SWE-agent and 33.4% under
-OpenHands, a 13.5-point spread, while Minimax scores 46.9% and 42.1%, a 4.9-point spread.
-One model is far more sensitive to the scaffold than the other. Reporting a single
-"harness effect" for a benchmark, with no model named, would hide this.
+Approximately 22 percent of rows had `resolved = -1` and were excluded.
+If grading failure depends on task difficulty, this exclusion can bias the result.
+The dataset was not collected as a controlled scaffold experiment. Independence between rollouts is not established.
+Tool names differ between harnesses, so this report compares outcomes rather than normalized action sequences.
 
-**5. A pass-rate gap is not the effect.** Qwen under the two scaffolds differs by 13.5
-points of pass rate but produces an ARI-E effect of 8.9 points. The effect is a difference
-of agreement rates, and that compresses. Do not read ARI-E numbers as score gaps.
+## Reproduce
 
-## Why this design was chosen
+From the repository root, install the data dependencies:
 
-An earlier plan ran two agents against a self-hosted model on 25 tasks. The power analysis
-in [`../harness-power/`](../harness-power/) showed that design detects a 20-point pass-rate
-gap 8% of the time. This dataset supplies about 11,000 cases per contrast instead of 25,
-which is why every interval here is narrow.
+```bash
+python -m pip install -e ".[data]"
+python experiments/harness-effect/extract.py
+python experiments/harness-effect/run.py
+```
 
-It also answers a question the earlier plan could not. If we write both harnesses, the
-measured effect is a property of our design choices. SWE-agent and OpenHands are widely
-used and were built by other people.
-
-## Caveats
-
-- **Three rollouts per cell is the dataset's limit.** More repeats sharpen the control.
-  The intervals are narrow because there are many cases, not because the control is
-  strong.
-- **Roughly 22% of rows carry `resolved = -1`** and were dropped, because an ungraded run
-  is not a failed one. If grading failure correlates with task difficulty, the surviving
-  set is easier than the whole. This is the largest threat to the numbers above.
-- **The dataset was built to train models, not to test scaffolds.** The rollouts were not
-  produced as a controlled experiment, and nothing guarantees the three rollouts of an
-  instance are independent draws.
-- **Outcome agreement only.** The two scaffolds do not share a tool vocabulary: SWE-agent
-  calls `bash`, `str_replace_editor` and `submit`, while OpenHands calls `execute_bash`,
-  `str_replace_editor`, `think`, `finish` and `fetch`. Trajectory agreement across them
-  needs a mapping between those names first, and `think` has no SWE-agent counterpart at
-  all, so a mapping would hide a real capability difference.
-- **Two scaffolds and two models.** The interaction in point 4 says the numbers move with
-  the pair, so treat these as two measurements rather than a constant.
+The extraction downloads [Open-SWE-Traces](https://huggingface.co/datasets/nvidia/Open-SWE-Traces).
+Check `extract.py --help` for the row limit before reproducing the full analysis.
+Outputs are written under `experiments/harness-effect/results/`.
+Match the captured dataset revision and case counts before comparing new results with this table.

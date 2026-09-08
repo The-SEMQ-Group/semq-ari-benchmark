@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.7.1)  31 AUG 2026 20:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.7.1)  4 SEP 2026 13:39
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -300,24 +300,24 @@ File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 ) (./ari.aux)
 \openout1 = `ari.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -385,7 +385,7 @@ LaTeX Font Info:    ... okay on input line 52.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring OFF on input line 52.
+Package hyperref Info: Link coloring OFF on input line 42.
 (./ari.out) (./ari.out)
 \@outlinefile=\write3
 \openout3 = `ari.out'.
@@ -396,77 +396,77 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
  (/Users/ilona/Library/TinyTeX/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-LaTeX Font Info:    Trying to load font information for U+msa on input line 54.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 44.
  (/Users/ilona/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 54.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 44.
  (/Users/ilona/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 54.
- (/Users/ilona/Library/TinyTeX/texmf-dist/tex/latex/base/t1cmtt.fd
-File: t1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
-)
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 [1
 
 
 {/Users/ilona/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/Users/ilona/Library/TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc}]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
+LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 66.
+ (/Users/ilona/Library/TinyTeX/texmf-dist/tex/latex/base/t1cmtt.fd
+File: t1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
+)
 
 [2
 pdfTeX warning (ext4): destination with the same identifier (name{table.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.115 
-      ]
-<figure1.pdf, id=106, 397.485pt x 130.086pt>
-File: figure1.pdf Graphic file (type pdf)
-<use figure1.pdf>
-Package pdftex.def Info: figure1.pdf  used on input line 120.
-(pdftex.def)             Requested size: 397.48499pt x 130.08963pt.
-
-
-[3
+l.107 
+      
 pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.138 
-      
+l.107 
+      ]
+<figure1.pdf, id=107, 397.485pt x 130.086pt>
+File: figure1.pdf Graphic file (type pdf)
+<use figure1.pdf>
+Package pdftex.def Info: figure1.pdf  used on input line 110.
+(pdftex.def)             Requested size: 397.48499pt x 130.08963pt.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+[3
 pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.138 
+l.143 
        <./figure1.pdf>]
-Underfull \hbox (badness 7558) in paragraph at lines 180--187
+Underfull \hbox (badness 7558) in paragraph at lines 170--177
 []\T1/ptm/m/n/9 [3] Ra-jput, S., Mehta, N., Singh, A., Ke-sha-van, R. H., Vu, T., Heldt, L., Hong, L.,
  []
 
 
-Underfull \hbox (badness 5681) in paragraph at lines 180--187
+Underfull \hbox (badness 5681) in paragraph at lines 170--177
 \T1/ptm/m/n/9 Tay, Y., Tran, V. Q., Samost, J., Kula, M., Chi, E. H., and Sathi-amoor-thy, M. Rec-om-
  []
 
 
-Underfull \hbox (badness 2884) in paragraph at lines 180--187
+Underfull \hbox (badness 2884) in paragraph at lines 170--177
 \T1/ptm/m/n/9 mender Sys-tems with Gen-er-a-tive Re-trieval. In \T1/ptm/m/it/9 Ad-vances in Neu-ral In-for-ma-tion Pro-cess-ing Sys-
  []
 
 
-Underfull \hbox (badness 2680) in paragraph at lines 180--187
+Underfull \hbox (badness 2680) in paragraph at lines 170--177
 \T1/ptm/m/it/9 tems 36 (NeurIPS)\T1/ptm/m/n/9 , 2023. []$\T1/cmtt/m/n/9 https : / / proceedings . neurips . cc / paper _ files / paper / 2023 / hash /
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 188--192
+Underfull \hbox (badness 10000) in paragraph at lines 178--182
 []\T1/ptm/m/n/9 [4] Ope-nAI. Em-bed-dings with Ope-nAI ``text-embedding-ada-002'' Are Not De-ter-min-is-tic.
  []
+
+
+Underfull \vbox (badness 2564) has occurred while \output is active []
 
 
 
@@ -475,25 +475,25 @@ pdfTeX warning (ext4): destination with the same identifier (name{table.3}) has 
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.198 [
-       6] Gond, R., Kamath, A. K., Basu, A., Ramjee, R., and Panwar, A.]
-Underfull \hbox (badness 4634) in paragraph at lines 219--224
+       8] Yashwanth, T. S.]
+Underfull \hbox (badness 4634) in paragraph at lines 209--214
 []\T1/ptm/m/n/9 [10] The SEMQ Group. ARI: An Au-ditable Re-trieval In-sta-bil-ity Har-ness. Soft-ware repos-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 219--224
+Underfull \hbox (badness 10000) in paragraph at lines 209--214
 \T1/ptm/m/n/9 i-tory, 2026. []$\T1/cmtt/m/n/9 https : / / github . com / The-[]SEMQ-[]Group / semq-[]ari-[]benchmark$[]\T1/ptm/m/n/9 . Ver-sion
  []
 
 
 
 [5]
-Underfull \hbox (badness 1472) in paragraph at lines 252--253
+Underfull \hbox (badness 1472) in paragraph at lines 242--243
 \T1/ptm/m/n/10 ARI-E ap-plies the same dis-ci-pline --- re-peat, con-trol, at-tribute --- to agent out-comes on
  []
 
 
-Underfull \vbox (badness 2134) has occurred while \output is active []
+LaTeX Warning: `h' float specifier changed to `ht'.
 
 
 
@@ -501,29 +501,27 @@ Underfull \vbox (badness 2134) has occurred while \output is active []
 pdfTeX warning (ext4): destination with the same identifier (name{table.4}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.294 
+l.301 
       
 pdfTeX warning (ext4): destination with the same identifier (name{table.5}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.294 
+l.301 
       ]
 
 [7
 pdfTeX warning (ext4): destination with the same identifier (name{table.6}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.337 
-      
+l.332 T
+       he TF32 row also shows the cost of strictness read in reverse. Over a...
 pdfTeX warning (ext4): destination with the same identifier (name{table.7}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.337 
-      ]
+l.332 T
+       he TF32 row also shows the cost of strictness read in reverse. Over a...]
 
-[8]
-
-[9] (./ari.aux)
+[8] (./ari.aux)
  ***********
 LaTeX2e <2024-06-01> patch level 2
 L3 programming layer <2024-05-27>
@@ -532,18 +530,18 @@ Package rerunfilecheck Info: File `ari.out' has not changed.
 (rerunfilecheck)             Checksum: 380F8D24956C3BA72BEC22FD68F9A842;3659.
  ) 
 Here is how much of TeX's memory you used:
- 10907 strings out of 475544
- 165584 string characters out of 5776852
- 1942905 words of memory out of 5000000
+ 10906 strings out of 475544
+ 165578 string characters out of 5776852
+ 1946905 words of memory out of 5000000
  33347 multiletter control sequences out of 15000+600000
  598478 words of font info for 88 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  75i,11n,79p,987b,446s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/ilona/Library/TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt0900.600pk> </Users/ilona/Library/TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on ari.pdf (9 pages, 292729 bytes).
+Output written on ari.pdf (8 pages, 290968 bytes).
 PDF statistics:
- 385 PDF objects out of 1000 (max. 8388607)
- 237 compressed objects within 3 object streams
- 37 named destinations out of 1000 (max. 500000)
+ 374 PDF objects out of 1000 (max. 8388607)
+ 231 compressed objects within 3 object streams
+ 36 named destinations out of 1000 (max. 500000)
  142 words of extra memory for PDF output out of 10000 (max. 10000000)
 
