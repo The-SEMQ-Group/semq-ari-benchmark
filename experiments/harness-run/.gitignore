@@ -1,0 +1,8 @@
+# Local virtualenvs (harnesses + grader), recreated per environment.
+.venv*/
+
+# Run outputs, grading artifacts, and harness/grader logs.
+runs/
+logs/
+*.log
+__pycache__/
