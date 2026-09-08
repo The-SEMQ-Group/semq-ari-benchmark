@@ -51,7 +51,11 @@ if CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" \
       --domain-owner "$CA_OWNER" --region "$CA_REGION" \
       --query authorizationToken --output text 2>/dev/null) && [ -n "$CA_TOKEN" ]; then
   CA_URL="https://aws:${CA_TOKEN}@${CA_DOMAIN}-${CA_OWNER}.d.codeartifact.${CA_REGION}.amazonaws.com/pypi/${CA_REPO}/simple/"
-  sudo -u ubuntu $VP/pip install -q --index-url "$CA_URL" semq \
+  # --extra-index-url, not --index-url: the latter REPLACES PyPI, and this
+  # CodeArtifact repository serves only semq. semq depends on cffi, so an
+  # --index-url install resolves semq and then fails on "No matching
+  # distribution found for cffi".
+  sudo -u ubuntu $VP/pip install -q --extra-index-url "$CA_URL" semq \
     && echo "semq installed from CodeArtifact" \
     || echo "WARNING: semq install failed; anything computing codes will not run"
 else
