@@ -1,4 +1,4 @@
-# Agent Reproducibility Index (ARI)
+# ARI
 
 ARI measures changes in model representations under different deployment conditions.
 This repository contains the Python harness, frozen inputs, specifications, and experiment results.
