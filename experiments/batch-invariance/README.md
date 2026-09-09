@@ -1,9 +1,13 @@
 # Batch Invariance — does batch size change the codes on GPU?
 
-**Status: run on H100 (Hopper).** At true fp32 both encoders are batch invariant, HER
-1.0000. The only disagreement is with TF32 on, at batch 1 only: 0.9470 on MiniLM and
-0.9990 on bge-large. H1, H3 and H4 confirmed, H2 refuted. Results:
-[`RESULTS.md`](RESULTS.md). This document fixed the design *before* the run.
+**Status: run on H100 (Hopper), seven encoders.** Batch size does change codes at true fp32
+on four of the seven, concentrated at batch 1 and gone by batch 8 on all but one. The
+deterministic flag makes no difference anywhere. H1 and H2 refuted, H3 confirmed, H4 mixed.
+Results: [`RESULTS.md`](RESULTS.md). This document fixed the design *before* the run.
+
+An earlier two-encoder run read 1.0000 across cells A and B and looked like clean batch
+invariance. Both of those encoders turned out to be among the three that are invariant. The
+wider sample is the one to read.
 
 ## The question
 
