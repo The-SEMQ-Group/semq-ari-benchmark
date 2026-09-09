@@ -1,6 +1,7 @@
 # Regime Discrimination. Can retrieval metrics tell you which configuration you are in?
 
-**Status: run on CPU.** GPU conditions declared but deferred. Script:
+**Status: run on CPU.** GPU conditions are implemented in the separate GPU
+procedure and reported in the GPU results. Script:
 [`run_matrix.py`](run_matrix.py). Machine-readable:
 [`results/regime_matrix.json`](results/regime_matrix.json).
 
@@ -77,13 +78,12 @@ imprecise enough that its outputs are no longer unit vectors. Any monitor comput
 against a stored reference would need to notice a similarity slightly greater than 1 to
 catch this, and most clamp or ignore it.
 
-## What is deferred
+## Additional GPU conditions
 
-Four conditions need a GPU and are declared but not run: `fp16`, `gpu_tf32_off`,
-`gpu_tf32_on`, `gpu_bf16`. The TF32 pair is the most important remaining measurement,
-because it is the scenario where a model audited at fp32/CPU is served at fp32/GPU with no
-configuration change visible to the caller. The GPU-determinism experiment already has the
-SEMQ side of that (HER 0.541–0.875). This experiment supplies the retrieval side.
+The GPU procedure measures `fp16`, `gpu_tf32_off`, `gpu_tf32_on`, and `gpu_bf16`.
+Read [GPU determinism results](../gpu-determinism/RESULTS.md) for the measured
+TF32 and cross-device code comparisons. This CPU report does not repeat those
+rows because its reference environment is CPU.
 
 fp16 was moved to the GPU set after a CPU attempt: PyTorch has no optimised CPU fp16
 kernels, so a CPU fp16 run measures a fallback path rather than a serving regime.

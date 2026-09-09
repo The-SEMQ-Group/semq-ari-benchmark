@@ -1,10 +1,8 @@
 # ARI-D-Bench v0.1 — decoding-layer reproducibility for hosted LLM APIs
 
-**Status:** adopted, implementing · proposed August 2026, adopted 2026-08-31 ·
-rollout items 1–2 complete (power sim, frozen prompt set); item 3 (dry run)
-measured except the rehosted `time` cell; item 4 (fp32 references) and the
-first panel pending. Graduates ARI-D from a research protocol to a leaderboard
-measurement.
+**Status:** frozen, v0.1-preview. The power simulation, prompt set, and dry-run
+calibrations are complete. The full provider panel and fp32 reference pass are
+separate rollout work; no published leaderboard score uses this document alone.
 
 **Summary.** The Decoding tab exists and is empty, while the decoding layer is the
 one the community actually asks about: *is my provider silently serving me a

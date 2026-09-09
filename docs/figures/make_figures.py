@@ -1,7 +1,7 @@
 # Copyright (c) 2026 The SEMQ Group.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 
-"""Draw the figures for docs/key-results.md.
+"""Draw the figures used by the paper and the experiment reports.
 
 Every figure reads a results JSON that an experiment wrote. Nothing here
 recomputes a measurement, so a figure cannot disagree with the table it
