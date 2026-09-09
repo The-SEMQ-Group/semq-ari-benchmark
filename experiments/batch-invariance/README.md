@@ -60,6 +60,12 @@ Batch 32 is the reference in each cell, because the published panel uses it. Eac
 size is compared against that reference inside its own cell. Cells are never compared across
 rows for the batch claim, since they differ in more than batch size.
 
+Each cell also captures batch 32 a second time, in its own process, and compares the two. That
+is the same-batch control, and it sets the floor every other reading in the cell is read
+against. Without it a reading of 0.9990 cannot be told apart from ordinary capture-to-capture
+variation, and at least one model varies between captures at a fixed batch. A batch reading at
+or above the control says nothing about batch size, whatever its distance from 1.0000.
+
 The fixed scale matters. A scale calibrated per capture would move the bin edges with the data
 and hide or invent disagreement. Every capture takes the canonical scale from
 `spec/fingerprints-v0.1.csv`, as the GPU determinism experiment does.

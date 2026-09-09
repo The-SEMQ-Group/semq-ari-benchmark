@@ -148,6 +148,20 @@ def main() -> int:
                     publish(dirs[b] / f, (a.publish_s3 + "/captures/" + tag)
                             if a.publish_s3 else None, a.publish_region)
 
+            # Same-batch control: a second capture at the reference batch, same
+            # config, separate process. Without it a reading of 0.9990 cannot be
+            # told apart from ordinary capture-to-capture variation, and at
+            # least one model (all-mpnet-base-v2 under TF32) does vary between
+            # captures at a fixed batch. Every batch reading below is only
+            # interpretable against this floor.
+            ctl_tag = f"{slug}__{a.label}_cell{cell}_b{REFERENCE_BATCH}_control"
+            ctl_dir = capture(model, ctl_tag, tf32, det, REFERENCE_BATCH, a.n, out)
+            for f in ("codes.npy", "meta.json"):
+                publish(ctl_dir / f, (a.publish_s3 + "/captures/" + ctl_tag)
+                        if a.publish_s3 else None, a.publish_region)
+            control_her, _ = compare(dirs[REFERENCE_BATCH], ctl_dir)
+            print(f"  control  {REFERENCE_BATCH} vs {REFERENCE_BATCH}: HER = {control_her:.4f}")
+
             rows = []
             for b in batches:
                 if b == REFERENCE_BATCH:
@@ -156,9 +170,15 @@ def main() -> int:
                 rows.append({"batch": b, "vs_batch": REFERENCE_BATCH, "HER": her})
                 print(f"  batch {b:>3} vs {REFERENCE_BATCH}: HER = {her:.4f}")
 
+            worst = min(r["HER"] for r in rows)
             summary["cells"][key] = {
                 "model": model, "cell": cell, "tf32": tf32, "deterministic": det,
-                "min_HER": min(r["HER"] for r in rows), "comparisons": rows,
+                "control_HER": control_her,
+                "min_HER": worst,
+                # A batch reading at or above the control floor says nothing
+                # about batch size, whatever its distance from 1.0000.
+                "exceeds_control": worst < control_her,
+                "comparisons": rows,
             }
             # Written and published per cell, not at the end. A run that only saves on
             # completion loses everything to a shutdown that lands mid-sweep.
@@ -167,8 +187,14 @@ def main() -> int:
 
     print(f"\n-> {spath}")
     for key, c in summary["cells"].items():
-        verdict = "invariant" if c["min_HER"] == 1.0 else "batch changes the codes"
-        print(f"  {key}: min HER {c['min_HER']:.4f}  ({verdict})")
+        if not c["exceeds_control"]:
+            verdict = "within the same-batch control"
+        elif c["min_HER"] == 1.0:
+            verdict = "invariant"
+        else:
+            verdict = "batch changes the codes"
+        print(f"  {key}: min HER {c['min_HER']:.4f}  control {c['control_HER']:.4f}"
+              f"  ({verdict})")
     return 0
 
 
