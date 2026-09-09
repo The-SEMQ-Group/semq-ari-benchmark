@@ -4,54 +4,91 @@
 1,000 frozen inputs, fixed QBIN scale from `spec/fingerprints-v0.1.csv`, one process per
 capture, batch 32 as the reference inside each cell.
 
-## Result
+Seven encoders. `BAAI/bge-m3` is excluded: it ships no safetensors, and transformers 5.x
+refuses to `torch.load` a `.bin` under torch < 2.6 (CVE-2025-32434). Upgrading torch for one
+model would change the kernels for every other model in the table, and the kernels are what
+this measures.
 
-| model | cell | TF32 | deterministic | b1 | b8 | b128 | b512 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| all-MiniLM-L6-v2 | A | off | on | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| all-MiniLM-L6-v2 | B | off | off | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| all-MiniLM-L6-v2 | C | **on** | off | **0.9470** | 1.0000 | 1.0000 | 1.0000 |
-| bge-large-en-v1.5 | A | off | on | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| bge-large-en-v1.5 | B | off | off | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| bge-large-en-v1.5 | C | **on** | off | **0.9990** | 1.0000 | 1.0000 | 1.0000 |
+## Cell A — fp32, TF32 off, deterministic on
 
-Both models give the same shape of answer. At true fp32 the encoders are batch invariant. The
-only disagreement appears with TF32 on, and only at batch 1.
+| model | dim | b1 | b8 | b128 | b512 |
+| --- | --- | --- | --- | --- | --- |
+| all-MiniLM-L6-v2 | 384 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| bge-large-en-v1.5 | 1024 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| all-mpnet-base-v2 | 768 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| multilingual-e5-large | 1024 | **0.9990** | 1.0000 | 1.0000 | 1.0000 |
+| nomic-embed-text-v1.5 | 768 | **0.9990** | 1.0000 | 1.0000 | 1.0000 |
+| snowflake-arctic-embed-l | 1024 | **0.9990** | **0.9990** | 1.0000 | 1.0000 |
+| mxbai-embed-large-v1 | 1024 | **0.5560** | 1.0000 | 1.0000 | 1.0000 |
+
+## Cell B — fp32, TF32 off, deterministic off
+
+Bit-identical to cell A for all seven models, at every batch size. The deterministic flag
+changes nothing here.
+
+## Cell C — fp32, TF32 on, deterministic off
+
+| model | b1 | b8 | b128 | b512 |
+| --- | --- | --- | --- | --- |
+| all-MiniLM-L6-v2 | 0.9470 | 1.0000 | 1.0000 | 1.0000 |
+| bge-large-en-v1.5 | 0.9990 | 1.0000 | 1.0000 | 1.0000 |
+| multilingual-e5-large | 0.9980 | 1.0000 | 1.0000 | 1.0000 |
+| nomic-embed-text-v1.5 | 0.8670 | 0.9970 | 0.9990 | 0.9990 |
+| snowflake-arctic-embed-l | 1.0000 | 0.9980 | 1.0000 | 1.0000 |
+| mxbai-embed-large-v1 | 0.5560 | 1.0000 | 1.0000 | 1.0000 |
+| all-mpnet-base-v2 | 0.8560 | 0.8530 | 0.8820 | 0.8490 |
+
+## Batch boundary (two encoders, TF32 on)
+
+| model | b1 | b2 | b4 | b8 | b16 | b64 |
+| --- | --- | --- | --- | --- | --- | --- |
+| all-MiniLM-L6-v2 | 0.9470 | 0.9990 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| bge-large-en-v1.5 | 0.9990 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
 
 ## Verdicts
 
 | # | hypothesis | verdict |
 | --- | --- | --- |
-| H1 | deterministic on, TF32 off: batch does not change codes | **confirmed**, HER 1.0000 across both models |
-| H2 | deterministic off: batch does change codes | **refuted**, HER 1.0000 across both models |
-| H3 | any batch effect is weaker than the precision effect | **confirmed**, 0.947 against 0.0000 under bf16 |
-| H4 | TF32 raises batch sensitivity | **confirmed**, and it is the only cell that moves |
+| H1 | deterministic on, TF32 off: batch does not change codes | **refuted**, 4 of 7 models disagree at batch 1 |
+| H2 | deterministic off: batch does change codes | **refuted**, cells A and B are identical everywhere |
+| H3 | any batch effect is weaker than the precision effect | **confirmed**, worst batch reading 0.5560 against 0.0000 under bf16 |
+| H4 | TF32 raises batch sensitivity | **mixed**, see below |
+
+H4 does not resolve cleanly. TF32 lowers agreement on MiniLM (1.0000 to 0.9470) and nomic
+(1.0000 to 0.8670). It leaves mxbai unchanged at 0.5560. On arctic the batch 1 reading goes
+*up*, from 0.9990 to 1.0000.
 
 ## Reading
 
 The review comment said batch size should not change a forward pass, because BatchNorm is off
-and layer norm runs per sample. On this hardware, at true fp32, that is what we measure. Cells
-A and B read 1.0000 everywhere.
+and layer norm runs per sample. The mathematics is right and the measurement mostly agrees,
+but not universally.
 
-The deterministic flag changes nothing on its own. Cell B removes it and the codes still agree,
-so kernel and algorithm selection at fp32 is not what moves these encoders. This repeats the
-GPU determinism result, where the deterministic setting also did not help.
+Batch sensitivity is real, and it is concentrated at batch 1. Every model except arctic reads
+1.0000 from batch 8 upward in cells A and B, and the two-encoder boundary sweep shows the
+effect gone by batch 4. A batch of one is a matrix-vector product, so cuBLAS selects a
+different kernel for that shape and the partial sums combine in a different order. Batch size
+selects a kernel rather than acting as a source of variation itself.
 
-TF32 is the whole effect. It is also the smaller-batch effect, which fits how the disagreement
-arises: at batch 1 the matrix multiply is a matrix-vector product, cuBLAS picks a different
-reduced-precision kernel for that shape, and the partial sums combine in a different order.
-Larger batches share one kernel with the batch 32 reference and agree with it exactly. So batch
-size is not itself a source of variation. It is a selector, and it only selects something
-different once the arithmetic has mantissa bits to lose.
+The deterministic flag is inert. Cells A and B agree bit for bit on all seven models, which
+repeats the GPU determinism result where the same setting also did not help.
 
-The two models differ in how much they lose. MiniLM at 384 dimensions drops to 0.9470 and
-bge-large at 1024 drops to 0.9990. A wider vector needs every one of its coordinates to survive
-for the code to match, so the higher agreement on the wider model is not what a naive reading
-predicts. Neither is it explained by this run. Treat the two numbers as one result, not as a
-ranking.
+Two models need separate treatment.
+
+**all-mpnet-base-v2 under TF32 is not a batch result.** It disagrees at every batch size,
+0.8490 to 0.8820, with no ordering by batch. Two captures of this model under TF32 disagree
+whatever their shape, so the cell C row measures capture-to-capture variation and not batch
+sensitivity. It should not be read alongside the others.
+
+**mxbai-embed-large-v1 reads exactly 0.5560 at batch 1 in all three cells.** The same value
+with TF32 on and off makes it precision-independent, which none of the mechanisms above
+explain. This model is also the outlier in `results/mach_cross_gpu.csv` from the GPU
+determinism experiment, at 0.5371 for `mach_t4_vs_cpu`. Something is specific to this model
+and this run does not identify it.
 
 ## Scope
 
-Two encoders, one GPU architecture, one process per capture. Cells are never compared across
-rows, since they differ in more than batch size. The `mach` comparison against the earlier A10G
-captures is not included here and is still open.
+Seven encoders, one GPU architecture, one process per capture, one run per cell. Cells are
+never compared across rows, since they differ in more than batch size. The `mach` comparison
+against the earlier A10G captures is still open, but the code matrices from this run are
+retained in S3, so it does not need a repeat.
