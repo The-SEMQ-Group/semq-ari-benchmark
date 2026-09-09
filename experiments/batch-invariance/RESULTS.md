@@ -26,6 +26,15 @@ this measures.
 Bit-identical to cell A for all seven models, at every batch size. The deterministic flag
 changes nothing here.
 
+## Same-batch control
+
+Every cell captures batch 32 twice, in separate processes, and compares the two. **All 21
+cells read 1.0000.** Capture-to-capture variation at a fixed batch is zero on this hardware,
+so every reading below 1.0000 in the tables above and below is a batch effect and not noise.
+
+The whole table also reproduces the earlier seven-encoder run value for value, on a different
+instance of the same type.
+
 ## Cell C — fp32, TF32 on, deterministic off
 
 | model | b1 | b8 | b128 | b512 |
@@ -49,7 +58,7 @@ changes nothing here.
 
 | # | hypothesis | verdict |
 | --- | --- | --- |
-| H1 | deterministic on, TF32 off: batch does not change codes | **refuted**, 4 of 7 models disagree at batch 1 |
+| H1 | deterministic on, TF32 off: batch does not change codes | **refuted**, 4 of 7 models disagree at batch 1, all above the control floor |
 | H2 | deterministic off: batch does change codes | **refuted**, cells A and B are identical everywhere |
 | H3 | any batch effect is weaker than the precision effect | **confirmed**, worst batch reading 0.5560 against 0.0000 under bf16 |
 | H4 | TF32 raises batch sensitivity | **mixed**, see below |
@@ -73,12 +82,14 @@ selects a kernel rather than acting as a source of variation itself.
 The deterministic flag is inert. Cells A and B agree bit for bit on all seven models, which
 repeats the GPU determinism result where the same setting also did not help.
 
-Two models need separate treatment.
+One model still stands apart.
 
-**all-mpnet-base-v2 under TF32 is not a batch result.** It disagrees at every batch size,
-0.8490 to 0.8820, with no ordering by batch. Two captures of this model under TF32 disagree
-whatever their shape, so the cell C row measures capture-to-capture variation and not batch
-sensitivity. It should not be read alongside the others.
+**all-mpnet-base-v2 under TF32 disagrees at every batch size**, 0.8490 to 0.8820, with no
+ordering by batch. Before the control existed this looked like capture-to-capture variation.
+The control refutes that: two batch 32 captures of this model under TF32 agree exactly. So
+every batch other than the reference genuinely produces different codes, and by a similar
+amount, which is what a per-shape kernel choice looks like when none of the alternatives match
+the reference shape's kernel.
 
 **mxbai-embed-large-v1 reads exactly 0.5560 at batch 1 in all three cells.** The same value
 with TF32 on and off makes it precision-independent, which none of the mechanisms above
@@ -88,7 +99,8 @@ and this run does not identify it.
 
 ## Scope
 
-Seven encoders, one GPU architecture, one process per capture, one run per cell. Cells are
+Seven encoders, one GPU architecture, one process per capture. Each cell carries a same-batch
+control, and the table reproduced value for value across two instances. Cells are
 never compared across rows, since they differ in more than batch size. The `mach` comparison
 against the earlier A10G captures is still open, but the code matrices from this run are
 retained in S3, so it does not need a repeat.
