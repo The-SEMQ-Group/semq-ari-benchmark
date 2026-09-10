@@ -42,7 +42,7 @@
     "input_content_hash": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$",
-      "description": "SHA-256 over the ordered input records — pins the exact inputs the report was produced on. Enforced by leaderboard/scoring/score.py: the hash must equal the input set's published content hash, or the hash of a prefix of it. A prefix run is accepted but recorded as `comparable: false` on the leaderboard, because a reduced run and a full run are not the same measurement."
+      "description": "SHA-256 over the ordered input records \u2014 pins the exact inputs the report was produced on. Enforced by leaderboard/scoring/score.py: the hash must equal the input set's published content hash, or the hash of a prefix of it. A prefix run is accepted but recorded as `comparable: false` on the leaderboard, because a reduced run and a full run are not the same measurement."
     },
     "measured_at": {
       "type": "string",
@@ -60,7 +60,7 @@
         "platform"
       ],
       "default": "self_hosted",
-      "description": "Determines how 'same' is validated. self_hosted: deterministic agent, 'same' is the probe-purity control and must be 1.0. api: black-box agent that may itself be non-deterministic, so 'same' is a measured within-session-determinism axis (any value in [0,1]). Absent → self_hosted. Decoding classes: 'vendor' (closed model served by its maker), 'rehosted' (open weights served by a third party), 'platform' (a proxy door in front of a vendor model). For all three, 'same' is a measured floor, never required to be 1.0."
+      "description": "Determines how 'same' is validated. self_hosted: deterministic agent, 'same' is the probe-purity control and must be 1.0. api: black-box agent that may itself be non-deterministic, so 'same' is a measured within-session-determinism axis (any value in [0,1]). Absent \u2192 self_hosted. Decoding classes: 'vendor' (closed model served by its maker), 'rehosted' (open weights served by a third party), 'platform' (a proxy door in front of a vendor model). For all three, 'same' is a measured floor, never required to be 1.0."
     },
     "encoder_fingerprint": {
       "type": "object",
@@ -229,7 +229,7 @@
         "Hbar": {
           "type": "number",
           "minimum": 0,
-          "description": "Mean Hamming drift in bits — a count of differing code bits, not of differing bytes and not of differing coordinates. SEMQ QUANT packs several coordinates into one byte, so those are three different numbers."
+          "description": "Mean Hamming drift in bits \u2014 a count of differing code bits, not of differing bytes and not of differing coordinates. SEMQ QUANT packs several coordinates into one byte, so those are three different numbers."
         },
         "HER_ci": {
           "type": "array",
@@ -269,7 +269,7 @@
             "interval",
             "threshold"
           ],
-          "description": "Whether a verdict needs calibration: 'exact' (bit/vector equality — no calibration needed), 'interval' (a bounded overlap measure), 'threshold' (needs a calibrated null floor, e.g. cosine similarity, before a verdict can be read off it)."
+          "description": "Whether a verdict needs calibration: 'exact' (bit/vector equality \u2014 no calibration needed), 'interval' (a bounded overlap measure), 'threshold' (needs a calibrated null floor, e.g. cosine similarity, before a verdict can be read off it)."
         },
         "bytes_of_reference_state": {
           "type": "integer",
@@ -284,6 +284,65 @@
             "ranked_list"
           ],
           "description": "What this detector compares: a SEMQ code, a raw embedding vector, or a ranked retrieval list."
+        },
+        "change_profile": {
+          "type": "object",
+          "description": "Extent and location of the change, and its quantized movement where the probe can bound it. Added 2026-09-10; absent from earlier reports, which are not re-signed. These measure movement in the representation and are not a measure of functional harm.",
+          "required": [
+            "n_coordinates",
+            "bits_per_coordinate",
+            "coordinate_change_rate",
+            "group_size",
+            "group_change_counts",
+            "group_sizes"
+          ],
+          "properties": {
+            "n_coordinates": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Denominator of coordinate_change_rate."
+            },
+            "bits_per_coordinate": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8
+            },
+            "coordinate_change_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Fraction of coordinates whose symbol changed. Not a byte rate."
+            },
+            "group_size": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Coordinates per block in group_change_counts."
+            },
+            "group_change_counts": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "Changed coordinates per contiguous block."
+            },
+            "group_sizes": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "description": "Coordinates in each block; the final block may be short."
+            },
+            "displacement": {
+              "type": "object",
+              "description": "Quantized movement over ordered value regions. n_unbounded counts coordinates in a saturated region, whose movement has no finite upper bound.",
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -321,7 +380,7 @@
             "achieved_in_flight": {
               "type": "integer",
               "minimum": 1,
-              "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md §6). Recorded so a capped row is not read as if it ran at 64."
+              "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md \u00a76). Recorded so a capped row is not read as if it ran at 64."
             }
           },
           "additionalProperties": false
@@ -350,7 +409,7 @@
             "achieved_in_flight": {
               "type": "integer",
               "minimum": 1,
-              "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md §6). Recorded so a capped row is not read as if it ran at 64."
+              "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md \u00a76). Recorded so a capped row is not read as if it ran at 64."
             }
           },
           "additionalProperties": false
@@ -389,7 +448,7 @@
             "interval",
             "threshold"
           ],
-          "description": "Whether a verdict needs calibration: 'exact' (bit/vector equality — no calibration needed), 'interval' (a bounded overlap measure), 'threshold' (needs a calibrated null floor, e.g. cosine similarity, before a verdict can be read off it)."
+          "description": "Whether a verdict needs calibration: 'exact' (bit/vector equality \u2014 no calibration needed), 'interval' (a bounded overlap measure), 'threshold' (needs a calibrated null floor, e.g. cosine similarity, before a verdict can be read off it)."
         },
         "bytes_of_reference_state": {
           "type": "integer",

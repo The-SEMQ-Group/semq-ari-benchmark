@@ -6,6 +6,35 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Extent, quantized movement and location, beside equality
+- A 32-byte SHA-256 detects every change and costs a fraction of a code,
+  so equality is not where a code earns its size. `ari.change_profile`
+  reports what a hash cannot: the fraction of coordinates whose symbol
+  changed, where they sit (counts per contiguous block, with the short
+  final block carrying its own denominator), and how far they moved.
+- Movement comes from `semq.regions`, which bounds the value change from
+  the ordered quantization regions. Requires a SEMQ build exposing
+  `Context.quant_regions`; where it is absent the block is omitted rather
+  than approximated, because a bound that cannot be verified is worse
+  than no bound.
+- **Measured, not assumed: the canonical probe cannot bound roughly half
+  of its own detected changes.** At `n_bins=2` the alphabet has four
+  regions and two of them are outermost, so on p99-calibrated unit-norm
+  embeddings 20% of coordinates sit in a region with no outer edge, and
+  47% (dim 384) / 46% (dim 1024) of the coordinates that changed have an
+  infinite upper bound on their movement. Lower bounds are always
+  available. `displacement.n_unbounded` reports the share rather than
+  substituting a region width that does not exist.
+- `reference_bytes` and `capabilities` state the storage each detector
+  needs and what it can answer, from construction rather than from a
+  measurement: a hash detects any change and locates none; a code
+  locates changes and bounds movement to its own resolution; raw fp32
+  gives movement exactly. No advantage is claimed in advance.
+- `spec/report-schema.json` gains an optional `change_profile` on the
+  semq detector. No existing field changes meaning, so `ari_version`
+  stays `0.1` and reports signed before 2026-09-10 still validate and
+  are not re-signed.
+
 ### Byte disagreement is no longer reported as symbol disagreement
 - SEMQ QUANT packs several coordinates into one byte and packs whether or
   not the context asks it to, so `(cur != ref).mean()` over two code
