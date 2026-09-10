@@ -66,6 +66,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ari.code_metrics import chunk_widths, chunked_code_diff
+
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 
@@ -285,18 +287,23 @@ def statistics(ref: np.ndarray, cur: np.ndarray) -> dict:
 
     scale = float(np.percentile(np.abs(ref), 99.0))
 
+    # Every chunk pads its own final byte, so the widths are fixed once and
+    # reused: a coordinate-level comparison splits the concatenated buffer
+    # back at the same boundaries.
+    widths = chunk_widths(ref.shape[1], MAX_DIM)
+
     def code(X):
-        dim = X.shape[1]
-        bounds = list(range(0, dim, MAX_DIM)) + [dim]
-        parts = []
-        for lo, hi in zip(bounds, bounds[1:]):
-            ctx = quant_context(hi - lo, n_bins=8, scale_max=scale)
+        parts, off = [], 0
+        for w in widths:
+            ctx = quant_context(w, n_bins=8, scale_max=scale)
             parts.append(np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(X[:, lo:hi], np.float32))))
+                np.ascontiguousarray(X[:, off:off + w], np.float32))))
             ctx.close()
+            off += w
         return parts[0] if len(parts) == 1 else np.concatenate(parts, axis=1)
 
     cr, cc = code(ref), code(cur)
+    diff = chunked_code_diff(cr, cc, n_bins=8, widths=widths)
 
     # Top-20 set change, in row blocks. A whole-array argpartition allocates an
     # int64 index the size of the logits, which is 2.8 GB at 48 prompts on a
@@ -317,8 +324,9 @@ def statistics(ref: np.ndarray, cur: np.ndarray) -> dict:
         "token_agreement": float((ref.argmax(1) == cur.argmax(1)).mean()),
         "top2_margin_delta": float(np.abs(top2_margin(cur) - top2_margin(ref)).mean()),
         "top20_set_change": float(jac.mean()),
-        "semq_hbar": float((cr != cc).mean()),
-        "semq_her": float((cr == cc).all(1).mean()),
+        "semq_coord_change": float(diff.coordinate_change_rate.mean()),
+        "semq_byte_change_legacy": float(diff.byte_change_rate.mean()),
+        "semq_her": float(diff.codes_equal.mean()),
         "max_abs_dlogit": float(np.abs(cur - ref).max()),
     }
 
@@ -423,14 +431,14 @@ def main() -> None:
             return r["condition"]
         return "adapter " + r["detail"].split("/")[-1][:24]
 
-    hdr = (f"{'condition':<34}{'tok agree':>10}{'margin d':>10}{'SEMQ Hbar':>11}"
+    hdr = (f"{'condition':<34}{'tok agree':>10}{'margin d':>10}{'SEMQ coord':>11}"
            + "".join(f"{bucket_label(lo, hi):>10}" for lo, hi in BUCKETS))
     print(hdr)
     print("-" * len(hdr))
     for r in rows:
         prof = r["rank_profile"]
         print(f"{row_label(r):<34}{r['token_agreement']:>9.2%}"
-              f"{r['top2_margin_delta']:>10.4f}{r['semq_hbar']:>11.4f}"
+              f"{r['top2_margin_delta']:>10.4f}{r['semq_coord_change']:>11.4f}"
               + "".join(f"{b['enrichment']:>9.2f}x" for b in prof.values()))
 
     print("\nRank columns are enrichment: the share of total |delta logit| in")

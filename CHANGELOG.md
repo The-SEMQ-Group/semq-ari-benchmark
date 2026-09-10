@@ -6,6 +6,36 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Byte disagreement is no longer reported as symbol disagreement
+- SEMQ QUANT packs several coordinates into one byte and packs whether or
+  not the context asks it to, so `(cur != ref).mean()` over two code
+  buffers is a **byte** change rate. Four measurements reported it as a
+  symbol or coordinate rate. At `n_bins=8` an isolated change reads twice
+  the coordinate rate, at `n_bins=2` four times, and the factor falls
+  towards one as changes get dense, so a published number cannot be
+  converted afterwards.
+- New `ari.code_metrics` reports each quantity against its own
+  denominator: whole-code equality, changed coordinates (count, fraction
+  and indices), bit Hamming (bits and fraction, over code bits only), and
+  the byte rate under a name that says bytes. `chunked_code_diff` compares
+  a vocabulary encoded in chunks without reading one chunk's padding as
+  the next chunk's coordinates.
+- Migrated: `decoding-reproducibility/baselines.py` (`SEMQ Hbar` becomes
+  `SEMQ coord change`, with `SEMQ byte change (legacy)` beside it),
+  `decoding-reproducibility/run_matrix.py`,
+  `drift-rank-profile/run.py` and `regime-discrimination/run_matrix.py`
+  (`semq_hbar` becomes `semq_coord_change` and
+  `semq_byte_change_legacy`). Audited and unchanged:
+  `ari/metrics.py`, whose `Hbar` was already a bit count, and
+  `probe-verifiability/near_tie_sweep.py`, whose codes are
+  one-index-per-subspace and already per-symbol.
+- `spec/report-schema.json` gains optional `bits_per_coordinate`,
+  `n_coordinates`, `n_bits` and `bit_hamming_rate` on the semq detector.
+  No existing field changes meaning, so `ari_version` stays `0.1` and
+  reports signed before 2026-09-10 still validate and are not re-signed.
+- Stored result files keep the names they were written with.
+  `docs/figures/make_figures.py` reads either name.
+
 ### `build_report` emits the multi-detector condition shape natively
 - `ari.report.build_report` now writes each condition as
   `{"detectors": {"semq": {...}}}` — the shape the v0.1 schema has accepted

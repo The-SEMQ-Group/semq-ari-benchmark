@@ -49,6 +49,20 @@ def load(p: Path) -> dict:
     return json.loads(p.read_text())
 
 
+def semq_stat(section: dict) -> str:
+    """Name of the SEMQ statistic in a baselines.json section.
+
+    Results written before 2026-09-10 carry "SEMQ Hbar", which was a
+    packed-byte change rate. Later runs report the coordinate rate under
+    "SEMQ coord change" and keep the byte rate beside it. Historical
+    result files are not rewritten, so both names have to render.
+    """
+    for name in ("SEMQ coord change", "SEMQ Hbar", "SEMQ byte change (legacy)"):
+        if name in section:
+            return name
+    raise KeyError(f"no SEMQ statistic in {sorted(section)}")
+
+
 def save(fig, name: str) -> None:
     fig.tight_layout()
     fig.savefig(OUT / name, bbox_inches="tight")
@@ -174,7 +188,8 @@ def fig_margin():
 def fig_sensitivity():
     d = load(EXP / "decoding-reproducibility/results/baselines.json")
     sig = np.array(d["sigmas"])
-    show = {"SEMQ Hbar": SEMQ, "top-2 margin delta": CHEAP,
+    semq_name = semq_stat(d["sensitivity"])
+    show = {semq_name: SEMQ, "top-2 margin delta": CHEAP,
             "KL": ACCENT, "JS": "#7a4fa3", "token flip": MUTED}
 
     fig, ax = plt.subplots(figsize=(5.6, 3.8))
@@ -183,7 +198,7 @@ def fig_sensitivity():
         y = np.where(y <= 0, np.nan, y)
         ax.loglog(sig, y, "o-", color=col, label=name, ms=3.5, lw=1.4)
 
-    ref = sig / sig[0] * float(d["sensitivity"]["SEMQ Hbar"][0])
+    ref = sig / sig[0] * float(d["sensitivity"][semq_name][0])
     ax.loglog(sig, ref, "--", color=INK, lw=0.8, alpha=0.5)
     ax.text(sig[2], ref[2] * 1.7, "slope 1 (linear)", fontsize=7.5,
             color=INK, alpha=0.7, rotation=22)
@@ -205,12 +220,13 @@ def fig_cost():
     store = d["storage_bytes"]
     resp = {k: v[1] for k, v in d["sensitivity"].items()}     # at sigma = 1e-3
     stable = {k: v["bit_identical"] for k, v in d["reassociation"].items()}
+    semq_name = semq_stat(store)
 
     fig, ax = plt.subplots(figsize=(6.2, 4))
     for name in store:
         if resp.get(name, 0) <= 0:
             continue
-        col = SEMQ if name == "SEMQ Hbar" else (
+        col = SEMQ if name == semq_name else (
             CHEAP if name == "top-2 margin delta" else MUTED)
         ax.scatter(store[name], resp[name], s=90 if col != MUTED else 45,
                    color=col, zorder=3,
@@ -235,7 +251,7 @@ def fig_tail():
     tail = d["tail_only"]
     keeps = ["0", "2", "20", "100"]
     labels = ["all ranks", "below\nrank 2", "below\nrank 20", "below\nrank 100"]
-    show = {"SEMQ Hbar": SEMQ, "top-2 margin delta": CHEAP,
+    show = {semq_stat(tail[keeps[0]]): SEMQ, "top-2 margin delta": CHEAP,
             "token flip": MUTED, "top-20 set change": ACCENT}
 
     fig, ax = plt.subplots(figsize=(6.6, 3.9))

@@ -3,7 +3,7 @@ bootstrap confidence intervals.
 
 Definitions (spec/report-schema.json, spec/condition-set.md):
 - HE(x)  = 1 if the code under the condition equals the baseline code bit-exactly
-- H(x)   = Hamming distance (number of differing code positions) between the two codes
+- H(x)   = Hamming distance in bits (popcount of the XOR) between the two codes
 - HER    = mean_x HE(x)         (Hash Equality Rate ∈ [0,1])
 - H̄      = mean_x H(x)          (mean Hamming drift)
 """
@@ -28,7 +28,12 @@ class ConditionMetrics:
 
 def per_input(baseline_codes: np.ndarray, condition_codes: np.ndarray):
     """Return (he, hamming) per input. `codes` are (n, k) uint8 (bit-packed) matrices.
-    HE = codes equal bit-exact; Hamming = number of differing bits."""
+
+    HE = codes equal bit-exact; Hamming = number of differing bits. Bits, not
+    bytes and not coordinates: QUANT packs several coordinates into one byte,
+    so a byte or coordinate count is a different number. Padding bits are
+    equal in both operands, so they never contribute.
+    """
     if baseline_codes.shape != condition_codes.shape:
         raise ValueError("baseline and condition code matrices must have the same shape")
     a = np.ascontiguousarray(baseline_codes, dtype=np.uint8)

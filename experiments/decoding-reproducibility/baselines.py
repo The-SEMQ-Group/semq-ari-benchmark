@@ -36,6 +36,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ari.code_metrics import code_diff
+
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 
@@ -149,7 +151,13 @@ def stat_token_flip(r: np.ndarray, c: np.ndarray) -> np.ndarray:
     return (r.argmax(axis=1) != c.argmax(axis=1)).astype(float)
 
 
-def _semq(X: np.ndarray, scale: float) -> np.ndarray:
+def _semq_chunks(X: np.ndarray, scale: float) -> list[tuple[int, np.ndarray]]:
+    """Encode X in MAX_DIM chunks, as (coordinates, codes) pairs.
+
+    The chunks are not concatenated. Each one pads its own final byte, so
+    a comparison over the joined buffer would read another chunk's
+    padding as coordinates.
+    """
     from ari.semq_compat import MAX_DIM, quant_context
 
     dim = X.shape[1]
@@ -157,20 +165,61 @@ def _semq(X: np.ndarray, scale: float) -> np.ndarray:
     out = []
     for lo, hi in zip(bounds, bounds[1:]):
         ctx = quant_context(hi - lo, n_bins=QUANT_BINS, scale_max=scale)
-        out.append(np.asarray(ctx.batch_encode(
-            np.ascontiguousarray(X[:, lo:hi], np.float32))))
+        out.append((hi - lo, np.asarray(ctx.batch_encode(
+            np.ascontiguousarray(X[:, lo:hi], np.float32)))))
         ctx.close()
-    return out[0] if len(out) == 1 else np.concatenate(out, axis=1)
+    return out
+
+
+_semq_memo: dict = {}
+
+
+def _semq_rates(r: np.ndarray, c: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Per-step (coordinate change rate, byte change rate).
+
+    Both rates come from one encoding pass. The two statistics below are
+    scored over the same pairs in the same loop, and encoding 32k logits
+    per step is the expensive part.
+    """
+    key = (id(r), id(c))
+    if _semq_memo.get("key") != key:
+        scale = float(np.percentile(np.abs(r), CALIBRATION_PERCENTILE * 100.0))
+        parts = [
+            code_diff(a, b, n_bins=QUANT_BINS, dim=width)
+            for (width, a), (_, b) in zip(_semq_chunks(r, scale),
+                                          _semq_chunks(c, scale))
+        ]
+        changed = sum(p.n_coordinates_changed for p in parts)
+        bytes_changed = sum(p.n_bytes_changed for p in parts)
+        rates = (changed / sum(p.n_coordinates for p in parts),
+                 bytes_changed / sum(p.n_bytes for p in parts))
+        _semq_memo.clear()
+        _semq_memo.update(key=key, rates=rates, hold=(r, c))
+    return _semq_memo["rates"]
 
 
 def stat_semq(r: np.ndarray, c: np.ndarray) -> np.ndarray:
-    """Per-step SEMQ symbol disagreement, at a scale frozen from reference."""
-    scale = float(np.percentile(np.abs(r), CALIBRATION_PERCENTILE * 100.0))
-    return (_semq(c, scale) != _semq(r, scale)).mean(axis=1)
+    """Per-step fraction of coordinates whose SEMQ symbol changed.
+
+    Scale frozen from the reference.
+    """
+    return _semq_rates(r, c)[0]
+
+
+def stat_semq_bytes(r: np.ndarray, c: np.ndarray) -> np.ndarray:
+    """Per-step fraction of packed code bytes that changed.
+
+    Kept so results published before the coordinate rate existed stay
+    reproducible. QUANT packs two coordinates per byte at n_bins=8, so
+    this reads about twice the coordinate rate for isolated changes and
+    less than that once changes are dense.
+    """
+    return _semq_rates(r, c)[1]
 
 
 STATS = {
-    "SEMQ Hbar": stat_semq,
+    "SEMQ coord change": stat_semq,
+    "SEMQ byte change (legacy)": stat_semq_bytes,
     "KL": stat_kl,
     "JS": stat_js,
     "top-2 margin delta": stat_margin_delta,
@@ -184,7 +233,8 @@ STATS = {
 # able to compute the statistic later against a new run.
 def storage_bytes(vocab: int) -> dict[str, int]:
     return {
-        "SEMQ Hbar": vocab // 2,          # uint8 code, 2 dims per byte
+        "SEMQ coord change": vocab // 2,  # uint8 code, 2 dims per byte
+        "SEMQ byte change (legacy)": vocab // 2,
         "KL": vocab * 4,                  # full fp32 distribution
         "JS": vocab * 4,
         "top-2 margin delta": 8,          # two fp32

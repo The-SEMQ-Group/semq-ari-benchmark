@@ -12,7 +12,10 @@ from pathlib import Path
 
 import numpy as np
 
+from .code_metrics import bits_per_coordinate
 from .metrics import ConditionMetrics
+from .probe import N_BINS
+from .rpc import semq_bytes_of_reference_state
 
 CANONICAL_CONDITIONS = ["same", "proc", "mach", "prec", "lib", "conc", "time", "batch"]
 # Headline ARI averages over the *comparable core* — the conditions measurable for any agent
@@ -59,13 +62,19 @@ def build_report(
     if dim is None:
         raise ValueError("fingerprint.dim is required to derive the semq "
                          "detector's bytes_of_reference_state")
-    from ari.rpc import semq_bytes_of_reference_state
     bors = semq_bytes_of_reference_state(int(dim))
+    # Hbar is a bit count, so it needs the code-bit total to become a rate.
+    bpc = bits_per_coordinate(N_BINS)
+    n_bits = int(dim) * bpc
     results = {}
     for cond, m in metrics_by_condition.items():
         results[cond] = {"detectors": {"semq": {
             "HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
             "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],
+            "bits_per_coordinate": bpc,
+            "n_coordinates": int(dim),
+            "n_bits": n_bits,
+            "bit_hamming_rate": round(m.Hbar / n_bits, 9),
             "criterion_type": "exact",
             "bytes_of_reference_state": bors,
             "unit": "code",
