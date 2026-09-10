@@ -243,7 +243,7 @@ def test_group_summaries_cost_an_order_of_magnitude_less_than_indices():
     the block counts avoid. Measured at the canonical probe: roughly
     450-550 bytes per condition against 5-20 kB.
     """
-    dim, n = 384, 64
+    dim, n = 384, 200          # the count the recorded figures were measured at
     rng = np.random.default_rng(0)
     X = rng.normal(size=(n, dim)).astype(np.float32)
     X /= np.linalg.norm(X, axis=1, keepdims=True)
@@ -267,5 +267,7 @@ def test_group_summaries_cost_an_order_of_magnitude_less_than_indices():
         {**p.as_dict(),
          "changed_coordinates": [i.tolist() for i in d.changed_coordinates]}
     ).encode())
+    # The block is flat in the number of inputs; the index lists are not,
+    # which is the whole reason the report carries one and not the other.
     assert block < 2000
     assert with_indices > 5 * block
