@@ -23,13 +23,14 @@ def bl():
     spec = importlib.util.spec_from_file_location("_baselines", BASELINES)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    # The SEMQ statistic needs the SEMQ package, which CI does not have. It is
-    # not what these tests are about, and skipping the whole file over it would
-    # take the index-valued regression with it.
+    # The SEMQ statistics need the SEMQ package, which CI does not have. They
+    # are not what these tests are about, and skipping the whole file over them
+    # would take the index-valued regression with it.
     try:
         import semq  # noqa: F401
     except ImportError:
-        mod.STATS = {k: v for k, v in mod.STATS.items() if k != "SEMQ Hbar"}
+        mod.STATS = {k: v for k, v in mod.STATS.items()
+                     if not k.startswith("SEMQ ")}
     return mod
 
 

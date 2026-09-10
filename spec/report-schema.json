@@ -229,7 +229,7 @@
         "Hbar": {
           "type": "number",
           "minimum": 0,
-          "description": "Mean Hamming drift in bits."
+          "description": "Mean Hamming drift in bits — a count of differing code bits, not of differing bytes and not of differing coordinates. SEMQ QUANT packs several coordinates into one byte, so those are three different numbers."
         },
         "HER_ci": {
           "type": "array",
@@ -239,6 +239,28 @@
           },
           "minItems": 2,
           "maxItems": 2
+        },
+        "bits_per_coordinate": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Code bits one coordinate occupies under the probe's configuration. Added 2026-09-10; absent from reports produced before that date, which are not re-signed."
+        },
+        "n_coordinates": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Coordinates per encoded unit. The denominator of a coordinate change rate. Added 2026-09-10."
+        },
+        "n_bits": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Code bits per encoded unit, n_coordinates * bits_per_coordinate. The denominator of bit_hamming_rate. Excludes the padding of a final partial byte. Added 2026-09-10."
+        },
+        "bit_hamming_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Hbar / n_bits. Added 2026-09-10."
         },
         "criterion_type": {
           "type": "string",

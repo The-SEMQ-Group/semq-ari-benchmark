@@ -45,6 +45,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ari.code_metrics import code_diff
+
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 CACHE = RESULTS / "cache"
@@ -217,7 +219,8 @@ def compare(ref: dict, cur: dict, doc_ids, q_ids, qrels, ref_codes) -> dict:
     r_cur = retrieval_metrics(cur["docs"], cur["queries"], doc_ids, q_ids, qrels)
 
     codes = semq_codes(cur["docs"], scale_source=ref["docs"])
-    equal_rows = (codes == ref_codes).all(1)
+    diff = code_diff(ref_codes, codes, n_bins=QUANT_BINS,
+                     dim=cur["docs"].shape[1])
 
     r_lo, r_hi = paired_bootstrap_ci(
         r_ref["per_query_recall"], r_cur["per_query_recall"])
@@ -237,8 +240,9 @@ def compare(ref: dict, cur: dict, doc_ids, q_ids, qrels, ref_codes) -> dict:
         "ndcg_delta_significant": not (n_lo <= 0.0 <= n_hi),
         "top10_identical": float(
             (r_cur["top10_ids"] == r_ref["top10_ids"]).all(1).mean()),
-        "semq_her": float(equal_rows.mean()),
-        "semq_hbar": float((codes != ref_codes).mean()),
+        "semq_her": float(diff.codes_equal.mean()),
+        "semq_coord_change": float(diff.coordinate_change_rate.mean()),
+        "semq_byte_change_legacy": float(diff.byte_change_rate.mean()),
     }
 
 

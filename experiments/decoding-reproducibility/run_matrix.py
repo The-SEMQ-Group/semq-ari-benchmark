@@ -50,6 +50,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ari.code_metrics import chunk_widths, chunked_code_diff
+
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 CACHE = RESULTS / "cache"
@@ -432,21 +434,24 @@ def run_worker(name: str, out: Path) -> None:
 
 
 def compare(ref: dict, cur: dict, ref_codes: np.ndarray) -> dict:
+    from ari.semq_compat import MAX_DIM
+
     r_log, c_log = ref["logits"], cur["logits"]
     ref_tok = ref["ref_tokens"]
 
     # Would this condition have emitted the same token, given identical history?
     same_token = (c_log.argmax(1) == r_log.argmax(1))
     codes = semq_codes(c_log, scale_source=r_log)
-    same_code = (codes == ref_codes).all(1)
+    # HER is exact-match, so it saturates at 0 for any real precision change
+    # and cannot rank severity. A coordinate change rate can.
+    diff = chunked_code_diff(
+        ref_codes, codes, n_bins=QUANT_BINS,
+        widths=chunk_widths(r_log.shape[1], MAX_DIM))
+    same_code = diff.codes_equal
 
     margins = top2_margin(r_log)
     # Steps where the token survived but SEMQ still read a change.
     early = same_token & ~same_code
-
-    # HER is exact-match, so it saturates at 0 for any real precision change
-    # and cannot rank severity. Mean symbol disagreement can.
-    hbar = float((codes != ref_codes).mean())
 
     # Does a flipped token sit at a smaller reference margin than a surviving
     # one? That is the "probabilities move before the argmax does" claim, and
@@ -469,7 +474,8 @@ def compare(ref: dict, cur: dict, ref_codes: np.ndarray) -> dict:
         "steps": int(len(same_token)),
         "token_agreement": float(same_token.mean()),
         "semq_her": float(same_code.mean()),
-        "semq_hbar": hbar,
+        "semq_coord_change": float(diff.coordinate_change_rate.mean()),
+        "semq_byte_change_legacy": float(diff.byte_change_rate.mean()),
         "early_warning_steps": float(early.mean()),
         "logit_max_abs_delta": float(np.abs(c_log - r_log).max()),
         "median_top2_margin": float(np.median(margins)),
@@ -545,14 +551,14 @@ def main() -> None:
     print(f"\nAll columns compare against the fp32 reference on the same input.")
     print(f"HER  = share of steps whose {'chunked ' if False else ''}code is "
           f"bit-identical to the reference     (n = {n_steps} steps)")
-    print(f"Hbar = share of code symbols differing from the reference"
-          f"              (n = {n_steps} steps)")
+    print(f"coord = share of coordinates whose code symbol differs from the "
+          f"reference (n = {n_steps} steps)")
     print(f"tok-same/code-diff = share of ALL steps with an identical token but "
           f"a changed code")
     print(f"free exact = whole generations identical, as a count"
           f"                    (n = {n_prompts} prompts)")
     hdr = (f"{'condition':<12} {'axis':<6} {'token agree':>12} {'SEMQ HER':>9} "
-           f"{'SEMQ Hbar':>11} {'tok-same/':>11} {'margin flip':>12} "
+           f"{'SEMQ coord':>11} {'tok-same/':>11} {'margin flip':>12} "
            f"{'free exact':>12} {'95% CI':>16} {'1st div':>8}")
     print("\nTeacher-forced (identical context at every position) + free-running")
     print(hdr)
@@ -563,7 +569,7 @@ def main() -> None:
         # A control that never diverges has no flipped tokens, so a median
         # margin over them does not exist. Print nothing rather than a zero.
         print(f"{r['condition']:<12} {r['axis']:<6} {r['token_agreement']:>11.2%} "
-              f"{r['semq_her']:>9.4f} {r['semq_hbar']:>11.2e} "
+              f"{r['semq_her']:>9.4f} {r['semq_coord_change']:>11.2e} "
               f"{r['early_warning_steps']:>10.2%} "
               f"{(f'{mf:.3f}' if mf == mf else '-'):>12} "
               f"{str(r['free_exact_count']) + '/' + str(r['n_prompts']):>12} "
