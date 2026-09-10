@@ -1,19 +1,18 @@
-# The ARI standard (spec)
+# Specifications
 
-The **normative** definition of the Agent Reproducibility Index. Everything here is versioned;
-a report is comparable to another only if both target the same versioned artifacts.
+These files define the versioned measurement contracts.
+Compare reports only when their required artifacts and conditions match.
 
-| file | what it fixes |
+| File | Contract |
 | --- | --- |
-| [`ari-canonical-v0.1.md`](ari-canonical-v0.1.md) | The canonical **probe** — SEMQ QBIN n=2, 99th-pct calibration — and why (design rationale). |
-| [`ari-bench-v0.1.md`](ari-bench-v0.1.md) | The canonical **input set** — a frozen, hash-pinned slice of real BEIR text ([`../data/`](../data/)). |
-| [`condition-set.md`](condition-set.md) | The **environmental conditions** ARI averages over (`same`/`proc`/`mach`/`prec`/`lib`/`conc`/`time`). |
-| [`report-schema.json`](report-schema.json) | The JSON **schema** every ARI report must satisfy (validated by the scorer + CI). |
-| [`fingerprints-v0.1.csv`](fingerprints-v0.1.csv) | The published **(s, b, κ) fingerprint registry** — one row per model, with coverage status. |
+| [ari-canonical-v0.1.md](ari-canonical-v0.1.md) | Embedding probe, calibration, and reference model. |
+| [ari-bench-v0.1.md](ari-bench-v0.1.md) | Frozen embedding inputs. |
+| [arid-bench-v0.1.md](arid-bench-v0.1.md) | Decoding inputs, protocol, and detectors. |
+| [condition-set.md](condition-set.md) | Embedding conditions and aggregation. |
+| [report-schema.json](report-schema.json) | Report JSON structure. |
+| [fingerprints-v0.1.csv](fingerprints-v0.1.csv) | Model calibration and response parameters. |
+| [signers.json](signers.json) | Published signer identities. |
 
-**Status:** v0.1-preview **frozen** — `ARI-Bench-v0.1` (input set) and `ARI-Canonical-v0.1`
-(probe + calibration + reference model) are fixed. The fingerprint registry is published and
-grows as per-model sweeps run (adding a `κ` does not change the frozen probe). Breaking
-changes bump the version.
-
-Licensing: the spec is **CC-BY-4.0** (see the [Licensing](../README.md#licensing) section).
+The v0.1 probe and input sets are frozen.
+Registry additions do not change the probe definition. Incompatible contract changes require a new version.
+Specifications use CC BY 4.0. See [license terms](../README.md#license-and-citation).

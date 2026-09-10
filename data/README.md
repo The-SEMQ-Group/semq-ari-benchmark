@@ -1,43 +1,53 @@
 # Frozen input sets
 
-## ARI-Bench (embeddings)
+Run commands from the repository root after the [development setup](../README.md#build-and-test).
 
-[`ari-bench-v0.1.jsonl`](ari-bench-v0.1.jsonl) — the **frozen** input set every ARI report runs
-on. One JSON object per line: `{input_id, source_id, text}`, in fixed order.
+| File | Records | Format | Source |
+| --- | ---: | --- | --- |
+| [ari-bench-v0.1.jsonl](ari-bench-v0.1.jsonl) | 1,000 | `input_id`, `source_id`, `text` | BEIR NFCorpus, SciFact, and FiQA. |
+| [arid-bench-v0.1.jsonl](arid-bench-v0.1.jsonl) | 100 | `input_id`, `bucket`, `text` | Prompts authored for this benchmark. |
 
-- **Size:** 1,000 items. **Composition:** real BEIR text, domain-diverse — NFCorpus (medical),
-  SciFact (scientific), FiQA (financial), ~1/3 each. Each item is title+body truncated to
-  512 characters.
-- **The pin:** `content_hash = e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d`
-  (SHA-256 over the ordered `input_id\0text\n` records). A submitter confirms they ran the exact
-  same inputs by matching this hash. See [`../spec/ari-bench-v0.1.md`](../spec/ari-bench-v0.1.md).
-- **Reproduce:** `python ari/tools/build_ari_bench.py --n 1000 --out data/ari-bench-v0.1.jsonl`
-  (deterministic — same corpora/seed → identical file and hash).
+The embedding set uses 334 NFCorpus, 333 SciFact, and 333 FiQA records.
+Each text combines the title and body, truncated to 512 characters.
+The decoding set contains 20 prompts in each of five categories.
+These categories are factual questions, code generation, multistep reasoning, instruction following, and open-ended prose.
 
-**Provenance & licensing.** The text is derived from [BEIR](https://github.com/beir-cellar/beir)
-corpora (publicly available; see their terms). This repository redistributes the selection,
-ordering, and truncation as the frozen input set. The selection/ordering is **CC-BY-4.0**; the
-underlying documents retain their original BEIR/source licenses.
+## Verify the content
 
-## ARI-D-Bench (decoding)
+Each content hash covers ordered `input_id\0text\n` records encoded as UTF-8.
+It is not the SHA-256 digest of the JSONL file bytes.
 
-[`arid-bench-v0.1.jsonl`](arid-bench-v0.1.jsonl) — the **frozen** prompt set for the
-decoding-layer bench ([`../spec/arid-bench-v0.1.md`](../spec/arid-bench-v0.1.md),
-§4). One JSON object per line: `{input_id, bucket, text}`, in fixed order.
+```bash
+python - <<'PYTHON'
+from pathlib import Path
+from ari.inputs import load_ari_bench
+for path in sorted(Path("data").glob("*-bench-v0.1.jsonl")):
+    inputs = load_ari_bench(path)
+    print(path, len(inputs), inputs.content_hash)
+PYTHON
+```
 
-- **Size:** 100 prompts, 20 per bucket, in this order: `factual_qa`, `code_generation`,
-  `multi_step_reasoning`, `instruction_following` (over a supplied passage), `open_ended_prose`.
-  Single-turn, no system prompt, English, 20–78 tokens each (cl100k_base).
-- **The pin:** `content_hash = af5b1a2bb35b9fa5f8d4e8f05b85a98f495a3edeb93e95da9c9ced6d783e0d6f`
-  (SHA-256 over the ordered `input_id\0text\n` records — same scheme as ARI-Bench, so every
-  prefix hash is also valid and a reduced run can prove it measured the first N as `prefix:N`).
-- **Verify:**
-  ```
-  python -c "import json,hashlib;h=hashlib.sha256();[h.update(i['input_id'].encode()+b'\0'+i['text'].encode()+b'\n') for i in map(json.loads,open('data/arid-bench-v0.1.jsonl'))];print(h.hexdigest())"
-  ```
+Expected values:
 
-**Provenance & licensing.** The prompts are authored for this bench — there is no upstream
-corpus and nothing to rebuild from; the file itself is the source, and the hash is the freeze.
-The set is **CC-BY-4.0**. The bucket mix is face-validity only (the proposal says so
-explicitly); enriching it toward decision-dense prompts is a v0.2 question. The mix is not
-sacred; what is sacred is that it freezes.
+| Set | Content hash |
+| --- | --- |
+| ARI-Bench-v0.1 | `e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d` |
+| ARI-D-Bench-v0.1 | `af5b1a2bb35b9fa5f8d4e8f05b85a98f495a3edeb93e95da9c9ced6d783e0d6f` |
+
+## Rebuild the embedding selection
+
+```bash
+python -m pip install -e ".[data]"
+python ari/tools/build_ari_bench.py --n 1000 --out /tmp/ari-bench-rebuilt.jsonl
+```
+
+The command downloads the source corpora. Compare the rebuilt content hash with the frozen value before using the output.
+Do not overwrite the frozen file to resolve a mismatch.
+The decoding file is authored source data and has no dataset reconstruction step.
+
+## Provenance and licenses
+
+Embedding source text comes from [BEIR](https://github.com/beir-cellar/beir).
+The selection and ordering use CC BY 4.0. Underlying documents retain their source licenses.
+The authored decoding prompts use CC BY 4.0.
+See the [embedding specification](../spec/ari-bench-v0.1.md) and [decoding specification](../spec/arid-bench-v0.1.md) for the frozen contracts.

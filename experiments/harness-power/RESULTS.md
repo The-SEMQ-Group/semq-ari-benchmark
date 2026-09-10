@@ -1,16 +1,13 @@
-# ARI-E power: what harness effect could the metric actually detect?
+# Harness-effect power simulation
 
-**Status: run (simulation).** Script: [`power.py`](power.py). Machine-readable:
-[`results/power.json`](results/power.json) (attested; sidecars alongside).
-Reproduce: `python power.py` — deterministic (seed recorded in the JSON),
-200 simulated experiments per cell over a (gap × repeats × cases) grid,
-base pass rate 0.75.
+The simulation measures how often the ARI-E interval excludes zero when an effect is present.
+It uses 200 simulated experiments per cell and a baseline pass probability of 0.75.
+The result JSON records the random seed.
+Data: [power.json](results/power.json). Implementation: [power.py](power.py).
 
-The question, asked before spending a day of agent compute: with a known
-harness effect planted, how often does the ARI-E estimator's interval on the
-effect exclude zero?
+## Results
 
-## Headline numbers
+The gap is a pass-probability difference. Power is the fraction of trials that detect the effect.
 
 | true gap | repeats | cases | power |
 | --- | --- | --- | --- |
@@ -20,24 +17,24 @@ effect exclude zero?
 | 0.20 | 5 | 200 | **0.965** |
 | 0.10 | 5 | 200 | 0.175 |
 
-- **The comparison that motivated this project would have failed silently.**
-  At octobench's design point — 25 cases, 2 repeats — a 20-point pass-rate
-  gap is detected 7.5% of the time. A null read at that size says almost
-  nothing.
-- **Repeats and cases both matter, and neither alone is enough.** 5 repeats
-  at 50 cases reaches only 0.46 for a 20-point gap; comfortable power needs
-  100–200 cases *with* the repeats.
-- **A 10-point gap is out of reach at every size tested** (max 0.175 at
-  200×5). Claims at that effect size need a different design, not more of
-  this one.
-- **Small case counts also lie in the other direction**: with no true effect,
-  the false-positive rate reaches **0.18 at 10 cases** — intervals misbehave
-  below ~25 cases, so a "detected" effect from a tiny suite is as suspect as
-  a null from one.
+## Interpretation
 
-## How to read this against the measured ARI-E result
+At 25 cases and two repeats, the design detected a 0.20 gap in 7.5 percent of trials.
+At 200 cases and five repeats, power reached 0.965 for that gap.
+For a 0.10 gap, the maximum measured power was 0.175.
+With no effect and ten cases, the false-positive rate reached 0.18.
+These results do not support small-effect claims from a small case set.
 
-The Open-SWE measurement (`../harness-effect/`) satisfies these requirements
-by orders of magnitude (~11,000 cases per contrast, up to 3 rollouts), which
-is why its intervals exclude zero cleanly. This simulation is the reason the
-project did not instead run a 25-case suite and publish whatever came out.
+The [public harness analysis](../harness-effect/RESULTS.md) uses substantially more cases.
+Its data collection assumptions remain separate from this simulation.
+
+## Reproduce
+
+After the root development setup, run:
+
+```bash
+python experiments/harness-power/power.py
+```
+
+The command writes `experiments/harness-power/results/power.json`.
+Compare the seed, grid, and trial count before comparing the reported power.

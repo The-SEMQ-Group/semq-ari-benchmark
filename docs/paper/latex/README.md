@@ -1,8 +1,7 @@
 # Submission build
 
-`ari.tex` is the source of truth for the ML for Systems submission.
-`../neurips-mlforsys-ari.md` is a readable mirror and is currently STALE —
-it predates the abstract rewrite. Regenerate or ignore it.
+`ari.tex` is the only paper source in this checkout. The removed Markdown and HTML
+drafts are preserved in Git history, but are not maintained copies.
 
 ## Build
 

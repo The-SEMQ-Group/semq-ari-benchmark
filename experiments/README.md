@@ -1,24 +1,36 @@
-# ARI Benchmark suite
+# Experiments
 
-The experiments that establish ARI as a measurement. Each answers one question about
-whether SEMQ can serve as a reproducibility instrument.
+Start with the [development setup](../README.md#build-and-test).
+Run commands from the repository root unless a procedure specifies another directory.
+Experiment scripts can overwrite their result files. Use a separate checkout to reproduce a published run.
 
-| experiment | question | status |
+| Experiment | Purpose | Procedure and results |
 | --- | --- | --- |
-| [**Drift Sensitivity**](drift-sensitivity/) | Does the SEMQ code respond to perturbation in a clean, universal, predictable way? | **done** — 66 + 132 cells, reference numbers published here |
-| **Probe Purity** | Is the instrument itself noise-free — does re-encoding the same input always give the same code? | **done** — see [probe-validation](../docs/analysis/probe-validation.md) (result: SEMQ 0.0000 exact vs *independently seeded* quantizers 0.5 — a statement about seeds, not about the probe class) |
-| [**Probe Verifiability**](probe-verifiability/) | Would a frozen-codebook VQ do the job instead — is its invariance as checkable as SEMQ's? | **run** — largely yes. On real k-means codebooks `encode(reconstruct(c)) = c` holds at every configuration swept; the two distance formulations disagree on 0–4.4% of vectors. **This retracted the necessity claim** ([retraction ledger](../docs/retractions.md)). See [RESULTS](probe-verifiability/RESULTS.md). |
-| **Cross-Process Attribution** | When a model is non-deterministic across processes, does SEMQ catch the drift that retrieval misses? | **done** — see [probe-validation](../docs/analysis/probe-validation.md) |
-| [**Deployed-Agent Panel**](deployed-agent-panel/) | What ARI do the major real agents actually score under the canonical conditions? | **run** — 13 agents (5 APIs + 8 self-hosted), see [RESULTS](deployed-agent-panel/RESULTS.md) |
-| [**ARI-D — Decoding Reproducibility**](decoding-reproducibility/) | One layer up: does a serving change move the logits before it moves the emitted tokens? | **run on Llama-3.1-8B, Qwen2.5-7B, Mistral-7B** ([production-model results](decoding-reproducibility/RESULTS-production-models.md)) — TF32 changes every reading while all 48 generations stay character-identical. bf16 loses <1% of tokens but 21–35% of whole generations. Earlier CPU + 3B runs: — yes. On Qwen2.5-3B under TF32, **100%** of steps emit the identical token and all completions come out character-identical while every logit code changes. Flipped tokens sit at a **41× smaller** top-2 margin than survivors. H̄, not HER, is the metric. `max_dim ≤ 65,536` needs vocabulary chunking. But the **top-2 margin gets 86% of the signal for 1/2000 the storage** — see [BASELINES](decoding-reproducibility/BASELINES.md) and [RESULTS](decoding-reproducibility/RESULTS.md). |
-| [**Regime Discrimination**](regime-discrimination/) | Do retrieval metrics detect a serving-configuration change, or only SEMQ? | **run (CPU + A10G)** — a model audited at fp32/CPU and served at fp32/GPU with **TF32 on** changes **47%** of SEMQ codes while Recall@10 moves by exactly zero (CI [0.0000, 0.0000]); TF32 off recovers HER 0.9992. Benign variation moves nothing. Retrieval *quality* is blind, retrieval *lists* are not. See [RESULTS](regime-discrimination/RESULTS.md). |
-| [**ARI-D Power**](arid-power-sim/) | Before paying for the hosted-API panel: does the frozen design (100 prompts, k=8/12) detect the effects the spec names? | **run (simulation)** — Δ=0.10 detected at ≥0.89 power under bimodal deviations, false positives ≤1% across 252 cells; k=4 would not have sufficed. Blind spot stated: concentrated-unique effects sit at ~0.53 power and only more prompts help. See [RESULTS](arid-power-sim/RESULTS.md). |
-| [**ARI-D Dry Run**](arid-dry-run/) | Does the hosted-API harness measure what the spec says, and do the three calibrations hold? | **run** — vendor floor 0.470 (nothing moves it: proc/conc/time all ≈ same), platform door 0.107 on the same model with confounders measured away, rehosted 0.452; burst sweep {16,64,128} all ≈ same → panel burst frozen at 64; length confounder weak; the set discriminates. See [RESULTS](arid-dry-run/RESULTS.md). |
-| [**ARI-E — Harness Effect**](harness-effect/) | On real scaffolds: does the harness or the model decide the outcome? | **run** — the scaffold, by 1.4×. Mean scaffold effect **+0.069** against model effect **+0.050**, ~11,000 cases per contrast, all intervals excluding zero. Agents disagree with **themselves** 10–13% of the time, so the self-consistency control removes **59–74%** of the apparent effect. See [RESULTS](harness-effect/RESULTS.md). |
-| [**ARI-E Power**](harness-power/) | Before running agents: what harness effect could ARI-E actually detect? | **run (simulation)** — at octobench's 25 cases and 2 repeats it detects a 20-point pass-rate gap **8%** of the time. Needs 50+ cases and 5 repeats. Below 10 cases the false-positive rate reaches 18%. |
-| [**GPU Determinism**](gpu-determinism/) | Is the self-hosted 1.000 an artifact of CPU? Does GPU inference drift (atomics, autotuning, TF32)? | **run (A10G + T4)** — instrument validation on a known phenomenon: reproducible at PyTorch defaults (TF32 off); **enabling TF32** breaks cross-process (proc 0.65–0.88), determinism doesn't help. Reconciles with ReproRAG. See [RESULTS](gpu-determinism/RESULTS.md). |
+| Drift sensitivity | Response to synthetic embedding perturbations. | [Procedure](drift-sensitivity/README.md), [results](drift-sensitivity/RESULTS.md). |
+| Deployed embedding panel | Reproducibility across model deployment conditions. | [Procedure](deployed-agent-panel/README.md), [results](deployed-agent-panel/RESULTS.md). |
+| GPU determinism | Effects of precision and GPU configuration. | [Procedure](gpu-determinism/README.md), [results](gpu-determinism/RESULTS.md). |
+| Regime discrimination | Code changes compared with retrieval quality. | [Results and reproduction](regime-discrimination/RESULTS.md). |
+| Internal decoding | Logit and output changes under serving conditions. | [Initial results](decoding-reproducibility/RESULTS.md), [larger models](decoding-reproducibility/RESULTS-production-models.md). |
+| Decoding baselines | Sensitivity and storage for alternative detectors. | [Baseline comparison](decoding-reproducibility/BASELINES.md). |
+| Drift rank profile | Distribution of changes across logit ranks. | [Results](drift-rank-profile/RESULTS.md). |
+| Probe verifiability | Reproducibility of frozen vector quantizers. | [Results](probe-verifiability/RESULTS.md). |
+| ARI-D power | Statistical power of the hosted-output protocol. | [Simulation](arid-power-sim/RESULTS.md). |
+| ARI-D dry run | Hosted API captures and protocol calibration. | [Procedure](arid-dry-run/README.md), [results](arid-dry-run/RESULTS.md). |
+| ARI-D references | Output from published weights at fixed precision. | [Procedure](arid-fp32-refs/README.md). |
+| Harness effect | Within-harness and cross-harness agreement. | [Results](harness-effect/RESULTS.md). |
+| Harness power | Case counts and repeated runs for harness comparisons. | [Simulation](harness-power/RESULTS.md). |
 
-The **Drift Sensitivity** experiment is the one with a full protocol + reproduce guide +
-machine-readable data in this directory, because it is the one that produces the
-per-model `(s, b, κ)` fingerprint. Probe Purity and Cross-Process Attribution are reported
-in the panel write-up; the Deployed-Agent Panel has been run — see its RESULTS.
+## Dependencies
+
+The two power simulations use the base package dependencies.
+Model experiments require their model libraries, data, and sometimes the separate SEMQ SDK.
+Use the [harness guide](../ari/README.md) for SDK access and [infrastructure guide](../infra/README.md) for GPU runs.
+Hosted captures require provider credentials and incur API charges.
+Published JSON and CSV files can be inspected without rerunning captures.
+
+## Report a reproduction
+
+Record the commit, command, model revision, dependency versions, hardware, and output hashes.
+State which conditions ran and which were skipped.
+Compare outputs only when the protocol and metric units match.
+Keep new measurements separate from the frozen reference artifacts until review.

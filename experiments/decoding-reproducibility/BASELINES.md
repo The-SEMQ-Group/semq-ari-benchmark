@@ -1,18 +1,12 @@
-# Does SEMQ beat the cheap alternatives at the decoding layer?
+# Decoding detector comparison
 
-**Status: run on CPU.** Script: [`baselines.py`](baselines.py). Machine-readable:
-[`results/baselines.json`](results/baselines.json).
+The comparison uses one CPU model, 539 reference steps, and five noise trials.
+Data: [baselines.json](results/baselines.json). Implementation: [baselines.py](baselines.py).
+Gaussian perturbation size is denoted by σ.
 
-**Headline: for the precision changes measured so far, no. The top-2 margin gets 86% of
-SEMQ's signal for 1/2000th of the storage. SEMQ's real advantage is elsewhere, and it is
-narrower than the ARI-D result on its own implied.**
+## Response to perturbation
 
-This was worth measuring because the ARI-D result is only interesting if a simpler
-statistic does not do the same job.
-
-## Axis 1. Sensitivity
-
-Response to Gaussian logit noise of magnitude σ, mean over steps, 5 trials:
+Different statistics use different units. A response ratio is not a calibrated detection-power comparison.
 
 | statistic | 1e-4 | 1e-3 | 1e-2 | 1e-1 | 1.0 | order |
 | --- | ---: | ---: | ---: | ---: | ---: | :--- |
@@ -24,18 +18,9 @@ Response to Gaussian logit noise of magnitude σ, mean over steps, 5 trials:
 | JS | −1.9e-10 | 5.39e-8 | 5.57e-6 | 5.50e-4 | 0.051 | quadratic |
 | token flip | 0 | 1.86e-3 | 2.97e-3 | 0.029 | 0.236 | threshold |
 
-**KL is the wrong instrument for small perturbations, and the reason is structural.** KL
-is second order in the perturbation, so a 10× rise in σ gives a 100× rise in KL. At
-σ = 1e-4 it reads −5.1e-10. That value is zero to numerical precision, with the *wrong sign*.
-SEMQ reads 1.33e-4 at the same point. So the "can I get 80% from KL" question has a clean
-answer for the small-σ regime: no, KL is not in the running there. JS inherits the same
-problem.
+## Reference storage
 
-**The top-2 margin is a different story, and it is the one that matters.** It is linear in
-σ, tracks SEMQ within 14%, and needs 8 bytes of reference state per step against SEMQ's
-16,000. That is a serious result against SEMQ and it should not be softened.
-
-## Axis 2. Reference state a monitor must retain, per decoding step
+Storage is per step for a vocabulary of 32,000. It excludes computation and metadata costs.
 
 | statistic | bytes |
 | --- | ---: |
@@ -45,14 +30,9 @@ problem.
 | **SEMQ H̄** | **16,000** |
 | KL / JS / max\|Δlogit\| / L2 | 128,000 |
 
-At 32,000 vocabulary. SEMQ is 8× cheaper than keeping fp32 logits, and 2,000× more
-expensive than keeping two floats.
+## Arithmetic reassociation
 
-## Axis 3. Is the statistic reproducible bit-exactly?
-
-The script computes each statistic two algebraically equivalent ways. For KL,
-`Σp(log p − log q)` against `Σp log p − Σp log q`; for the others, reversed summation
-order:
+The recorded comparison changes algebraic grouping or summation order. It does not measure every platform or implementation.
 
 | statistic | bit-identical | max relative difference |
 | --- | :---: | ---: |
@@ -65,20 +45,9 @@ order:
 | top-20 set change | no | 100% |
 | token flip | no | 100% |
 
-**KL is not reproducible.** Regrouping the arithmetic changes it by up to 4.6%, and JS by
-more than 100%. A published KL value is not a number a third party can recompute and
-confirm. A SEMQ code is. That matters for *attestation* and not for *detection*. For
-detection you would set a threshold on KL, and the last bits would not matter.
+## Perturbations below selected ranks
 
-But note the top-2 margin is bit-stable too. This axis does not separate SEMQ from the
-cheap baseline either.
-
-## The one axis that does separate them
-
-Every statistic above was measured under **isotropic** noise, which perturbs the top of the
-distribution and the tail alike. That cannot distinguish a statistic reading the whole
-vector from one reading two entries. So: perturb *only* the tail, leaving the top ranks
-untouched by construction (σ = 0.1):
+This synthetic test holds the top ranks fixed and applies noise at σ = 0.1.
 
 | statistic | full vector | below rank 20 | below rank 100 |
 | --- | ---: | ---: | ---: |
@@ -89,44 +58,35 @@ untouched by construction (σ = 0.1):
 | **top-2 margin Δ** | 0.1115 | **0** | **0** |
 | **token flip** | 0.0289 | **0** | **0** |
 
-**SEMQ's response does not change: 0.1289 against 0.1288. The margin and the token
-statistic go to exactly zero.** They are not less sensitive. They are structurally
-blind, because they read only the top of the distribution.
+## Interpretation
 
-## What this means for ARI-D
+At σ = 1e-3, the margin change was 1.15e-3 and SEMQ H̄ was 1.33e-3.
+The margin required eight reference bytes per step; the recorded SEMQ state required 16,000.
+The numerical response ratio was approximately 86 percent.
 
-**The claim "SEMQ is a more sensitive decoding-layer probe" does not survive.** For the
-precision changes measured in the main ARI-D run, the top-2 margin is 86% as responsive,
-equally bit-stable, and 2,000× cheaper. If detecting bf16-vs-fp32 is the goal, ship the
-margin statistic.
+KL and JS returned small negative values at σ = 1e-4 because of numerical error.
+Their values also changed under the tested arithmetic regrouping.
+This limits exact recomputation of those implementations; it does not rule out threshold-based detection with KL or JS.
 
-**The defensible claim is coverage, not sensitivity.** SEMQ reads the entire distribution,
-so it detects drift confined below the top ranks that a margin statistic cannot see at all.
-Whether that matters depends on whether real drift is isotropic or structured:
+Under synthetic noise below rank 20, the top-2 margin and token-flip statistic remained zero.
+SEMQ still changed. This demonstrates broader vector coverage in that constructed test.
+See [rank-profile results](../drift-rank-profile/RESULTS.md) for adapter and token-bias experiments.
 
-- **Isotropic**. A precision or quantization change scales all logits roughly
-  proportionally. The margin catches it. SEMQ adds little.
-- **Structured**. A token-suppression or safety filter, a LoRA adapter, a tokenizer or
-  vocabulary change, speculative decoding. These can move the tail while leaving the top-2
-  intact. The margin reads exactly zero. SEMQ reads the change at full strength.
+## Limits
 
-"A provider silently added an output filter" is a realistic instance of the second case,
-and it is precisely the scenario the margin cannot cover.
+These results do not establish a universally best detector.
+The synthetic noise is not a measurement of deployment-change frequency.
+Storage, response magnitude, reproducibility, and coverage answer different questions.
 
-**Recommended posture: both, not either.** The margin statistic is the right always-on
-tripwire at 8 bytes per step. SEMQ is the full-coverage, bit-reproducible record for the
-cases the tripwire cannot see and for attestation, where KL's 4.6% irreproducibility rules
-it out. Presenting SEMQ as a *replacement* for the cheap statistic would not survive
-scrutiny from anyone who runs this comparison.
+## Reproduce
 
-## Caveats
+Install the [SEMQ SDK](../../ari/README.md#install-the-canonical-probe) and model dependencies.
+Generate the matching reference cache with `run_matrix.py` before running the baseline comparison.
+From the repository root:
 
-- One model, one reference set, 539 steps, CPU only.
-- The structured-perturbation test uses synthetic tail noise. It shows SEMQ *can* see what
-  the margin cannot. It does **not** show that any real serving change makes
-  tail-confined drift. That question is open, and it decides whether the coverage
-  argument is commercially real or only true.
-- Isotropic Gaussian noise is itself a model of drift, not drift. The GPU conditions
-  (TF32, fp16) supply real structured changes to test against.
-- Storage figures are the reference state per step, not the cost of computing the
-  statistic.
+```bash
+python experiments/decoding-reproducibility/baselines.py
+```
+
+The command writes `experiments/decoding-reproducibility/results/baselines.json`.
+Check the source's reference-cache requirements before comparing results from another model or prompt set.

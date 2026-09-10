@@ -1,134 +1,77 @@
 # ARI
 
-ARI is a benchmark and reference implementation for measuring whether an AI system produces the same internal representation when it is run again under controlled deployment changes.
+ARI measures changes in model representations under different deployment conditions.
+This repository contains the Python harness, frozen inputs, specifications, and experiment results.
+The [leaderboard repository](https://github.com/The-SEMQ-Group/ari-leaderboard) maintains submission scoring and publication.
 
-This repository contains the versioned ARI and ARI-D specifications, frozen benchmark inputs, a Python harness for comparing runs and building report JSON, and the experiments used to validate the measurement. The leaderboard and submission validator are maintained separately in [`ari-leaderboard`](https://github.com/The-SEMQ-Group/ari-leaderboard).
+## Build and test
 
-## What ARI measures
-
-The embedding benchmark runs the same frozen inputs under a baseline and one or more conditions, then compares SEMQ QBIN (or SEMQ QUANT, depending on version) codes produced from the embeddings.
-
-| Metric | Meaning |
-| --- | --- |
-| ARI | Mean exact-code agreement over the comparable conditions. Higher is more reproducible; `1.0` means exact agreement for every measured input and condition. |
-| HER | Hash equality rate for one condition: the fraction of inputs whose code exactly matches the baseline. |
-| H̄ | Mean Hamming distance between baseline and condition codes. Lower is better; `0` means no changed bits. |
-
-The comparable core is `{proc, conc, time}`: a fresh process or request context, concurrent load, and a run separated in time. Additional self-hosted diagnostics cover machine, precision, and library changes. See [`spec/condition-set.md`](spec/condition-set.md) for the normative definitions.
-
-ARI measures representation-level reproducibility. It does not directly measure answer quality, retrieval quality, safety, or semantic equivalence.
-
-## Published results
-
-The current embedding panel contains 14 models measured on ARI-Bench v0.1: five hosted APIs and nine self-hosted models. The hosted APIs span ARI `0.169` to `1.000`; Gemini and all measured self-hosted models score `1.000` on the comparable core.
-
-| Model | ARI | 95% CI |
-| --- | ---: | ---: |
-| `gemini/gemini-embedding-001` | 1.000 | [1.000, 1.000] |
-| `openai/text-embedding-3-large` | 0.845 | [0.822, 0.866] |
-| `mistral/mistral-embed` | 0.699 | [0.672, 0.727] |
-| `voyage/voyage-4-large` | 0.500 | [0.472, 0.528] |
-| `cohere/embed-v4.0` | 0.169 | [0.147, 0.194] |
-
-Other measured results:
-
-- The SEMQ perturbation response has slope `0.979 ± 0.028` across 13 embedding models, close to the expected linear response.
-- On SciFact, a serving change altered every SEMQ code while Recall@10 remained statistically unchanged.
-- With TF32 disabled, tested self-hosted GPU configurations were reproducible at PyTorch defaults; enabling TF32 reduced cross-process HER to `0.65–0.88`.
-- In decoding experiments, TF32 changed every measured logit code while all 48 evaluated generations remained character-identical.
-
-These numbers are snapshots of the measured models and environments, not permanent provider guarantees. Full methods, condition-level results, and caveats are in [`experiments/deployed-agent-panel/RESULTS.md`](experiments/deployed-agent-panel/RESULTS.md), [`experiments/gpu-determinism/RESULTS.md`](experiments/gpu-determinism/RESULTS.md), and [`docs/key-results.md`](docs/key-results.md).
-
-## Installation
-
-ARI requires Python 3.9 or newer.
+Use Python 3.12 to match CI. The package declares support for Python 3.9 and later.
+Run these commands from the repository root on Linux or macOS:
 
 ```bash
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ".[scoring]"
+python -m pip install -e ".[dev]"
+python -m ari.run --out /tmp/ari-report.json --validate
+python -m pytest -q -rs
+python -m build
 ```
 
-Install optional dependency groups as needed:
+The mock command writes `/tmp/ari-report.json` and checks its structure against the report schema.
+It does not measure a real model or validate a leaderboard submission.
+Tests must finish without failures. The `-rs` option lists skipped tests and their reasons.
+Tests that require the separate `semq` SDK skip when that package is absent.
+The build writes a wheel and source archive to `dist/`.
+
+These commands require no API credentials, model downloads, or GPU.
+Dependency installation requires access to a Python package index.
+For Windows, activate the environment with `.venv\Scripts\Activate.ps1` in PowerShell and use a local report path.
+
+## Run a benchmark
+
+To exercise the mock pipeline with all 1,000 frozen embedding inputs:
 
 ```bash
-python -m pip install -e ".[apis]"        # hosted provider clients
-python -m pip install -e ".[selfhosted]"  # PyTorch and sentence-transformers
-python -m pip install -e ".[data]"        # rebuild the BEIR-derived input set
+python -m ari.run --inputs data/ari-bench-v0.1.jsonl --out /tmp/ari-report.json --validate
 ```
 
-Computing canonical QBIN codes requires the separate `semq` SDK. The built-in mock probe is intended for development and tests; reports produced with it are not canonical benchmark submissions.
+For real captures, install the required provider or model dependencies and the canonical SEMQ probe.
+Follow the [harness guide](ari/README.md). Provider calls incur charges. Model captures can require substantial memory and downloads.
 
-## Run the local pipeline
+## Measurements
 
-Run the complete mock pipeline without model downloads or API credentials:
-
-```bash
-python -m ari.run --out report.json
-```
-
-Run it against the frozen 1,000-item embedding input set:
-
-```bash
-python -m ari.run \
-  --inputs data/ari-bench-v0.1.jsonl \
-  --out report.json
-```
-
-The command writes a report containing condition metrics, bootstrap confidence intervals, environment metadata, the input-set content hash, and audit digests. The mock command exercises report generation; it does not provide a meaningful model score.
-
-For canonical captures, provider configuration, concurrency/time captures, and submission steps, start with [`ari/README.md`](ari/README.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md). A basic provider capture has this form:
-
-```bash
-python ari/tools/run_report.py \
-  --agent openai \
-  --inputs data/ari-bench-v0.1.jsonl
-```
-
-Provider runs incur API charges. Self-hosted runs may download large model weights, and some experiment suites require a CUDA GPU.
-
-## Run tests
-
-Install the package in the active environment, then run:
-
-```bash
-python -m pytest -q
-```
-
-Some tests are skipped when optional packages such as `cryptography` or `semq` are unavailable.
-
-## Repository layout
-
-| Path | Contents |
+| Term | Definition |
 | --- | --- |
-| [`ari/`](ari/) | Harness, metrics, report generation, attestation, provider adapters, and capture tools |
-| [`spec/`](spec/) | Normative probe, input-set, condition, fingerprint, signer, and report-schema definitions |
-| [`data/`](data/) | Frozen ARI-Bench and ARI-D-Bench JSONL inputs |
-| [`experiments/`](experiments/) | Experiment implementations, outputs, analysis, and result summaries |
-| [`docs/`](docs/) | Methodology, findings, analysis notes, paper sources, and retraction ledger |
-| [`infra/`](infra/) | Remote experiment and result-collection scripts |
-| [`tests/`](tests/) | Tests for metrics, harness statistics, attestation, and signing |
+| ARI | Mean hash equality rate over the measured core conditions: `proc`, `conc`, and `time`. |
+| HER | Fraction of inputs whose complete code matches the baseline code. |
+| H̄ | Mean Hamming distance. Read the experiment's definition of its unit and normalization. |
+| ARI-R | Representation measurement; the embedding report schema retains the name `ARI`. |
+| ARI-D | Decoding measurement. The specification defines output comparisons; experiments also compare internal logits. |
+| ARI-E | Harness effect after adjustment for disagreement within each harness. |
 
-The embedding dataset contains 1,000 domain-diverse BEIR records from NFCorpus, SciFact, and FiQA. The decoding dataset contains 100 prompts across five task categories. Hashes and provenance are documented in [`data/README.md`](data/README.md).
+An ARI of `1.0` means complete code agreement on the measured inputs and conditions.
+It does not establish answer quality, semantic equivalence, or reproducibility under unmeasured conditions.
+Compare reports only when their inputs, probe versions, condition sets, and scoring rules match.
+See the [condition specification](spec/condition-set.md) and [measurement scope](docs/proposals/ari-decomposition.md).
 
-## Specifications and reproducibility
+## Documentation
 
-Reports are comparable only when they use the same versioned probe, inputs, conditions, and scoring rules. The current frozen artifacts are:
-
-- [`ARI-Canonical-v0.1`](spec/ari-canonical-v0.1.md): SEMQ QBIN `n=2` with 99th-percentile calibration;
-- [`ARI-Bench-v0.1`](spec/ari-bench-v0.1.md): frozen embedding inputs;
-- [`ARI-D-Bench-v0.1`](spec/arid-bench-v0.1.md): frozen decoding prompts;
-- [`report-schema.json`](spec/report-schema.json): machine-readable report contract.
-
-Do not compare reports across incompatible spec versions or condition sets. Preserve the input content hash, environment manifest, model revision, precision, library versions, and per-condition audit digests when publishing a result.
-
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for report submission and development guidance. Changes to frozen artifacts require a version bump; results should include confidence intervals and enough environment information for independent verification.
+| Path | Purpose |
+| --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development, review requirements, documentation rules, and report submission. |
+| [ari/README.md](ari/README.md) | Harness modules, provider captures, SDK installation, and validation. |
+| [spec/README.md](spec/README.md) | Versioned measurement requirements and report contracts. |
+| [data/README.md](data/README.md) | Input formats, provenance, licenses, and hash verification. |
+| [experiments/README.md](experiments/README.md) | Experiment index and reproduction requirements. |
+| [docs/findings.md](docs/findings.md) | Results overview and evidence limits. |
+| [docs/retractions.md](docs/retractions.md) | Withdrawn claims and their replacements. |
+| [infra/README.md](infra/README.md) | Remote GPU setup, execution, and result collection. |
+| [docs/paper/latex/README.md](docs/paper/latex/README.md) | Paper source and build procedure. |
 
 ## License and citation
 
-Code under `ari/` is licensed under Apache-2.0. Specifications and benchmark selections are CC BY 4.0; source documents in the BEIR-derived input set retain their original licenses. See [`LICENSE`](LICENSE) and [`data/README.md`](data/README.md).
-
-Citation metadata is available in [`CITATION.cff`](CITATION.cff).
+Code under `ari/` uses Apache-2.0. Specifications and benchmark selections use CC BY 4.0.
+Source documents retain their original licenses. See [LICENSE](LICENSE) and [dataset licensing](data/README.md).
+Use [CITATION.cff](CITATION.cff) for citation metadata.
