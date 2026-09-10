@@ -50,7 +50,7 @@ Two identical requests to the same embedding API can return numerically differen
 
 \section{Introduction}\label{sec1}
 
-Reproducibility in deployed inference depends on execution conditions. Changes in numerical precision, hardware configuration, and batching can alter even greedy model outputs [1, 2], and a nominally fixed stack may vary further when its computation is not batch invariant [1]. This paper excludes sampling randomness and studies variation introduced by numerical execution and serving behavior. In our experiments (\S3.2, \S3.3), such changes range from small floating-point differences to per-component perturbations on the order of $10^{-4}$.
+Reproducibility in deployed inference depends on execution conditions, and floating-point non-associativity is the mechanism beneath them. Because addition does not associate, the order in which a sum accumulates determines its result. The conditions studied here act through that one fact at different removes. Reduction order changes the accumulation order directly. Kernel selection and batch shape change it indirectly, because a different kernel or a different tensor shape accumulates a matrix product in a different order. Hardware and numeric precision instead change the rounding applied at each step. Sampling randomness is a separate source and this paper excludes it. Prior work documents the resulting variation in greedy outputs [1, 2] and in GPU execution generally [11], and a nominally fixed stack may vary further when its computation is not batch invariant [1, 8]. In our experiments (\S3.2, \S3.3), such changes range from small floating-point differences to per-component perturbations on the order of $10^{-4}$.
 
 Conventional task metrics may not detect this variation. Retrieval quality, for example, can remain unchanged even when representations and ranked lists differ. Hosted API users also lack the backend visibility needed to attribute observed changes to a particular mechanism. The consequence is most noticeable where a system stores a discretization of an embedding rather than the embedding itself, as with semantic IDs in sequence and recommendation models [3]: the stored symbol either matches or does not, and there is no tolerance in which upstream drift can be absorbed.
 
@@ -62,18 +62,21 @@ ARI serves as a common protocol for measuring representation-level reproducibili
 
 \textbf{The probe.} A deterministic quantizer $Q$ turns each output vector into a code with two bits per dimension, recording each coordinate's sign and whether its magnitude exceeds half a calibrated scale. Because $Q$ is bit-deterministic, it contributes no disagreement of its own, and it operates independently on each coordinate, so observed drift can be traced to specific dimensions. Appendix~\ref{app:calib} gives the quantizer, the calibration rule, and the response model fitted per architecture.
 
+\textbf{Tiers.} Reproducibility is not one property, so Table~\ref{tab:conditions} groups the conditions by what the comparison holds fixed. A system that disagrees at T1, where machine, kernel, hardware and model are all unchanged, has a stronger defect than one that disagrees only at T4, where the numeric precision itself was changed. The tiers order the conditions; they do not rank the models. On hosted APIs no tier can be held fixed, because the backend is not observable, and \texttt{time} therefore carries no tier.
+
 \begin{table}[H]
-\centering\caption{ARI execution conditions. \texttt{proc}, \texttt{conc} and \texttt{time} form the externally observable core; the others are controls and self-hosted diagnostics.}\label{tab:conditions}\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lll}
+\centering\caption{ARI execution conditions, grouped by reproducibility tier. \texttt{proc}, \texttt{conc} and \texttt{time} form the externally observable core; the others are controls and self-hosted diagnostics.}\label{tab:conditions}\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{cllp{0.42\linewidth}}
 \toprule
-id & varied condition & variation potentially exposed \\
+tier & id & varied condition & variation potentially exposed \\
 \midrule
-\texttt{same} & immediate repeat & within-session repeatability \\
-\texttt{proc} & fresh process & process-dependent execution (self-hosted); client state (API) \\
-\texttt{conc} & concurrent burst & load-associated batching, composition, routing, queueing \\
-\texttt{time} & wall-clock gap $>24$\,h & time-associated drift; backend cause unobserved \\
-\texttt{prec} & precision or compute mode & TF32, bf16, fp16, int8 (self-hosted diagnostic) \\
-\texttt{mach}, \texttt{lib} & host; library version & hardware/library drift (self-hosted diagnostics) \\
+T0 & \texttt{same} & immediate repeat & within-session repeatability \\
+T1 & \texttt{proc} & fresh process & process-dependent execution (self-hosted); client state (API) \\
+T1 & \texttt{conc} & concurrent burst & load-associated batching, composition, routing, queueing \\
+T2 & \texttt{lib} & library version & kernel selection and library drift (self-hosted diagnostic) \\
+T3 & \texttt{mach} & host & hardware change (self-hosted diagnostic) \\
+T4 & \texttt{prec} & precision or compute mode & TF32, bf16, fp16, int8 (self-hosted diagnostic) \\
+--- & \texttt{time} & wall-clock gap $>24$\,h & time-associated drift; backend cause unobserved \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -149,7 +152,7 @@ Among the decoding statistics tested, the quantizer and top-2 logit margin remai
 
 \section{Conclusion}\label{sec5}
 
-Rank-based task metrics do not fully characterize representation-level reproducibility. Under one protocol, five commercial APIs span ARI-HER 0.169 to 1.000; precision changes alter 47–100\% of codes with no distinguishable Recall@10 change; and small local differences compound into trajectory- and generation-level divergence. ARI makes this measurable without access to serving internals by separating exact repeatability from calibrated drift magnitude. It complements rather than replaces task evaluation: representation changes may be harmless, and these API measurements are point-in-time observations, not long-run rates. Reproducibility is a property of the deployed system, not something inferable from model identity or endpoint quality alone.\label{bodyend}
+Rank-based task metrics answer a different question from representation-level reproducibility. On SciFact no condition we tested produced a $\Delta$Recall@10 interval excluding zero, while exact code agreement fell from 1.000 to 0.527 under TF32 and to 0.000 under bf16 and int8 (Appendix~\ref{app:scifact}). The rank metric is not wrong there; it is answering about ranked output while the representation underneath it changed. Under one protocol, five commercial APIs span ARI-HER 0.169 to 1.000; precision changes alter 47–100\% of codes with no distinguishable Recall@10 change; and small local differences compound into trajectory- and generation-level divergence. ARI makes this measurable without access to serving internals by separating exact repeatability from calibrated drift magnitude. It complements rather than replaces task evaluation: representation changes may be harmless, and these API measurements are point-in-time observations, not long-run rates. Reproducibility is a property of the deployed system, not something inferable from model identity or endpoint quality alone.\label{bodyend}
 
 
 \section*{References}
@@ -211,6 +214,13 @@ ARI: An Auditable Retrieval Instability Harness.
 Software repository, 2026.
 \url{https://github.com/The-SEMQ-Group/semq-ari-benchmark}.
 Version \texttt{e9c55407755940cb38b4fd1403266ef4fc03bfc5}.
+
+[11] Riach, D.
+Determinism in Deep Learning.
+GPU Technology Conference (GTC) Silicon Valley, talk S9911, 2019.
+\url{https://developer.nvidia.com/gtc/2019/video/s9911}.
+See also NVIDIA, \texttt{framework-reproducibility},
+\url{https://github.com/NVIDIA/framework-reproducibility}.
 
 \normalsize
 \appendix
