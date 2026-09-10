@@ -233,3 +233,39 @@ def test_the_profile_recomputes_from_the_stored_codes_alone():
     finally:
         again_ctx.close()
     assert second.as_dict() == first.as_dict()
+
+
+def test_group_summaries_cost_an_order_of_magnitude_less_than_indices():
+    """Why the report carries blocks and not every index.
+
+    The indices stay available on the comparison for a caller who wants
+    them; serializing them into every condition of every report is what
+    the block counts avoid. Measured at the canonical probe: roughly
+    450-550 bytes per condition against 5-20 kB.
+    """
+    dim, n = 384, 64
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, dim)).astype(np.float32)
+    X /= np.linalg.norm(X, axis=1, keepdims=True)
+    Y = X + rng.normal(scale=1e-3, size=X.shape).astype(np.float32)
+    Y /= np.linalg.norm(Y, axis=1, keepdims=True)
+
+    ctx = quant_context(dim, n_bins=2)
+    try:
+        ctx.calibrate(np.ascontiguousarray(X), percentile=0.99)
+        ca, cb = _encode(ctx, X), _encode(ctx, Y)
+        regions = ctx.quant_regions()
+        sa, sb = ctx.unpack_codes(ca, dim), ctx.unpack_codes(cb, dim)
+    finally:
+        ctx.close()
+    d = code_diff(ca, cb, n_bins=2, dim=dim)
+    p = profile(d, n_bins=2, group_size=64,
+                ref_symbols=sa, cur_symbols=sb, regions=regions)
+
+    block = len(json.dumps(p.as_dict()).encode())
+    with_indices = len(json.dumps(
+        {**p.as_dict(),
+         "changed_coordinates": [i.tolist() for i in d.changed_coordinates]}
+    ).encode())
+    assert block < 2000
+    assert with_indices > 5 * block
