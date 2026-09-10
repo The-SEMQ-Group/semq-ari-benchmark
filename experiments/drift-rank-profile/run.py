@@ -287,20 +287,23 @@ def statistics(ref: np.ndarray, cur: np.ndarray) -> dict:
 
     scale = float(np.percentile(np.abs(ref), 99.0))
 
+    # Every chunk pads its own final byte, so the widths are fixed once and
+    # reused: a coordinate-level comparison splits the concatenated buffer
+    # back at the same boundaries.
+    widths = chunk_widths(ref.shape[1], MAX_DIM)
+
     def code(X):
-        dim = X.shape[1]
-        bounds = list(range(0, dim, MAX_DIM)) + [dim]
-        parts = []
-        for lo, hi in zip(bounds, bounds[1:]):
-            ctx = quant_context(hi - lo, n_bins=8, scale_max=scale)
+        parts, off = [], 0
+        for w in widths:
+            ctx = quant_context(w, n_bins=8, scale_max=scale)
             parts.append(np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(X[:, lo:hi], np.float32))))
+                np.ascontiguousarray(X[:, off:off + w], np.float32))))
             ctx.close()
+            off += w
         return parts[0] if len(parts) == 1 else np.concatenate(parts, axis=1)
 
     cr, cc = code(ref), code(cur)
-    diff = chunked_code_diff(cr, cc, n_bins=8,
-                             widths=chunk_widths(ref.shape[1], MAX_DIM))
+    diff = chunked_code_diff(cr, cc, n_bins=8, widths=widths)
 
     # Top-20 set change, in row blocks. A whole-array argpartition allocates an
     # int64 index the size of the logits, which is 2.8 GB at 48 prompts on a

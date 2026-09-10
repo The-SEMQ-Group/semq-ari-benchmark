@@ -50,7 +50,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ari.code_metrics import chunk_widths, chunked_code_diff
+from ari.code_metrics import chunked_code_diff
 
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
@@ -257,7 +257,7 @@ def teacher_forced_logits(tok, model, prompt: str, cont: list[int],
 # ---------------------------------------------------------------------------
 
 def semq_codes(X: np.ndarray, scale_source: np.ndarray):
-    """SEMQ code for each logit vector, at a scale frozen from scale_source.
+    """SEMQ codes and chunk widths, at a scale frozen from scale_source.
 
     SEMQ's Context caps max_dim at 65,536, which is smaller than the
     vocabulary of every model in current use except the small ones. A
@@ -271,6 +271,10 @@ def semq_codes(X: np.ndarray, scale_source: np.ndarray):
     Passing quant_scale_max = percentile(|scale_source|, 99) is bit-identical
     to calibrate(scale_source, percentile=0.99), so a chunked run stays
     directly comparable with an unchunked one.
+
+    The chunk widths are returned with the codes because every chunk pads
+    its own final byte: a coordinate-level comparison has to split the
+    concatenated buffer back at the same boundaries.
     """
     from ari.semq_compat import MAX_DIM, quant_context
 
@@ -279,13 +283,15 @@ def semq_codes(X: np.ndarray, scale_source: np.ndarray):
     dim = X.shape[1]
     bounds = list(range(0, dim, MAX_DIM)) + [dim]
 
-    out = []
+    out, widths = [], []
     for lo, hi in zip(bounds, bounds[1:]):
         ctx = quant_context(hi - lo, n_bins=QUANT_BINS, scale_max=scale)
         out.append(np.asarray(ctx.batch_encode(
             np.ascontiguousarray(X[:, lo:hi], np.float32))))
         ctx.close()
-    return out[0] if len(out) == 1 else np.concatenate(out, axis=1)
+        widths.append(hi - lo)
+    codes = out[0] if len(out) == 1 else np.concatenate(out, axis=1)
+    return codes, widths
 
 
 def top2_margin(logits: np.ndarray) -> np.ndarray:
@@ -433,20 +439,17 @@ def run_worker(name: str, out: Path) -> None:
     )
 
 
-def compare(ref: dict, cur: dict, ref_codes: np.ndarray) -> dict:
-    from ari.semq_compat import MAX_DIM
-
+def compare(ref: dict, cur: dict, ref_codes: np.ndarray,
+            widths: list[int]) -> dict:
     r_log, c_log = ref["logits"], cur["logits"]
     ref_tok = ref["ref_tokens"]
 
     # Would this condition have emitted the same token, given identical history?
     same_token = (c_log.argmax(1) == r_log.argmax(1))
-    codes = semq_codes(c_log, scale_source=r_log)
+    codes, _ = semq_codes(c_log, scale_source=r_log)
     # HER is exact-match, so it saturates at 0 for any real precision change
     # and cannot rank severity. A coordinate change rate can.
-    diff = chunked_code_diff(
-        ref_codes, codes, n_bins=QUANT_BINS,
-        widths=chunk_widths(r_log.shape[1], MAX_DIM))
+    diff = chunked_code_diff(ref_codes, codes, n_bins=QUANT_BINS, widths=widths)
     same_code = diff.codes_equal
 
     margins = top2_margin(r_log)
@@ -537,12 +540,13 @@ def main() -> None:
 
     usable = [c for c in active if c.name not in failed]
     ref = dict(np.load(cache_path("reference"), allow_pickle=True))
-    ref_codes = semq_codes(ref["logits"], scale_source=ref["logits"])
+    ref_codes, code_widths = semq_codes(ref["logits"],
+                                        scale_source=ref["logits"])
 
     rows = []
     for c in usable:
         cur = dict(np.load(cache_path(c.name), allow_pickle=True))
-        m = compare(ref, cur, ref_codes)
+        m = compare(ref, cur, ref_codes, code_widths)
         m["condition"], m["axis"], m["note"] = c.name, c.axis, c.note
         rows.append(m)
 

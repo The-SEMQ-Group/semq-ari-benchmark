@@ -7,7 +7,8 @@ pins it against the SDK itself. The rest fix the denominators that
 import numpy as np
 import pytest
 
-from ari.code_metrics import bits_per_coordinate, code_diff, unpack_symbols
+from ari.code_metrics import (bits_per_coordinate, chunk_widths, code_diff,
+                              chunked_code_diff, unpack_symbols)
 
 semq = pytest.importorskip("semq")
 
@@ -107,8 +108,6 @@ def test_mismatched_shapes_are_rejected():
 
 def test_chunked_diff_locates_a_coordinate_in_the_last_chunk():
     """Each chunk pads its own final byte, so the split has to be exact."""
-    from ari.code_metrics import chunk_widths, chunked_code_diff
-
     widths = chunk_widths(1000, 384)
     assert widths == [384, 384, 232]
     n_bins = 8
@@ -131,8 +130,6 @@ def test_chunked_diff_locates_a_coordinate_in_the_last_chunk():
 
 
 def test_chunked_diff_rejects_widths_that_do_not_fill_the_buffer():
-    from ari.code_metrics import chunked_code_diff
-
     codes = _encode(_vectors(2, 384), 8)
     with pytest.raises(ValueError, match="widths imply"):
         chunked_code_diff(codes, codes.copy(), n_bins=8, widths=[100])
@@ -146,8 +143,6 @@ def test_concatenating_chunks_before_comparing_misplaces_the_change():
     decodes those bits as three coordinates and shifts every later index
     by three.
     """
-    from ari.code_metrics import chunk_widths, chunked_code_diff
-
     widths = chunk_widths(34, 17)
     n_bins = 2
     X = _vectors(1, 34)
