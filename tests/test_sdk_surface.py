@@ -46,8 +46,10 @@ def test_symbol_order_within_a_byte_is_not_arbitrary():
     w = bits_per_coordinate(bins)
     good_a = unpack_symbols(a, dim=dim, n_bins=bins)
     good_b = unpack_symbols(b, dim=dim, n_bins=bins)
-    swap = lambda p: (np.unpackbits(p, axis=1).reshape(len(p), -1, w)
-                      * (1 << np.arange(w)[::-1])).sum(2).astype(np.uint8)
+    def swap(p):
+        """Read each byte's symbols high-order first, as the old code did."""
+        return (np.unpackbits(p, axis=1).reshape(len(p), -1, w)
+                * (1 << np.arange(w)[::-1])).sum(2).astype(np.uint8)
 
     assert np.allclose((good_a != good_b).mean(axis=1),
                        (swap(a) != swap(b)).mean(axis=1))
@@ -56,7 +58,13 @@ def test_symbol_order_within_a_byte_is_not_arbitrary():
 
 
 def test_core_calibration_is_not_interchangeable_with_numpy_percentile():
-    """semq_compat used to claim these give bit-identical codes. They do not."""
+    """semq_compat used to claim these give bit-identical codes. They do not.
+
+    A tripwire, not a property worth preserving. If the core ever adopts
+    float64 interpolation the two paths converge, this test fails, and the
+    right response is to delete it and restore the docstring's claim -- not
+    to reintroduce the divergence.
+    """
     rng = np.random.default_rng(7)
     dim, bins, pct = 384, 8, 0.999
     X = rng.standard_normal((200, dim)).astype(np.float32)

@@ -70,6 +70,23 @@ Report these quantities separately:
 - `ari_symbol_mismatch` — fraction of coordinates whose decoded symbol changed
 - `ari_byte_mismatch` — the published quantity, retained for continuity
 
+### 0.5 The committed pilot results predate SDK-sourced scoring
+
+`results/pilot.json` and `results/pilot.scores.npz` were produced by an earlier
+`_ari_scores` that unpacked symbols itself and calibrated with
+`numpy.percentile`. Both are now taken from the SDK.
+
+Two differences follow. The hand-rolled unpacker read each byte's symbols in
+the wrong order, which left every aggregate rate correct and every
+changed-coordinate index wrong. `numpy.percentile` interpolates in float64
+while `Context.calibrate` takes the percentile in float32, so the recorded
+`ari_meta.scale` and a small number of codes near a bin boundary differ.
+
+**Consequence.** Aggregate rates in the committed pilot still stand; any
+location-level output derived from it does not. The file is retained as the
+pilot record and is not regenerated. Confirmatory collection uses the current
+scoring path.
+
 ---
 
 ## 1. Two questions, kept separate
