@@ -23,6 +23,7 @@ import platform
 import subprocess
 import sys
 import time
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,61 @@ CONDITIONS = {
     "bf16":        ("bf16",  False, 32,    None),
     "threads_1":   ("fp32",  False, 32,    1),
 }
+
+
+def _episode_paths(root: Path, condition: str, episode: int) -> tuple[Path, Path]:
+    stem = root / condition / f"ep{episode:03d}"
+    return stem.with_suffix(".npz"), stem.with_suffix(".json")
+
+
+def _inputs_sha256(texts: list[str]) -> str:
+    return hashlib.sha256("\n".join(texts).encode()).hexdigest()
+
+
+def _reuse_existing_episode(paths: tuple[Path, Path], expected: dict) -> bool:
+    """Validate and reuse a complete episode; reject partial/corrupt output."""
+    data_path, manifest_path = paths
+    present = [path.exists() for path in paths]
+    if not any(present):
+        return False
+    if not all(present):
+        raise RuntimeError(f"incomplete episode artifacts: {data_path} / {manifest_path}")
+
+    try:
+        manifest = json.loads(manifest_path.read_text())
+        for key, value in expected.items():
+            if manifest.get(key) != value:
+                raise RuntimeError(
+                    f"existing episode mismatch for {key}: "
+                    f"{manifest.get(key)!r} != {value!r}"
+                )
+        with np.load(data_path, allow_pickle=False) as archive:
+            embeddings = np.ascontiguousarray(archive["embeddings"], dtype=np.float32)
+        digest = hashlib.sha256(embeddings.tobytes()).hexdigest()
+        if manifest.get("embeddings_sha256") != digest:
+            raise RuntimeError("existing episode checksum mismatch")
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
+        raise RuntimeError(f"invalid existing episode artifacts: {exc}") from exc
+    return True
+
+
+def publish_files(paths: tuple[Path, ...], destination: str, region: str) -> None:
+    """Upload an episode's artifacts, failing if any upload is not durable."""
+    failures = []
+    for path in paths:
+        cmd = ["aws", "s3", "cp", str(path), f"{destination}/{path.name}",
+               "--region", region, "--only-show-errors"]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True,
+                                    timeout=600)
+        except Exception as exc:
+            failures.append(f"{path.name}: {exc}")
+            continue
+        if result.returncode:
+            detail = (result.stderr or result.stdout or "").strip()
+            failures.append(f"{path.name}: {detail[:200]}")
+    if failures:
+        raise RuntimeError("episode publication failed: " + "; ".join(failures))
 
 
 def main() -> int:
@@ -54,15 +110,6 @@ def main() -> int:
     a = ap.parse_args()
 
     dtype_name, tf32, batch, threads = CONDITIONS[a.condition]
-
-    import torch
-    if threads is not None:
-        torch.set_num_threads(threads)
-    torch.backends.cuda.matmul.allow_tf32 = tf32
-    torch.backends.cudnn.allow_tf32 = tf32
-
-    from sentence_transformers import SentenceTransformer
-
     texts = []
     with open(a.inputs) as fh:
         for line in fh:
@@ -72,6 +119,36 @@ def main() -> int:
             texts.append(rec.get("text") or rec.get("input") or "")
             if len(texts) >= a.n:
                 break
+
+    data_path, manifest_path = _episode_paths(Path(a.out), a.condition, a.episode)
+    expected = {
+        "condition": a.condition,
+        "episode": a.episode,
+        "model": a.model,
+        "n_inputs": len(texts),
+        "inputs_sha256": _inputs_sha256(texts),
+        "requested": {"dtype": dtype_name, "tf32": tf32, "batch": batch,
+                      "threads": threads},
+    }
+    if _reuse_existing_episode((data_path, manifest_path), expected):
+        # Reuse skips the encode, not the upload. A retry after a failed publish
+        # is the main reason this path is taken, so returning here without
+        # publishing would turn the fail-closed upload into a silent no-op.
+        if a.publish_s3:
+            publish_files((data_path, manifest_path),
+                          a.publish_s3.rstrip("/") + f"/{a.condition}",
+                          a.publish_region)
+        print(f"{a.condition} ep{a.episode}: existing validated artifacts reused",
+              flush=True)
+        return 0
+
+    import torch
+    if threads is not None:
+        torch.set_num_threads(threads)
+    torch.backends.cuda.matmul.allow_tf32 = tf32
+    torch.backends.cudnn.allow_tf32 = tf32
+
+    from sentence_transformers import SentenceTransformer
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer(a.model, device=dev)
@@ -111,7 +188,7 @@ def main() -> int:
         },
         "encode_seconds": round(encode_s, 3),
         "embeddings_sha256": hashlib.sha256(emb.tobytes()).hexdigest(),
-        "inputs_sha256": hashlib.sha256("\n".join(texts).encode()).hexdigest(),
+        "inputs_sha256": _inputs_sha256(texts),
         "torch": torch.__version__,
         "python": platform.python_version(),
         "pid": os.getpid(),
@@ -128,16 +205,8 @@ def main() -> int:
     # 2026-09-09 because the driver wrote only to local disk.
     if a.publish_s3:
         dest = a.publish_s3.rstrip("/") + f"/{a.condition}"
-        for path in (stem.with_suffix(".npz"), stem.with_suffix(".json")):
-            cmd = ["aws", "s3", "cp", str(path), f"{dest}/{path.name}",
-                   "--region", a.publish_region, "--only-show-errors"]
-            try:
-                r = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-                if r.returncode:
-                    print(f"  WARNING: publish {path.name} failed: "
-                          f"{(r.stderr or '').strip()[:200]}", flush=True)
-            except Exception as e:  # an upload failure must not lose the episode
-                print(f"  WARNING: publish {path.name} errored: {e}", flush=True)
+        publish_files((stem.with_suffix(".npz"), stem.with_suffix(".json")),
+                      dest, a.publish_region)
     print(f"{a.condition} ep{a.episode}: {emb.shape} sha={manifest['embeddings_sha256'][:12]} "
           f"tf32={manifest['effective']['matmul_tf32']} dtype={manifest['effective']['param_dtype']} "
           f"{encode_s:.1f}s", flush=True)
