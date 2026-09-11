@@ -47,37 +47,39 @@ def _ari_scores(r, c, bins):
 
     The published score counts packed bytes; symbol mismatch and bit Hamming
     are what the coordinate-wise baselines are actually comparable against.
+
+    Every quantity here comes from the SDK. The packed layout, the symbol
+    unpacking and the calibration percentile all live in the core, so this
+    file cannot drift from the encoder it is measuring. An earlier inline
+    unpacking read each byte's symbols in the wrong order: it reported the
+    same aggregate rate, because the error permutes coordinates identically
+    in both operands, but every changed-coordinate index it produced was
+    wrong.
     """
     from ari.semq_compat import MAX_DIM, quant_context
 
-    scale = float(np.percentile(np.abs(r), 99.0))
     dim = r.shape[1]
-    bounds = list(range(0, dim, MAX_DIM)) + [dim]
+    if dim > MAX_DIM:
+        raise ValueError(
+            f"probe dim {dim} exceeds SEMQ_MAX_DIM {MAX_DIM}; calibration is "
+            "global across coordinates and a percentile does not compose "
+            "across chunks, so chunked calibration needs its own design")
 
-    def enc(X):
-        out = []
-        for lo, hi in zip(bounds, bounds[1:]):
-            ctx = quant_context(hi - lo, n_bins=bins, scale_max=scale)
-            out.append(np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(X[:, lo:hi], np.float32))))
-            ctx.close()
-        return out[0] if len(out) == 1 else np.concatenate(out, axis=1)
+    with quant_context(dim, n_bins=bins) as ctx:
+        scale = float(ctx.calibrate(np.ascontiguousarray(r, np.float32),
+                                    percentile=0.99))
+        bits = ctx.bits_per_coordinate
 
-    a, b = enc(r), enc(c)
-    byte_mismatch = (a != b).mean(axis=1)
-    bits_per_dim = int(round(a.shape[1] * 8 / dim))
-    per_byte = 8 // bits_per_dim                     # coordinates packed per byte
-    xor = np.bitwise_xor(a, b)
-    hamming = np.unpackbits(xor, axis=1).sum(axis=1) / (dim * bits_per_dim)
-    # Unpack to symbols so a changed coordinate counts once, not once per byte.
-    sym_a = np.unpackbits(a, axis=1).reshape(len(a), -1, bits_per_dim)
-    sym_b = np.unpackbits(b, axis=1).reshape(len(b), -1, bits_per_dim)
-    symbol_mismatch = (sym_a != sym_b).any(axis=2).mean(axis=1)
+    with quant_context(dim, n_bins=bins, scale_max=scale) as ctx:
+        a = np.asarray(ctx.batch_encode(np.ascontiguousarray(r, np.float32)))
+        b = np.asarray(ctx.batch_encode(np.ascontiguousarray(c, np.float32)))
+        cmp = ctx.compare_codes(a, b, dim)
+
     return {
-        "ari_byte_mismatch": byte_mismatch,
-        "ari_code_hamming": hamming,
-        "ari_symbol_mismatch": symbol_mismatch,
-    }, {"bits_per_dim": bits_per_dim, "coords_per_byte": per_byte, "scale": scale}
+        "ari_byte_mismatch": cmp.byte_change_rate,
+        "ari_code_hamming": cmp.bit_hamming_rate,
+        "ari_symbol_mismatch": cmp.coordinate_change_rate,
+    }, {"bits_per_dim": bits, "coords_per_byte": 8 // bits, "scale": scale}
 
 
 def _hash_scores(r, c, roundings):
