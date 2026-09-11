@@ -18,6 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scorers as scorer_module  # noqa: E402
 from scorers import (  # noqa: E402
     block_hash_mismatch,
     block_hash_rows,
@@ -238,9 +239,16 @@ def test_block_hash_budget_is_what_the_digests_actually_occupy():
 def test_block_hashes_are_deterministic_and_reject_bad_geometry():
     r = np.ones((2, 16), dtype=np.float32)
     np.testing.assert_array_equal(block_hash_rows(r, 4, 8), block_hash_rows(r, 4, 8))
-    for bad in ((0, 4), (4, 0), (4, 33)):
+    for bad in ((0, 4), (4, 0), (4, 33), (17, 4)):
         with pytest.raises(ValueError):
             block_hash_rows(r, *bad)
+
+
+def test_logit_divergence_api_names_make_the_input_contract_explicit():
+    assert callable(scorer_module.kl_from_logits)
+    assert callable(scorer_module.js_from_logits)
+    assert not hasattr(scorer_module, "kl_div")
+    assert not hasattr(scorer_module, "js_div")
 
 
 # -------------------------------------------------- float16 anchor

@@ -117,6 +117,10 @@ def block_hash_rows(x: np.ndarray, n_blocks: int, digest_bytes: int,
     if not 1 <= digest_bytes <= 32:
         raise ValueError(f"digest_bytes must be in [1, 32], got {digest_bytes}")
     rows = np.atleast_2d(x)
+    if n_blocks > rows.shape[1]:
+        raise ValueError(
+            f"n_blocks ({n_blocks}) cannot exceed vector dimension ({rows.shape[1]})"
+        )
     bounds = np.linspace(0, rows.shape[1], n_blocks + 1).astype(int)
     out = np.empty((rows.shape[0], n_blocks, digest_bytes), dtype=np.uint8)
     for i, row in enumerate(rows):
@@ -264,8 +268,12 @@ def budget_margin_fp32() -> Budget:
 
 
 def budget_block_hash(n_blocks: int, digest_bytes: int) -> Budget:
+    if n_blocks < 1:
+        raise ValueError(f"n_blocks must be at least 1, got {n_blocks}")
+    if not 1 <= digest_bytes <= 32:
+        raise ValueError(f"digest_bytes must be in [1, 32], got {digest_bytes}")
     return Budget(n_blocks * digest_bytes, 8,
-                  f"{n_blocks} x {digest_bytes}-byte truncated digests + layout")
+                  f"{n_blocks} x {digest_bytes}-byte truncated digests + 2 uint32 layout")
 
 
 def budget_float16(dim: int) -> Budget:

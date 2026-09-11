@@ -168,7 +168,8 @@ false-alarm rate the one-sided convention is the right one, and it is used
 here. **200 control episodes do not support a 1% claim**; 299 do.
 
 **Collection target: 300 control episodes and 300 per intervention**, which
-establishes <1% with zero alarms and leaves margin for a small number.
+establishes a sub-1% upper bound only when zero control alarms are observed.
+Any nonzero alarm count is reported with its corresponding wider interval.
 
 The existing 12 prompts bound the rate only below 22.1%, which is why that
 cache is pilot data and is never pooled with confirmatory episodes.
@@ -218,6 +219,11 @@ each hashed and truncated so that B digests occupy the same bytes as the code
 they are compared against. This is the baseline that answers "a hash, but
 given the same storage and therefore able to localise too", and without it the
 comparison hands ARI localisation for free.
+
+The block-hash layout is serialized as two little-endian uint32 values
+(`n_blocks`, `digest_bytes`) and therefore costs the declared 8 shared bytes;
+the vector dimension, dtype, canonical byte format, and SHA-256 algorithm are
+fixed by this protocol and are not per-example metadata.
 
 **A float16 reference** — not budget-matched, and deliberately so. It is the
 larger-storage accuracy anchor: what a monitor gets for 2 bytes per coordinate
