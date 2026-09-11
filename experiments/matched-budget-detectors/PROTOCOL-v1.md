@@ -1,11 +1,15 @@
-# Matched-budget detector study — frozen protocol v2
+# Matched-budget detector study — protocol v1 (superseded)
 
-**Status: frozen 2026-09-11, before any confirmatory collection.**
-Supersedes [PROTOCOL-v1.md](PROTOCOL-v1.md), which the pilot in `results/`
-was scored under. Section numbering is unchanged so existing citations in
-`run_pilot.py` still resolve; §2.1, §3.1 and §8 are new.
+> Superseded by [PROTOCOL.md](PROTOCOL.md) v2. Kept unedited as the record of
+> what v1 specified, since the pilot in `results/` was scored under it.
+>
+> v2 changed: the sizing table (v1 used a two-sided interval where a one-sided
+> upper bound is the right convention), the alarm unit (v1 defined a per-input
+> unit but no deployment-level policy, and the choice moves the measured
+> false-alarm rate by two orders of magnitude), degenerate-null handling,
+> multiple comparisons, power and stopping rules, and two missing baselines.
 
-**Original v1 status line:**
+**Status: frozen 2026-09-09, before any confirmatory evaluation.**
 Repository commit at freeze: `a961b3516b58` (branch `research/ari-review-response`).
 
 Addresses major concern 1 of the paper review: does ARI provide a useful
@@ -118,85 +122,34 @@ no prompt, prefix, reference or episode. Three disjoint roles:
 Resampling is grouped by prompt and by episode. Reused reference pairs are not
 independent and are resampled as blocks.
 
-**An episode** is one complete collection of the frozen input set under one
-declared configuration, in its own process, recorded with its own manifest.
-Two episodes differ in at least their process and wall-clock time. Documents
-or prompts inside one episode are *not* episodes: they share the process,
-the machine and the session, so they support corpus-level uncertainty and
-nothing about run-to-run variation.
-
-### 2.1 Deployment alarm policy, declared separately
-
-The per-input unit above answers "did this embedding change". An operator
-asks "did this deployment change", and the two give different answers from the
-same data. Measured on the cached SciFact panel, comparing a raw-vector
-SHA-256 against the canonical code under four benign conditions:
-
-| | per input | per deployment |
-| --- | --- | --- |
-| raw SHA-256 false-alarm rate | ~0.45% | **50%** (fires on 2 of 4) |
-| canonical code false-alarm rate | 0% | 0% |
-
-Two orders of magnitude, same data, from a definition. So the deployment
-policy is declared here rather than chosen after the results are in:
-
-**A deployment alarm fires when the per-input alarm rate over the frozen input
-set exceeds a threshold calibrated on control episodes.** It is not "any input
-changed". A raw hash detecting a benign byte change is not an integrity
-failure, and a policy that treats it as one measures the input set's size
-rather than the deployment's state.
-
-Both units are reported for every method. Neither is presented alone.
-
 ## 3. Error rates and sizing
 
 Primary nominal FPR **5%**. Secondary **1%**, reported only where the effective
 sample size supports it.
 
-Sizing is set by what zero alarms in N independent control **episodes** can
-establish. The one-sided 95% upper bound is `1 - 0.05^(1/N)`:
+Prospective calculation over prompt-level controls, Clopper-Pearson:
 
-| N control episodes | 0 alarms gives 95% upper bound |
-| ---: | ---: |
-| 12 | 22.1% |
-| 200 | **1.49%** |
-| 299 | **1.00%** |
-| 2,995 | 0.10% |
+| n controls | finest achievable FPR | 0 alarms gives 95% upper | TPR CI half-width at 0.90 |
+| --- | --- | --- | --- |
+| 12 (existing cache) | 0.0833 | 0.2646 | 0.170 |
+| 50 | 0.0200 | 0.0711 | 0.083 |
+| 100 | 0.0100 | 0.0362 | 0.059 |
+| 200 | 0.0050 | 0.0183 | 0.042 |
 
-v1 quoted 1.83% at N=200 from a two-sided interval. For an upper bound on a
-false-alarm rate the one-sided convention is the right one, and it is used
-here. **200 control episodes do not support a 1% claim**; 299 do.
+**The existing 12 prompts cannot support a 5% claim**: their finest achievable
+FPR is 8.3%, and a flawless control run bounds the FPR only below 26%. This is
+why the cache is pilot data.
 
-**Collection target: 300 control episodes and 300 per intervention**, which
-establishes <1% with zero alarms and leaves margin for a small number.
-
-The existing 12 prompts bound the rate only below 22.1%, which is why that
-cache is pilot data and is never pooled with confirmatory episodes.
+**Collection target: 200 control episodes and 200 per intervention at the
+prompt level**, which supports the primary 5% with a TPR half-width near 0.04
+and makes the secondary 1% reportable.
 
 Thresholds on discrete scores are set at the conservative side of a tie: the
 smallest threshold whose achieved control alarm rate does not exceed nominal.
 Achieved held-out FPR is reported with an interval, never asserted as exactly
-matched.
-
-### 3.1 The null is expected to be degenerate
-
-On the cached panel the canonical code gives **zero** alarms across every
-benign condition, so its control distribution has no variance. This is the
-expected case, not a surprise, and it has a consequence the study has to
-accept in advance: **with a degenerate null there is no threshold to trade and
-no FPR to fix.** A nominal "5% FPR" is unachievable, because no threshold
-produces 5% false alarms.
-
-Three rules follow, fixed here:
-
-1. A method whose controls are alarm-free is reported at its **achieved** FPR
-   of zero with the one-sided upper bound its episode count supports, never at
-   a nominal rate it cannot realise.
-2. Methods are then separated on **sensitivity at zero achieved false alarms**,
-   which is a well-defined comparison and the one the data can support.
-3. Ties among alarm-free methods are reported as ties. Noise is not injected
-   into controls to manufacture a threshold, and a method is not credited for
-   discrimination the null cannot demonstrate.
+matched. If controls are bit-identical the null is degenerate; that is reported
+as a limit on discrimination among methods rather than papered over with
+injected noise.
 
 ## 4. Methods compared
 
@@ -213,28 +166,10 @@ or uniform scalar quantization at bit budgets matched to ARI. Canonical bytes
 fix dtype, little-endian byte order, C-contiguous shape, negative zero
 normalized to positive zero, and NaN rejected rather than hashed.
 
-**Budget-matched block hashes** — the vector split into B contiguous blocks,
-each hashed and truncated so that B digests occupy the same bytes as the code
-they are compared against. This is the baseline that answers "a hash, but
-given the same storage and therefore able to localise too", and without it the
-comparison hands ARI localisation for free.
-
-**A float16 reference** — not budget-matched, and deliberately so. It is the
-larger-storage accuracy anchor: what a monitor gets for 2 bytes per coordinate
-instead of a fraction of one. It bounds how much the compressed methods give
-up.
-
 **Logit-only** — top-2 margin change, argmax token change, top-k set change,
 and KL and JS computed in float64 log-space, validated against a
 high-precision oracle on tiny perturbations, identical inputs and extreme
 logits. These are not dismissed for float32 cancellation observed elsewhere.
-
-KL and JS apply to **probability distributions only**, so at the logit probe
-and never to signed embedding coordinates, which are not a distribution and
-for which the quantity is undefined rather than merely awkward. Support and
-zero handling are declared with the implementation and covered by the oracle
-tests. A scorer table that applies them to embeddings is a bug, and the
-scorer suite raises rather than returning a number.
 
 **Sketch** — seeded Gaussian random projection; its seed and projection
 metadata count toward its storage budget.
@@ -273,34 +208,3 @@ separation, is an equally valid outcome and is reported without hedging.
 Nothing here is described as early warning or as a capability-damage detector.
 That would need a separate operational validation which this study does not
 perform.
-
-## 8. Analysis, fixed before collection
-
-**Multiple comparisons.** The study compares roughly a dozen scorers across
-two probes and several interventions. Every reported comparison is one of a
-family, so the primary family — scorers against ARI at the embedding probe,
-at the declared alarm policy — is corrected by Holm–Bonferroni at the family
-level, and the uncorrected p-values are reported alongside. Comparisons
-outside the primary family are labelled exploratory and are not used to
-support a claim.
-
-**Paired testing.** All scorers see identical episodes, so every comparison is
-paired at the episode level and resampled by episode, never by input. An
-interval over inputs within an episode measures corpus sampling and is
-reported as such.
-
-**Power and stopping.** Collection stops at the declared 300 control and 300
-intervention episodes, or earlier only on a declared failure of the collection
-itself. There is no interim analysis of detection performance and no stopping
-on a result. If collection falls short, the achieved counts and the bounds
-they support are reported, and the shortfall is stated rather than absorbed.
-
-**Exclusions.** An episode is excluded only for a recorded collection fault —
-a failed upload, a scorer error, a manifest mismatch — never for its scores.
-Every exclusion is listed with its cause and the analysis is reported with and
-without them.
-
-**What a result may say.** With the null expected to be degenerate (§3.1), the
-supportable comparative statement is about sensitivity at zero achieved false
-alarms, at equal retained bytes, on declared interventions. It is not about
-early warning, functional harm, or a need to rebuild an index.

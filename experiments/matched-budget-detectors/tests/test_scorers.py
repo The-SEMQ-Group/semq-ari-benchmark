@@ -19,7 +19,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scorers import (  # noqa: E402
+    block_hash_mismatch,
+    block_hash_rows,
     budget_ari,
+    budget_block_hash,
+    budget_float16,
+    float16_roundtrip_delta,
     budget_margin_fp32,
     budget_projection,
     canonical_bytes,
@@ -198,3 +203,61 @@ def test_budgets_round_partial_bytes_up_and_charge_metadata():
 def test_amortized_budget_falls_with_n_but_never_below_per_example():
     b = budget_ari(dim=1024, bits_per_dim=4)
     assert b.total_at(1) > b.total_at(1000) > b.per_example
+
+
+# ------------------------------------------- budget-matched block hashes
+
+
+def test_block_hashes_localise_a_change_to_its_block():
+    """The point of the baseline: a hash that can say where, not just whether."""
+    rng = np.random.default_rng(11)
+    r = rng.standard_normal((1, 64)).astype(np.float32)
+    c = r.copy()
+    c[0, 20] = np.float32(c[0, 20] + 1.0)          # block 2 of 8
+    a = block_hash_rows(r, n_blocks=8, digest_bytes=4)
+    b = block_hash_rows(c, n_blocks=8, digest_bytes=4)
+    differing = np.flatnonzero((a != b).any(axis=2)[0])
+    assert differing.tolist() == [2]
+    assert block_hash_mismatch(r, c, 8, 4)[0] == pytest.approx(1 / 8)
+
+
+def test_block_hashes_at_one_block_reduce_to_a_plain_hash():
+    rng = np.random.default_rng(12)
+    r = rng.standard_normal((3, 32)).astype(np.float32)
+    c = r.copy()
+    c[1, 0] = np.float32(c[1, 0] + 1.0)
+    assert block_hash_mismatch(r, c, 1, 32).tolist() == [0.0, 1.0, 0.0]
+
+
+def test_block_hash_budget_is_what_the_digests_actually_occupy():
+    b = budget_block_hash(n_blocks=24, digest_bytes=4)
+    assert b.per_example == 96          # matches a 384-dim 2-bit code
+    assert b.shared == 8
+
+
+def test_block_hashes_are_deterministic_and_reject_bad_geometry():
+    r = np.ones((2, 16), dtype=np.float32)
+    np.testing.assert_array_equal(block_hash_rows(r, 4, 8), block_hash_rows(r, 4, 8))
+    for bad in ((0, 4), (4, 0), (4, 33)):
+        with pytest.raises(ValueError):
+            block_hash_rows(r, *bad)
+
+
+# -------------------------------------------------- float16 anchor
+
+
+def test_float16_anchor_costs_two_bytes_a_coordinate():
+    assert budget_float16(384).per_example == 768
+    assert budget_float16(384).shared == 0
+
+
+def test_float16_roundtrip_hides_changes_below_its_resolution():
+    """The anchor bounds what the compressed methods give up, so its own
+    resolution limit has to be visible."""
+    r = np.array([[1.0, 2.0]], dtype=np.float32)
+    tiny = r.copy()
+    tiny[0, 0] = np.float32(1.0 + 1e-6)            # below float16 resolution
+    assert float16_roundtrip_delta(r, tiny)[0] == 0.0
+    big = r.copy()
+    big[0, 0] = np.float32(1.5)
+    assert float16_roundtrip_delta(r, big)[0] == pytest.approx(0.5)

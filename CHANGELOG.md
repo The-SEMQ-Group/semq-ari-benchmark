@@ -6,6 +6,39 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Matched-budget protocol v2
+- `experiments/matched-budget-detectors/PROTOCOL.md` is reissued as v2, with
+  v1 kept unedited as `PROTOCOL-v1.md` since the committed pilot was scored
+  under it. Section numbering is unchanged so existing citations resolve.
+- **The deployment alarm policy is declared, because the definition moves the
+  answer more than any experimental choice does.** Measured on the cached
+  panel, a raw-vector SHA-256 false-alarms on about 0.45% of inputs under
+  benign conditions but on 50% of deployments, against 0% for the canonical
+  code either way. v2 defines a deployment alarm as the per-input rate
+  exceeding a calibrated threshold, not as "any input changed", and reports
+  both units for every method.
+- **Sizing corrected.** v1 quoted a two-sided interval; for an upper bound on
+  a false-alarm rate the one-sided `1 - 0.05^(1/N)` is the right convention.
+  200 control episodes establish only 1.49%, not 1%; 299 are needed. The
+  collection target is now 300 control and 300 intervention episodes.
+- **The degenerate null is planned for rather than discovered.** The canonical
+  code gives zero alarms on every benign condition, so there is no threshold
+  to trade and a nominal 5% FPR is unachievable. v2 fixes three rules in
+  advance: report achieved zero with the bound the episode count supports,
+  separate methods on sensitivity at zero achieved false alarms, and report
+  ties among alarm-free methods as ties rather than injecting noise.
+- An **episode** is now defined — one complete collection of the frozen input
+  set under one configuration, in its own process, with its own manifest — and
+  inputs within an episode are explicitly not episodes.
+- New §8 fixes multiple comparisons (Holm–Bonferroni over the primary family,
+  uncorrected values reported alongside), episode-level paired testing, power
+  and stopping rules with no interim analysis of detection performance, and
+  exclusion rules that admit collection faults only.
+- Two baselines the comparison was missing: **budget-matched block hashes**,
+  so a hash is given the same storage and can localise too, and a **float16
+  reference** as the larger-storage accuracy anchor. KL and JS are now
+  restricted to probability distributions and raise on signed embeddings.
+
 ### Extent, quantized movement and location, beside equality
 - A 32-byte SHA-256 detects every change and costs a fraction of a code,
   so equality is not where a code earns its size. `ari.change_profile`
