@@ -23,6 +23,7 @@ import platform
 import subprocess
 import sys
 import time
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -70,7 +71,7 @@ def _reuse_existing_episode(paths: tuple[Path, Path], expected: dict) -> bool:
         digest = hashlib.sha256(embeddings.tobytes()).hexdigest()
         if manifest.get("embeddings_sha256") != digest:
             raise RuntimeError("existing episode checksum mismatch")
-    except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
         raise RuntimeError(f"invalid existing episode artifacts: {exc}") from exc
     return True
 
@@ -126,8 +127,17 @@ def main() -> int:
         "model": a.model,
         "n_inputs": len(texts),
         "inputs_sha256": _inputs_sha256(texts),
+        "requested": {"dtype": dtype_name, "tf32": tf32, "batch": batch,
+                      "threads": threads},
     }
     if _reuse_existing_episode((data_path, manifest_path), expected):
+        # Reuse skips the encode, not the upload. A retry after a failed publish
+        # is the main reason this path is taken, so returning here without
+        # publishing would turn the fail-closed upload into a silent no-op.
+        if a.publish_s3:
+            publish_files((data_path, manifest_path),
+                          a.publish_s3.rstrip("/") + f"/{a.condition}",
+                          a.publish_region)
         print(f"{a.condition} ep{a.episode}: existing validated artifacts reused",
               flush=True)
         return 0
@@ -139,7 +149,6 @@ def main() -> int:
     torch.backends.cudnn.allow_tf32 = tf32
 
     from sentence_transformers import SentenceTransformer
-
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer(a.model, device=dev)
