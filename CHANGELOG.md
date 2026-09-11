@@ -6,6 +6,38 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Bound quality reported beside the bounds
+- `ari.bound_quality` reports the strictly-positive lower-bound count, the
+  finite and unbounded upper-bound counts, and quantiles of the finite
+  interval widths, so a vacuous interval can be told from an informative one.
+- Every rate names its denominator. `_of_all` covers every coordinate
+  compared, `_of_changed` only those whose symbol changed, and a rate over
+  changed coordinates is `null` when nothing changed rather than zero.
+  `n_unbounded` stays a count. The width quantiles carry
+  `finite_width_basis`, since restricting them to changed coordinates changes
+  what they mean.
+- Predeclared movement thresholds report counts definitely below, definitely
+  above, and unresolved. A coordinate with an unbounded upper bound can never
+  be definitely below. These are thresholds on the representation, not on
+  functional harm.
+- Generic codec bounds and norm-constrained bounds go in separate blocks, the
+  latter carrying its declared assumption. The schema requires that
+  assumption to be non-empty.
+- Measured: at the canonical probe the bounds resolve almost nothing. Adjacent
+  regions touch, so a positive lower bound requires a move of two or more
+  regions — asserted as an exact identity. At `n_bins=2` under 1e-3 drift
+  every detected change is a single-region move, so every lower bound is zero
+  and a 0.01 threshold leaves every change unresolved. Positive lower bounds
+  first appear at 5e-2 drift. This is a result for this probe and this
+  intervention.
+- `cost_record` reports reference-state bytes, report bytes and runtime
+  separately, each with the input count and machine it was measured on.
+- `spec/report-schema.json` gains optional `bound_quality`,
+  `norm_bound_quality` and `thresholds` on the change profile, each with
+  declared properties and closed to additions. HER and aggregate ARI keep
+  their exact-code-equality semantics; `ari_version` stays `0.1` and earlier
+  reports still validate.
+
 ### Matched-budget protocol v2
 - `experiments/matched-budget-detectors/PROTOCOL.md` is reissued as v2.
   The committed pilot was scored under v1, which git holds at commit
