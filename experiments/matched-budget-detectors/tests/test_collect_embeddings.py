@@ -18,6 +18,33 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(collect_embeddings)
 
 
+EXPECTED_KEYS = ("condition", "episode", "model", "n_inputs", "inputs_sha256",
+                 "requested")
+
+
+def _write_episode(tmp_path, condition, episode, *, texts=("a", "b"),
+                   embeddings=None):
+    """Write a complete, self-consistent episode and return its paths and the
+    `expected` dict main() would check it against."""
+    if embeddings is None:
+        embeddings = np.ones((2, 4), dtype=np.float32)
+    paths = collect_embeddings._episode_paths(tmp_path, condition, episode)
+    paths[0].parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(paths[0], embeddings=embeddings)
+    manifest = {
+        "condition": condition,
+        "episode": episode,
+        "model": "m",
+        "n_inputs": len(texts),
+        "inputs_sha256": collect_embeddings._inputs_sha256(list(texts)),
+        "requested": {"dtype": "fp32", "tf32": False, "batch": 32,
+                      "threads": None},
+        "embeddings_sha256": hashlib.sha256(embeddings.tobytes()).hexdigest(),
+    }
+    paths[1].write_text(json.dumps(manifest))
+    return paths, {k: manifest[k] for k in EXPECTED_KEYS}, embeddings
+
+
 def test_publish_files_uploads_every_artifact(monkeypatch, tmp_path):
     calls = []
 
@@ -46,31 +73,22 @@ def test_publish_files_fails_closed_on_upload_error(monkeypatch, tmp_path):
 
 
 def test_existing_episode_is_reused_only_after_validation(tmp_path):
-    paths = collect_embeddings._episode_paths(tmp_path, "control", 3)
-    paths[0].parent.mkdir(parents=True, exist_ok=True)
-    embeddings = np.ones((2, 4), dtype=np.float32)
-    np.savez_compressed(paths[0], embeddings=embeddings)
-    manifest = {
-        "condition": "control",
-        "episode": 3,
-        "model": "model",
-        "n_inputs": 2,
-        "inputs_sha256": "inputs",
-        "requested": {"dtype": "fp32", "tf32": False, "batch": 32, "threads": None},
-        "embeddings_sha256": hashlib.sha256(embeddings.tobytes()).hexdigest(),
-    }
-    paths[1].write_text(json.dumps(manifest))
-
-    assert collect_embeddings._reuse_existing_episode(
-        paths, {k: manifest[k] for k in ("condition", "episode", "model", "n_inputs", "inputs_sha256", "requested")}
-    )
+    paths, expected, embeddings = _write_episode(tmp_path, "control", 3)
+    assert collect_embeddings._reuse_existing_episode(paths, expected)
 
     embeddings[0, 0] = 2.0
     np.savez_compressed(paths[0], embeddings=embeddings)
     with pytest.raises(RuntimeError, match="checksum mismatch"):
-        collect_embeddings._reuse_existing_episode(paths, {
-            k: manifest[k] for k in ("condition", "episode", "model", "n_inputs", "inputs_sha256", "requested")
-        })
+        collect_embeddings._reuse_existing_episode(paths, expected)
+
+
+def test_a_manifest_that_describes_a_different_run_is_not_reused(tmp_path):
+    """Same paths, different inputs: reuse would silently score stale data."""
+    paths, expected, _ = _write_episode(tmp_path, "control", 3)
+    with pytest.raises(RuntimeError, match="inputs_sha256"):
+        collect_embeddings._reuse_existing_episode(
+            paths, {**expected,
+                    "inputs_sha256": collect_embeddings._inputs_sha256(["c"])})
 
 
 def test_partial_existing_episode_fails_closed(tmp_path):
@@ -98,20 +116,7 @@ def test_reuse_publishes_so_a_retry_after_a_failed_upload_still_uploads(
     monkeypatch, tmp_path
 ):
     """Fail-closed publish is pointless if the retry path skips the upload."""
-    paths = collect_embeddings._episode_paths(tmp_path, "control", 6)
-    paths[0].parent.mkdir(parents=True, exist_ok=True)
-    embeddings = np.ones((2, 4), dtype=np.float32)
-    np.savez_compressed(paths[0], embeddings=embeddings)
-    manifest = {
-        "condition": "control",
-        "episode": 6,
-        "model": "m",
-        "n_inputs": 2,
-        "inputs_sha256": collect_embeddings._inputs_sha256(["a", "b"]),
-        "requested": {"dtype": "fp32", "tf32": False, "batch": 32, "threads": None},
-        "embeddings_sha256": hashlib.sha256(embeddings.tobytes()).hexdigest(),
-    }
-    paths[1].write_text(json.dumps(manifest))
+    _write_episode(tmp_path, "control", 6)
 
     uploaded = []
     monkeypatch.setattr(collect_embeddings.subprocess, "run",
