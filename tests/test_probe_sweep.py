@@ -79,6 +79,17 @@ def decide():
     return mod
 
 
+def _report(cells, near_null=("proc",), non_null=(), scored=None):
+    """A sweep report shaped the way run_sweep.describe_data writes one."""
+    if scored is None:
+        scored = sorted({c for cell in cells for c in cell["conditions"]})
+    return {"data": {"near_null_conditions": list(near_null),
+                     "non_null_interventions": list(non_null),
+                     "non_null_scored": [c for c in non_null if c in scored],
+                     "conditions": list(scored)},
+            "cells": cells}
+
+
 def _cell(conditions, n_bins=4, percentile=0.99):
     return {"operator": "semq_quant", "n_bins": n_bins, "percentile": percentile,
             "bits_per_coordinate": 3, "code_bytes": 144,
@@ -87,12 +98,9 @@ def _cell(conditions, n_bins=4, percentile=0.99):
 
 def test_a_missing_control_is_not_a_passed_control(decide, tmp_path, monkeypatch):
     """`all()` over an empty set is True, which would pass every cell."""
-    report = {
-        "data": {"near_null_conditions": ["proc", "threads1"],
-                 "non_null_interventions": []},
-        # the controls the rule names are absent from the scored conditions
-        "cells": [_cell({"int8": {"her": 0.0}})],
-    }
+    # the controls the rule names are absent from the scored conditions
+    report = _report([_cell({"int8": {"her": 0.0}})],
+                     near_null=("proc", "threads1"))
     monkeypatch.setattr(decide, "load_per_document", lambda *a, **k: {})
     out = decide.evaluate(report, tmp_path / "absent.npz")
     cell = out["cells"][0]
@@ -102,10 +110,7 @@ def test_a_missing_control_is_not_a_passed_control(decide, tmp_path, monkeypatch
 
 
 def test_a_disturbed_control_still_rejects_the_cell(decide, tmp_path, monkeypatch):
-    report = {
-        "data": {"near_null_conditions": ["proc"], "non_null_interventions": []},
-        "cells": [_cell({"proc": {"her": 0.999}})],
-    }
+    report = _report([_cell({"proc": {"her": 0.999}})])
     monkeypatch.setattr(decide, "load_per_document", lambda *a, **k: {})
     cell = decide.evaluate(report, tmp_path / "absent.npz")["cells"][0]
     assert cell["control_codes_intact"] is False
@@ -114,10 +119,7 @@ def test_a_disturbed_control_still_rejects_the_cell(decide, tmp_path, monkeypatc
 
 def test_two_absent_selections_are_not_two_readings_agreeing(decide, tmp_path,
                                                              monkeypatch):
-    report = {
-        "data": {"near_null_conditions": ["proc"], "non_null_interventions": []},
-        "cells": [_cell({"proc": {"her": 1.0}})],
-    }
+    report = _report([_cell({"proc": {"her": 1.0}})])
     monkeypatch.setattr(decide, "load_per_document", lambda *a, **k: {})
     out = decide.evaluate(report, tmp_path / "absent.npz")
     assert out["selection_under_any_intervention"] is None
@@ -153,3 +155,60 @@ def test_the_operator_comparison_is_paired_on_documents(decide):
 def test_a_paired_comparison_refuses_mismatched_documents(decide):
     with pytest.raises(ValueError, match="same documents"):
         decide.paired_difference([1, 2], [3, 4], [1], [3])
+
+
+def test_the_report_records_declared_roles_not_the_ones_that_showed_up(sweep,
+                                                                      tmp_path):
+    """A pruned role list makes "every declared intervention qualifies" vacuous.
+
+    run_sweep used to narrow both role lists to the conditions it found on
+    disk, so decide.py could not tell a satisfied intervention from an absent
+    one, and the control check it wrote was unreachable.
+    """
+    data = sweep.describe_data(tmp_path, "enc", ["proc", "int8"],
+                               dim=384, n_total=10, n_dev=6, n_reserved=4)
+    assert data["near_null_conditions"] == list(sweep.NEAR_NULL)
+    assert data["non_null_interventions"] == list(sweep.NON_NULL)
+    # bf16 was declared and never scored; both facts are on the record
+    assert "bf16" in data["non_null_interventions"]
+    assert data["non_null_scored"] == ["int8"]
+    assert "bf16" in data["conditions_missing"]
+
+
+def test_an_unscored_intervention_cannot_satisfy_the_all_reading(decide,
+                                                                 tmp_path,
+                                                                 monkeypatch):
+    """int8 qualifying is not both interventions qualifying when bf16 is absent."""
+    cell = _cell({"proc": {"her": 1.0}, "int8": {"her": 0.0}})
+    report = _report([cell], near_null=("proc",), non_null=("bf16", "int8"),
+                     scored=["proc", "int8"])
+    monkeypatch.setattr(decide, "load_per_document", lambda *a, **k: {
+        "multi_region": np.full(200, 40), "changed": np.full(200, 100),
+        "unbounded_changed": np.full(200, 5)})
+
+    out = decide.evaluate(report, tmp_path / "absent.npz")
+    scored_cell = out["cells"][0]
+    assert scored_cell["qualifying_interventions"] == ["int8"]
+    assert scored_cell["qualifies_any"] is True
+    assert scored_cell["missing_interventions"] == ["bf16"]
+    assert scored_cell["qualifies_all"] is False          # not 1 of 1
+    assert out["selection_under_all_interventions"] is None
+    assert out["declared_but_unscored"]["non_null"] == ["bf16"]
+
+
+def test_every_declared_intervention_present_and_qualifying_does_pass(decide,
+                                                                     tmp_path,
+                                                                     monkeypatch):
+    """The guard must not reject a grid that genuinely measured everything."""
+    cell = _cell({"proc": {"her": 1.0}, "bf16": {"her": 0.0},
+                  "int8": {"her": 0.0}})
+    report = _report([cell], near_null=("proc",), non_null=("bf16", "int8"))
+    monkeypatch.setattr(decide, "load_per_document", lambda *a, **k: {
+        "multi_region": np.full(200, 40), "changed": np.full(200, 100),
+        "unbounded_changed": np.full(200, 5)})
+
+    out = decide.evaluate(report, tmp_path / "absent.npz")
+    assert out["cells"][0]["missing_interventions"] == []
+    assert out["cells"][0]["qualifies_all"] is True
+    assert out["selection_under_all_interventions"] is not None
+    assert out["declared_but_unscored"] == {"near_null": [], "non_null": []}

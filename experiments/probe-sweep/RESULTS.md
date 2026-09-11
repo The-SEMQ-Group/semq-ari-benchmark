@@ -98,6 +98,12 @@ bound above zero.
   reaches the threshold at any cell, so no configuration resolves both
   declared interventions.
 
+Both declared interventions were scored in this run (`declared_but_unscored`
+is empty in `decision.json`), so the second line is a measurement and not an
+absence. A declared intervention that was never scored cannot satisfy that
+reading: the rule is evaluated against the roles as declared, not against
+whatever the cache happened to contain.
+
 The two readings disagree, which is why both are reported. Choosing between
 them now would be selecting on the outcome.
 
@@ -148,7 +154,7 @@ by `regime-discrimination`. 12 cells over 3,111 documents, about 5 seconds.
 | artifact | sha256 (first 16) | size |
 | --- | --- | ---: |
 | `results/sweep.per-document.npz` | `67d63705475ad1d6` | 170.2 KiB |
-| `results/decision.json` | `9335873c2ed78130` | 14.0 KiB |
+| `results/decision.json` | `91bb386c91bd3ec1` | 14.4 KiB |
 | `results/sweep.json` | varies, see below | 40.7 KiB |
 
 `sweep.json` records `encode_seconds` per cell, so it does not hash

@@ -41,8 +41,13 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   evidence comes from the fresh episodes in SEM-49.
 - `decide.py` evaluates the rule rather than describing it: declared condition
   roles, a declared 1% threshold, and 95% percentile bootstrap intervals
-  resampled over documents. Documents are not episodes. A missing near-null
-  condition counts as a missing control, not a passed one.
+  resampled over documents. Documents are not episodes.
+- The declared condition roles are recorded as declared, not narrowed to
+  whatever the cache contained. Narrowing them makes both halves of the rule
+  vacuous: "every declared intervention qualifies" is trivially true over a
+  pruned list, and the missing-control check becomes unreachable. A declared
+  condition that was never scored now fails the control check and blocks the
+  "all interventions" reading, and `decision.json` names the gap.
 - `run_matrix.py` gains `--limit` and an `ARI_ENCODER` override so the same
   conditions can be encoded for another dimension without re-running the full
   corpus. Committed results are unaffected.

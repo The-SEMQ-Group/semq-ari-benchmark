@@ -112,7 +112,8 @@ def compare_operators(report: dict, sidecar: Path) -> list[dict]:
 
     out = []
     for bits in sorted(set(quant) & set(uniform)):
-        for name in report["data"]["non_null_interventions"]:
+        for name in report["data"].get("non_null_scored",
+                                       report["data"]["non_null_interventions"]):
             a = load_per_document(sidecar, quant[bits], name)
             b = load_per_document(sidecar, uniform[bits], name)
             if "multi_region" not in a or "multi_region" not in b:
@@ -146,6 +147,12 @@ def evaluate(report: dict, sidecar: Path) -> dict:
         control_clean = (not missing_controls
                          and all(conds[c]["her"] == 1.0 for c in near_null))
 
+        # A declared intervention that was never scored is not a satisfied one.
+        # "every declared intervention qualifies" is trivially true over a list
+        # that was pruned to what happened to be on disk, which is why the
+        # roles arrive declared and the pruning is checked here.
+        missing_interventions = [c for c in non_null if c not in conds]
+
         per_intervention = {}
         for name in non_null:
             if name not in conds:
@@ -174,8 +181,11 @@ def evaluate(report: dict, sidecar: Path) -> dict:
             "missing_controls": missing_controls,
             "interventions": per_intervention,
             "qualifies_any": bool(qualifying),
-            "qualifies_all": len(qualifying) == len(per_intervention) and bool(qualifying),
+            "qualifies_all": (not missing_interventions
+                              and bool(qualifying)
+                              and len(qualifying) == len(per_intervention)),
             "qualifying_interventions": qualifying,
+            "missing_interventions": missing_interventions,
         })
 
     def smallest(key: str):
@@ -187,6 +197,10 @@ def evaluate(report: dict, sidecar: Path) -> dict:
         return {"n_bins": best["n_bins"], "percentile": best["percentile"],
                 "code_bytes": best["code_bytes"]}
 
+    unscored = {
+        "near_null": [c for c in near_null if c not in report["data"]["conditions"]],
+        "non_null": [c for c in non_null if c not in report["data"]["conditions"]],
+    }
     under_any, under_all = smallest("qualifies_any"), smallest("qualifies_all")
     # Two absent selections are not two readings agreeing on one.
     readings_agree = (under_any == under_all) if under_any is not None else None
@@ -204,6 +218,7 @@ def evaluate(report: dict, sidecar: Path) -> dict:
         "uncertainty_unit": report["data"].get("uncertainty_unit"),
         "documents_are_independent_episodes":
             report["data"].get("documents_are_independent_episodes"),
+        "declared_but_unscored": unscored,
         "cells": scored,
         "operator_comparison": compare_operators(report, sidecar),
         "selection_under_any_intervention": under_any,
@@ -233,6 +248,10 @@ def main() -> int:
     print(f"  under any intervention: {out['selection_under_any_intervention']}")
     print(f"  under all interventions: {out['selection_under_all_interventions']}")
     print(f"  readings agree: {out['readings_agree']}")
+    for role, names in out["declared_but_unscored"].items():
+        if names:
+            print(f"  WARNING: declared {role} conditions never scored: "
+                  f"{', '.join(names)}")
     for row in out["operator_comparison"]:
         d = row["quant_minus_uniform"]
         if d["point"] is not None:

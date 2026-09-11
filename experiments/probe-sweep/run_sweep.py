@@ -243,6 +243,37 @@ def load_per_document(sidecar: Path, cell_index: int, condition: str) -> dict:
                 if per_document_key(cell_index, condition, f) in archive}
 
 
+def describe_data(cache: Path, encoder: str, available: list[str], dim: int,
+                  n_total: int, n_dev: int, n_reserved: int) -> dict:
+    """The data block, including which declared roles were actually scored.
+
+    The declared roles are recorded as declared. Narrowing them to whatever
+    happened to be on disk is what would let a missing intervention read as a
+    satisfied one: a rule of the form "every declared intervention qualifies"
+    is trivially true over a list the reporter already pruned.
+    """
+    return {
+        "source": _relative_source(cache),
+        "encoder": encoder,
+        "dim": dim,
+        "n_documents_total": n_total,
+        "n_development": n_dev,
+        "n_reserved": n_reserved,
+        "split_rule": f"doc_index % {DEV_MODULUS} < {DEV_KEEP}",
+        "reserved_are_independent_episodes": False,
+        "conditions": available,
+        "conditions_missing": sorted(set(CONDITIONS) - set(available)),
+        # declared, not discovered
+        "near_null_conditions": list(NEAR_NULL),
+        "non_null_interventions": list(NON_NULL),
+        # discovered, so a reader can see the gap without recomputing it
+        "near_null_scored": [c for c in NEAR_NULL if c in available],
+        "non_null_scored": [c for c in NON_NULL if c in available],
+        "uncertainty_unit": "document",
+        "documents_are_independent_episodes": False,
+    }
+
+
 def _relative_source(cache: Path) -> str:
     """Repo-relative where possible; a cache outside the repo keeps its path."""
     try:
@@ -262,7 +293,6 @@ def main() -> int:
     cache = Path(a.cache).resolve()
 
     available = [c for c in CONDITIONS if (cache / f"{c}.npz").exists()]
-    missing = sorted(set(CONDITIONS) - set(available))
     ref_all = load_docs(cache, REFERENCE)
     dev, reserved = split_development(ref_all.shape[0])
     ref = np.ascontiguousarray(ref_all[dev])
@@ -279,22 +309,9 @@ def main() -> int:
 
     report = {
         "preregistration": "PREREGISTRATION.md",
-        "data": {
-            "source": _relative_source(cache),
-            "encoder": a.encoder,
-            "dim": int(ref.shape[1]),
-            "n_documents_total": int(ref_all.shape[0]),
-            "n_development": int(dev.size),
-            "n_reserved": int(reserved.size),
-            "split_rule": f"doc_index % {DEV_MODULUS} < {DEV_KEEP}",
-            "reserved_are_independent_episodes": False,
-            "conditions": available,
-            "conditions_missing": missing,
-            "near_null_conditions": [c for c in NEAR_NULL if c in available],
-            "non_null_interventions": [c for c in NON_NULL if c in available],
-            "uncertainty_unit": "document",
-            "documents_are_independent_episodes": False,
-        },
+        "data": describe_data(cache, a.encoder, available, int(ref.shape[1]),
+                              int(ref_all.shape[0]), int(dev.size),
+                              int(reserved.size)),
         "environment": {
             "semq": sdk_version(),
             "python": platform.python_version(),
