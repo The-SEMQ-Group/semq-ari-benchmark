@@ -6,6 +6,33 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Probe sweep: the decision rule, and what it selected
+- `decide.py` evaluates the rule rather than describing it: declared condition
+  roles, a declared 1% threshold, and 95% percentile bootstrap intervals
+  resampled over documents. Documents are not episodes. A declared condition
+  that was never scored fails the control check and blocks the
+  "all interventions" reading, and `decision.json` names the gap.
+- The 1% threshold is a screen, and says so. It is applied to the point
+  estimate while the interval only has to exclude zero, so a qualifying cell
+  has not been shown to have a true share at or above 1%. Applying the
+  threshold to the interval's lower end instead is reported alongside as
+  `qualifies_strict`; on this data it selects the same cell.
+- Against ordinary uniform scalar quantization, QUANT has no consistent
+  advantage. Paired over the same documents, the difference in int8
+  multi-region share excludes zero at every width and reverses sign: QUANT
+  resolves more at two and three bits (+0.02 pp, +0.46 pp), uniform more at
+  four (−1.65 pp). The intervals cover corpus sampling within one run, not
+  run-to-run variation. The case for a configuration is not a case for the
+  operator.
+- **No configuration is frozen.** The rule selects `n_bins = 4` at percentile
+  0.999 under the "any intervention" reading and nothing at all under "all
+  interventions", because bf16 never reaches the threshold. The 0.999
+  selection is the tie-break defect the preregistration records in advance:
+  ties break on saturation, which is in tension with resolution, so the rule
+  lands on the widest scale and least sensitive qualifying cell. Freezing on
+  this output would freeze the defect with it. Confirmatory evidence comes
+  from the fresh episodes in SEM-49.
+
 ### Probe sweep: the grid, and what it measures
 - `experiments/probe-sweep/` scores `n_bins` 2, 4 and 8 across three
   calibration percentiles on 3,111 development documents of SciFact encoded by
