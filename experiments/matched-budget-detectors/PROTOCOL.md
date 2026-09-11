@@ -1,19 +1,24 @@
-# Matched-budget detector study — frozen protocol
+# Matched-budget detector study — frozen protocol v2
 
-**Status: frozen 2026-09-09, before any confirmatory evaluation.**
+**Status: frozen 2026-09-11, before any confirmatory collection.**
+Supersedes v1, used for the pilot and retained at commit `57d91e7`:
+
+    git show 57d91e7:experiments/matched-budget-detectors/PROTOCOL.md
+
+Section numbering is unchanged for `run_pilot.py`; new sections are §2.1,
+§3.1, §4.1 and §8. See the CHANGELOG for details.
+
+**Original v1 status line:**
 Repository commit at freeze: `a961b3516b58` (branch `research/ari-review-response`).
 
-Addresses major concern 1 of the paper review: does ARI provide a useful
-detection / storage / runtime / verification tradeoff against simpler
-measurements? A negative result is an acceptable outcome and this document is
-written so that it can be reported as one.
+Evaluates ARI's detection, storage, runtime and verification tradeoffs against
+simpler measurements. Negative results are valid outcomes.
 
 ---
 
 ## 0. Audit findings that constrain the design
 
-Established before writing anything below. Each changes what the study can
-claim, so they are recorded first.
+These findings constrain the study's claims.
 
 ### 0.1 The existing cache is TinyLlama-1.1B on CPU
 
@@ -21,28 +26,20 @@ claim, so they are recorded first.
 (`reference`, `proc`, `threads1`, `batched`, `bf16`, `int8`), each
 `logits (539, 32000) float32` over 12 prompts.
 
-Vocabulary 32,000 identifies the model by elimination: Llama-3.1-8B is 128,256,
-Mistral-7B-v0.3 is 32,768, Qwen2.5 is about 152k. Only
-`TinyLlama/TinyLlama-1.1B-Chat-v1.0` matches, and `decoding_matrix.json` is the
-sole `device: cpu` run, names TinyLlama, and reports the same 12 prompts. The
-539 steps decompose as 11x48 + 1x11.
+The 32,000-token vocabulary and `decoding_matrix.json` identify this as
+`TinyLlama/TinyLlama-1.1B-Chat-v1.0` on CPU. The cache contains 539 steps
+(11×48 + 1×11) over 12 prompts.
 
-**Consequence.** The Appendix I baseline comparisons were computed on a 1.1B
-CPU model, not on any decoder the paper reports. Nothing derived from this
-cache may be presented as a property of the paper's decoders.
+**Consequence.** Appendix I baselines are TinyLlama CPU results, not results for
+the paper's reported decoders.
 
 ### 0.2 The cache is unreadable by its own loader, and unlabelled
 
-`baselines.py::_cache()` delegates to `run_matrix.cache_dir()`, which resolves
-`results/cache/<fingerprint>/`. The files on disk are flat, with no fingerprint
-directory and no manifest, although `write_cache_manifest()` exists for exactly
-that purpose. Provenance above was recovered by elimination, not read from the
-artifacts.
+`baselines.py::_cache()` expects `results/cache/<fingerprint>/`, but the files
+are flat and lack a manifest. Their provenance was reconstructed from metadata.
 
-**Consequence.** These arrays are usable for implementation testing and
-synthetic diagnostics only. They are not admissible evidence for a
-confirmatory result, and this study writes its own manifest for everything it
-collects.
+**Consequence.** Use these arrays only for implementation tests and synthetic
+diagnostics. Confirmatory collection must write a manifest.
 
 ### 0.3 There are two probes, not one
 
@@ -51,10 +48,8 @@ collects.
 | embedding probe | 2 | 2 | paper §2 and Appendix A |
 | logit probe | 8 | 4 | `baselines.py:75`, `run_matrix.py:63`, published Llama artifact |
 
-Different probes for embeddings and logits are defensible. Presenting them as
-one declared probe is not. This study specifies them separately throughout and
-never quotes a storage number from one against a detection number from the
-other.
+The probes are specified and reported separately; storage and detection results
+are never combined across probes.
 
 ### 0.4 The published ARI score compares packed bytes, not symbols
 
@@ -68,9 +63,8 @@ one coordinate of 4096 gives a byte rate of 0.000488 against a true coordinate
 rate of 0.000244: **2x overstatement**, the coordinates-per-byte factor, which
 would be 4x at 2 bits/dim. The effect saturates as changes become dense.
 
-**Consequence.** The published ARI score is not on the same footing as the
-coordinate-wise baselines it is compared against. This study scores three
-distinct quantities and never conflates them:
+**Consequence.** The published ARI score is not coordinate-wise comparable.
+Report these quantities separately:
 
 - `ari_code_hamming` — bit Hamming distance over unpacked code bits
 - `ari_symbol_mismatch` — fraction of coordinates whose decoded symbol changed
@@ -80,21 +74,17 @@ distinct quantities and never conflates them:
 
 ## 1. Two questions, kept separate
 
-**Q1 — exact representation change.** Any difference in a declared canonical
-vector is a positive. Identical arrays are a serialization control. Raw-vector
-SHA-256 is a valid and strong baseline here, and is expected to be optimal by
-construction: it detects every change and nothing else.
+**Q1 — exact representation change.** Any difference in a canonical vector is a
+positive; identical arrays are serialization controls. SHA-256 is the exact
+equality baseline.
 
 **Q2 — condition-change monitoring.** Detect a declared serving intervention
-beyond the variation of repeated runs under a fixed nominal configuration.
-Same-configuration repeats define the operational null even when their vectors
-differ. Tolerating baseline variability is not a claim that such variability is
-absent or harmless.
+against repeated-run variation under a fixed nominal configuration. This null
+does not imply that baseline variation is harmless.
 
-Neither target establishes functional harm. ARI disagreement is never used to
-define ground-truth positives; positives are defined by the declared
-intervention. Interventions that produce no measured vector change are reported
-separately, alongside both results.
+Neither question establishes functional harm. Positives are defined by the
+declared intervention, not ARI disagreement; interventions with no measured
+change are reported separately.
 
 ## 2. Alarm unit and splitting
 
@@ -113,34 +103,69 @@ no prompt, prefix, reference or episode. Three disjoint roles:
 Resampling is grouped by prompt and by episode. Reused reference pairs are not
 independent and are resampled as blocks.
 
+**Episode:** one complete collection of the frozen input set under one
+configuration, run in its own process and recorded in its own manifest. Episodes
+must differ in process and wall-clock time. Inputs within an episode are not
+independent run-to-run trials.
+
+### 2.1 Deployment alarm policy, declared separately
+
+The per-input unit asks whether an embedding changed; the deployment unit asks
+whether the aggregate rate exceeded a threshold. On the cached SciFact panel:
+
+| | per input | per deployment |
+| --- | --- | --- |
+| raw SHA-256 false-alarm rate | ~0.45% | **50%** (fires on 2 of 4) |
+| canonical code false-alarm rate | 0% | 0% |
+
+**A deployment alarm fires when the per-input alarm rate over the frozen input
+set exceeds a threshold calibrated on control episodes. A per-input byte change
+is not itself a deployment failure.
+
+Both units are reported for every method. Neither is presented alone.
+
 ## 3. Error rates and sizing
 
 Primary nominal FPR **5%**. Secondary **1%**, reported only where the effective
 sample size supports it.
 
-Prospective calculation over prompt-level controls, Clopper-Pearson:
+Sizing is set by what zero alarms in N independent control **episodes** can
+establish. The one-sided 95% upper bound is `1 - 0.05^(1/N)`:
 
-| n controls | finest achievable FPR | 0 alarms gives 95% upper | TPR CI half-width at 0.90 |
-| --- | --- | --- | --- |
-| 12 (existing cache) | 0.0833 | 0.2646 | 0.170 |
-| 50 | 0.0200 | 0.0711 | 0.083 |
-| 100 | 0.0100 | 0.0362 | 0.059 |
-| 200 | 0.0050 | 0.0183 | 0.042 |
+| N control episodes | 0 alarms gives 95% upper bound |
+| ---: | ---: |
+| 12 | 22.1% |
+| 200 | **1.49%** |
+| 299 | **1.00%** |
+| 2,995 | 0.10% |
 
-**The existing 12 prompts cannot support a 5% claim**: their finest achievable
-FPR is 8.3%, and a flawless control run bounds the FPR only below 26%. This is
-why the cache is pilot data.
+v1 quoted a two-sided interval. This protocol uses the one-sided bound; 200
+controls do not support a 1% claim, while 299 do when zero alarms occur.
 
-**Collection target: 200 control episodes and 200 per intervention at the
-prompt level**, which supports the primary 5% with a TPR half-width near 0.04
-and makes the secondary 1% reportable.
+**Collection target: 300 control episodes and 300 per intervention**, which
+establishes a sub-1% upper bound only when zero control alarms are observed.
+Any nonzero alarm count is reported with its corresponding wider interval.
+
+The existing 12 prompts bound the rate only below 22.1%, which is why that
+cache is pilot data and is never pooled with confirmatory episodes.
 
 Thresholds on discrete scores are set at the conservative side of a tie: the
 smallest threshold whose achieved control alarm rate does not exceed nominal.
 Achieved held-out FPR is reported with an interval, never asserted as exactly
-matched. If controls are bit-identical the null is degenerate; that is reported
-as a limit on discrimination among methods rather than papered over with
-injected noise.
+matched.
+
+### 3.1 The null is expected to be degenerate
+
+The canonical code gives **zero** alarms across every cached benign condition.
+With this degenerate null, no threshold realizes a nominal nonzero FPR.
+
+Therefore:
+
+1. A method whose controls are alarm-free is reported at its **achieved** FPR
+   of zero with the one-sided upper bound its episode count supports, never at
+   a nominal rate it cannot realise.
+2. Separate methods on **sensitivity at zero achieved false alarms**.
+3. Report ties among alarm-free methods as ties; do not inject control noise.
 
 ## 4. Methods compared
 
@@ -157,10 +182,43 @@ or uniform scalar quantization at bit budgets matched to ARI. Canonical bytes
 fix dtype, little-endian byte order, C-contiguous shape, negative zero
 normalized to positive zero, and NaN rejected rather than hashed.
 
+**Budget-matched block hashes** — the vector split into B contiguous blocks,
+each hashed and truncated so that B digests occupy the same bytes as the code
+they are compared against. This is the baseline that answers "a hash, but
+given the same storage and therefore able to localise too", and without it the
+comparison hands ARI localisation for free.
+
+The block-hash layout is serialized as two little-endian uint32 values
+(`n_blocks`, `digest_bytes`) and therefore costs the declared 8 shared bytes;
+the vector dimension, dtype, canonical byte format, and SHA-256 algorithm are
+fixed by this protocol and are not per-example metadata.
+
+**A float16 reference** — not budget-matched, and deliberately so. It is the
+larger-storage accuracy anchor: what a monitor gets for 2 bytes per coordinate
+instead of a fraction of one. It bounds how much the compressed methods give
+up.
+
 **Logit-only** — top-2 margin change, argmax token change, top-k set change,
 and KL and JS computed in float64 log-space, validated against a
 high-precision oracle on tiny perturbations, identical inputs and extreme
 logits. These are not dismissed for float32 cancellation observed elsewhere.
+
+KL and JS take logits; `kl_from_logits` and `js_from_logits` apply softmax
+internally. Do not apply them to embeddings: the float-array type cannot be
+checked at runtime, so the function name carries the precondition. Support and
+zero handling are specified in the implementation and tested against the
+oracle.
+
+### 4.1 Every comparison stays inside one probe
+
+Methods are compared **within each probe**; no result crosses probes:
+
+| probe | methods compared |
+| --- | --- |
+| embedding (`n_bins=2`) | ARI family, vector distances, equality and block hashes, uniform scalar quantization, sketch, float16 anchor |
+| logit (`n_bins=8`) | all of the above, plus `kl_from_logits`, `js_from_logits`, top-2 margin, token flip, top-k set change |
+
+Each probe has its own comparison family for the correction in §8.
 
 **Sketch** — seeded Gaussian random projection; its seed and projection
 metadata count toward its storage budget.
@@ -170,32 +228,50 @@ per method in `scorers.py` and asserted in tests.
 
 ## 5. Storage accounting
 
-Actual serialized bytes, partial bytes rounded up, plus scale, threshold, seed,
-codebook and manifest metadata. Per-example and amortized shared state are
-reported separately. Theoretical packed size is never reported as implemented
-size. One float32 top-2 margin is included as a storage option, since storing
-one scalar is a legitimate competitor to storing two logits.
+Charge actual serialized bytes, rounding partial bytes up, including scale,
+threshold, seed, codebook and manifest metadata. Report per-example and
+amortized shared state separately; do not report theoretical packed size as
+implemented size. Include a one-float32 top-2 margin as a storage baseline.
 
 ## 6. Verification
 
-The *same frozen vectors* are scored on local CPU and on the p5 CPU and GPU.
-Re-running inference on another platform tests something else and is not
-substituted for this. Reported: bit-exact agreement of codes and hashes,
-floating score error against declared tolerances, and agreement of the alarm
-decision. Fixtures include threshold-adjacent and quantization-boundary cases.
+Score the *same frozen vectors* on local CPU and p5 CPU/GPU; this tests the
+implementation, not cross-platform inference. Report bit-exact code/hash
+agreement, floating-score error against declared tolerances, and alarm-decision
+agreement. Include threshold-adjacent and quantization-boundary fixtures.
 Unsupported combinations are marked unmeasured rather than inferred.
 
-Signature checking and independent recomputation from raw vectors are reported
-separately, with bytes transferred and dependency cost for each. Simpler
-baselines get the same integrity mechanism and tolerance options as ARI.
+Report signature checking and independent recomputation separately, including
+bytes transferred and dependency cost. Apply the same integrity and tolerance
+options to simpler baselines.
 
 ## 7. Decision rule
 
-An ARI advantage is reported only where held-out results support it at
-comparable achieved FPR and comparable budget, with its scope stated. Equal
-detection at lower cost is a useful result. Inferiority, or no clear
-separation, is an equally valid outcome and is reported without hedging.
+Report an ARI advantage only when held-out results support it at comparable
+achieved FPR and budget, with scope stated. Equal detection at lower cost,
+inferiority and no separation are valid outcomes. Do not claim early warning,
+capability damage or index-rebuild requirements without operational validation.
 
-Nothing here is described as early warning or as a capability-damage detector.
-That would need a separate operational validation which this study does not
-perform.
+## 8. Analysis, fixed before collection
+
+**Multiple comparisons.** Families are per probe (§4.1). Holm–Bonferroni is
+applied within each primary family of scorers versus ARI at the declared alarm
+policy; uncorrected p-values are also reported. Other comparisons are
+exploratory, and probe families are never pooled.
+
+**Paired testing.** All scorers see identical episodes. Test comparisons are
+paired and resampled by episode, never by input. Input-level intervals describe
+corpus sampling only.
+
+**Power and stopping.** Stop at the declared 300 control and 300 intervention
+episodes, or earlier only for a recorded collection failure. Do not inspect
+detection performance interim. Report any shortfall and its resulting bounds.
+
+**Exclusions.** Exclude episodes only for recorded collection faults (failed
+upload, scorer error or manifest mismatch), never for their scores. List every
+exclusion and report analyses with and without them.
+
+**Permitted claim.** With the expected degenerate null (§3.1), compare
+sensitivity at zero achieved false alarms and equal retained bytes on declared
+interventions. Do not claim early warning, functional harm or index-rebuild
+requirements.

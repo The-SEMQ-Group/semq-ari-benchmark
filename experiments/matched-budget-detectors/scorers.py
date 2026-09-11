@@ -98,6 +98,58 @@ def cosine_distance(r, c):
 # --------------------------------------------------------------------------
 
 
+def block_hash_rows(x: np.ndarray, n_blocks: int, digest_bytes: int,
+                    dtype: str = "float32") -> np.ndarray:
+    """Truncated SHA-256 per contiguous block, one row of digests per vector.
+
+    The budget-matched answer to "a hash, but able to localise". Splitting a
+    vector into blocks and truncating each digest to ``digest_bytes`` spends
+    the same storage a code would and buys block-level location with it.
+    Without this baseline the comparison hands localisation to the code for
+    free.
+
+    Truncation is a real weakening: a ``digest_bytes``-byte digest collides at
+    roughly ``2**(-8 * digest_bytes)`` per block, which the caller accounts for
+    rather than ignores.
+    """
+    if n_blocks < 1:
+        raise ValueError(f"n_blocks must be at least 1, got {n_blocks}")
+    if not 1 <= digest_bytes <= 32:
+        raise ValueError(f"digest_bytes must be in [1, 32], got {digest_bytes}")
+    rows = np.atleast_2d(x)
+    if n_blocks > rows.shape[1]:
+        raise ValueError(
+            f"n_blocks ({n_blocks}) cannot exceed vector dimension ({rows.shape[1]})"
+        )
+    bounds = np.linspace(0, rows.shape[1], n_blocks + 1).astype(int)
+    out = np.empty((rows.shape[0], n_blocks, digest_bytes), dtype=np.uint8)
+    for i, row in enumerate(rows):
+        for b, (lo, hi) in enumerate(zip(bounds, bounds[1:])):
+            digest = hashlib.sha256(canonical_bytes(row[lo:hi], dtype)).digest()
+            out[i, b] = np.frombuffer(digest[:digest_bytes], dtype=np.uint8)
+    return out
+
+
+def block_hash_mismatch(r: np.ndarray, c: np.ndarray, n_blocks: int,
+                        digest_bytes: int) -> np.ndarray:
+    """Fraction of blocks whose digest differs, per vector."""
+    a = block_hash_rows(r, n_blocks, digest_bytes)
+    b = block_hash_rows(c, n_blocks, digest_bytes)
+    return (a != b).any(axis=2).mean(axis=1)
+
+
+def float16_roundtrip_delta(r: np.ndarray, c: np.ndarray) -> np.ndarray:
+    """Max absolute difference after a float16 round trip, per vector.
+
+    The larger-storage accuracy anchor: two bytes per coordinate, against a
+    fraction of one for the compressed methods. Not budget-matched, and bounds
+    what the compressed methods give up.
+    """
+    a = np.asarray(r, dtype=np.float16).astype(np.float64)
+    b = np.asarray(c, dtype=np.float16).astype(np.float64)
+    return np.abs(b - a).max(axis=-1)
+
+
 def _log_softmax64(x: np.ndarray) -> np.ndarray:
     x = np.asarray(x, dtype=np.float64)
     m = x.max(axis=-1, keepdims=True)
@@ -105,18 +157,31 @@ def _log_softmax64(x: np.ndarray) -> np.ndarray:
     return z - np.log(np.exp(z).sum(axis=-1, keepdims=True))
 
 
-def kl_div(r, c):
-    """KL(P_r || P_c) in nats, float64 log-space.
+def kl_from_logits(r, c):
+    """KL(P_r || P_c) in nats, float64 log-space, from **logits**.
 
-    Nonnegative by construction up to rounding; a negative value here would
-    indicate a numerical fault rather than a property of the statistic.
+    Named for its input because nothing at runtime distinguishes a logit
+    vector from an embedding: both are float arrays, so a guard cannot
+    catch the misuse and the name has to. The softmax below turns a row
+    into a distribution over a vocabulary, which is what logits are. An
+    embedding coordinate is not an unnormalised log-probability of
+    anything, so softmaxing one produces a number with no meaning rather
+    than a worse estimate of a real quantity.
+
+    Nonnegative by construction up to rounding; a negative value here
+    would indicate a numerical fault rather than a property of the
+    statistic.
     """
     lr, lc = _log_softmax64(r), _log_softmax64(c)
     return (np.exp(lr) * (lr - lc)).sum(axis=-1)
 
 
-def js_div(r, c):
-    """Jensen-Shannon divergence in nats, via a log-space mixture."""
+def js_from_logits(r, c):
+    """Jensen-Shannon divergence in nats from **logits**, log-space mixture.
+
+    Same precondition as :func:`kl_from_logits`, and carried in the name
+    for the same reason.
+    """
     lr, lc = _log_softmax64(r), _log_softmax64(c)
     lm = np.logaddexp(lr, lc) - math.log(2.0)
     return 0.5 * (np.exp(lr) * (lr - lm)).sum(-1) + 0.5 * (np.exp(lc) * (lc - lm)).sum(-1)
@@ -200,6 +265,19 @@ def budget_uniform_quant(dim: int, bits_per_dim: int) -> Budget:
 
 def budget_margin_fp32() -> Budget:
     return Budget(4, 0, "one float32 top-2 margin")
+
+
+def budget_block_hash(n_blocks: int, digest_bytes: int) -> Budget:
+    if n_blocks < 1:
+        raise ValueError(f"n_blocks must be at least 1, got {n_blocks}")
+    if not 1 <= digest_bytes <= 32:
+        raise ValueError(f"digest_bytes must be in [1, 32], got {digest_bytes}")
+    return Budget(n_blocks * digest_bytes, 8,
+                  f"{n_blocks} x {digest_bytes}-byte truncated digests + 2 uint32 layout")
+
+
+def budget_float16(dim: int) -> Budget:
+    return Budget(dim * 2, 0, "float16 reference vector")
 
 
 def budget_projection(k: int) -> Budget:
