@@ -30,3 +30,9 @@ experiments/decoding-reproducibility/results/cache/
 infra/.last-instance
 experiments/harness-effect/results/attestation-repo/
 experiments/*/results/attestation-repo/
+
+# Local and generated documentation/build artifacts
+*.log
+.Rhistory
+*.synctex.gz
+.DS_Store
