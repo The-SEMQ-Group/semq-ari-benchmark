@@ -39,6 +39,25 @@ CONDITIONS = {
 }
 
 
+def publish_files(paths: tuple[Path, ...], destination: str, region: str) -> None:
+    """Upload an episode's artifacts, failing if any upload is not durable."""
+    failures = []
+    for path in paths:
+        cmd = ["aws", "s3", "cp", str(path), f"{destination}/{path.name}",
+               "--region", region, "--only-show-errors"]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True,
+                                    timeout=600)
+        except Exception as exc:
+            failures.append(f"{path.name}: {exc}")
+            continue
+        if result.returncode:
+            detail = (result.stderr or result.stdout or "").strip()
+            failures.append(f"{path.name}: {detail[:200]}")
+    if failures:
+        raise RuntimeError("episode publication failed: " + "; ".join(failures))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--condition", required=True, choices=sorted(CONDITIONS))
@@ -128,16 +147,8 @@ def main() -> int:
     # 2026-09-09 because the driver wrote only to local disk.
     if a.publish_s3:
         dest = a.publish_s3.rstrip("/") + f"/{a.condition}"
-        for path in (stem.with_suffix(".npz"), stem.with_suffix(".json")):
-            cmd = ["aws", "s3", "cp", str(path), f"{dest}/{path.name}",
-                   "--region", a.publish_region, "--only-show-errors"]
-            try:
-                r = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-                if r.returncode:
-                    print(f"  WARNING: publish {path.name} failed: "
-                          f"{(r.stderr or '').strip()[:200]}", flush=True)
-            except Exception as e:  # an upload failure must not lose the episode
-                print(f"  WARNING: publish {path.name} errored: {e}", flush=True)
+        publish_files((stem.with_suffix(".npz"), stem.with_suffix(".json")),
+                      dest, a.publish_region)
     print(f"{a.condition} ep{a.episode}: {emb.shape} sha={manifest['embeddings_sha256'][:12]} "
           f"tf32={manifest['effective']['matmul_tf32']} dtype={manifest['effective']['param_dtype']} "
           f"{encode_s:.1f}s", flush=True)
