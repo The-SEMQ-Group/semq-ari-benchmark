@@ -1,9 +1,14 @@
 # Matched-budget detector study — frozen protocol v2
 
 **Status: frozen 2026-09-11, before any confirmatory collection.**
-Supersedes [PROTOCOL-v1.md](PROTOCOL-v1.md), which the pilot in `results/`
-was scored under. Section numbering is unchanged so existing citations in
-`run_pilot.py` still resolve; §2.1, §3.1 and §8 are new.
+Supersedes v1, which the pilot in `results/` was scored under and which git
+holds at commit `57d91e7`:
+
+    git show 57d91e7:experiments/matched-budget-detectors/PROTOCOL.md
+
+Section numbering is unchanged so existing citations in `run_pilot.py` still
+resolve; §2.1, §3.1, §4.1 and §8 are new. The CHANGELOG records what changed
+and why.
 
 **Original v1 status line:**
 Repository commit at freeze: `a961b3516b58` (branch `research/ari-review-response`).

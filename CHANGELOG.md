@@ -7,9 +7,9 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 ## [Unreleased]
 
 ### Matched-budget protocol v2
-- `experiments/matched-budget-detectors/PROTOCOL.md` is reissued as v2, with
-  v1 kept unedited as `PROTOCOL-v1.md` since the committed pilot was scored
-  under it. Section numbering is unchanged so existing citations resolve.
+- `experiments/matched-budget-detectors/PROTOCOL.md` is reissued as v2.
+  The committed pilot was scored under v1, which git holds at commit
+  `57d91e7`. Section numbering is unchanged so existing citations resolve.
 - **The deployment alarm policy is declared, because the definition moves the
   answer more than any experimental choice does.** Measured on the cached
   panel, a raw-vector SHA-256 false-alarms on about 0.45% of inputs under
