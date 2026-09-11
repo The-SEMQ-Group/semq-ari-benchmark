@@ -6,6 +6,34 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Probe sweep: a configuration decision, and a null result beside it
+- `experiments/probe-sweep/` compares `n_bins` 2, 4 and 8 across three
+  calibration percentiles on 3,111 development documents of SciFact encoded by
+  `all-MiniLM-L6-v2`, under six real serving conditions. Grid and decision rule
+  frozen before any cell was scored.
+- **The Gaussian saturation prediction holds on real embeddings**: 19.6% /
+  5.3% / 2.4% measured against 19.8% / 5.3% / 2.4% predicted, and the nominal
+  outermost edge agreed with the encoder-derived boundary to five decimals.
+  Storage is not proportional to bin count — 96, 144 and 192 bytes at dim 384.
+- **Upper and lower bounds respond differently.** More bins cut the unbounded
+  share of changed coordinates from ~50% to ~2.6%. They buy no lower bound at
+  all for bf16, which produces zero multi-region moves at every bin count
+  tested; only int8, a far coarser change, gains them.
+- The cost is HER saturation: bf16's exact-code agreement falls 0.1016 →
+  0.0077 → 0.0000, so at eight bins the metric no longer separates bf16 from
+  int8. The four near-null conditions leave every code intact throughout.
+- **Against ordinary uniform scalar quantization, QUANT has no consistent
+  advantage.** Paired over the same documents, the difference in int8
+  multi-region share excludes zero at every width and reverses sign: QUANT
+  resolves more at two and three bits, uniform more at four. The effects are
+  small (0.46 and 1.65 percentage points) and the intervals cover corpus
+  sampling within one run, not run-to-run variation. The case for a
+  configuration is not a case for the operator.
+- Decision: freeze `n_bins = 4` at percentile 0.99, pending confirmatory
+  evidence. The preregistered rule's literal reading was satisfied by
+  `n_bins = 2` on 66 coordinates out of 246,058; the rule is recorded as
+  written rather than retrofitted, and the defect is noted.
+
 ### Bound quality reported beside the bounds
 - Having a bound is not the same as knowing something. `ari.bound_quality`
   reports the strictly-positive lower-bound count, the finite and unbounded
