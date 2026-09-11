@@ -39,6 +39,42 @@ CONDITIONS = {
 }
 
 
+def _episode_paths(root: Path, condition: str, episode: int) -> tuple[Path, Path]:
+    stem = root / condition / f"ep{episode:03d}"
+    return stem.with_suffix(".npz"), stem.with_suffix(".json")
+
+
+def _inputs_sha256(texts: list[str]) -> str:
+    return hashlib.sha256("\n".join(texts).encode()).hexdigest()
+
+
+def _reuse_existing_episode(paths: tuple[Path, Path], expected: dict) -> bool:
+    """Validate and reuse a complete episode; reject partial/corrupt output."""
+    data_path, manifest_path = paths
+    present = [path.exists() for path in paths]
+    if not any(present):
+        return False
+    if not all(present):
+        raise RuntimeError(f"incomplete episode artifacts: {data_path} / {manifest_path}")
+
+    try:
+        manifest = json.loads(manifest_path.read_text())
+        for key, value in expected.items():
+            if manifest.get(key) != value:
+                raise RuntimeError(
+                    f"existing episode mismatch for {key}: "
+                    f"{manifest.get(key)!r} != {value!r}"
+                )
+        with np.load(data_path, allow_pickle=False) as archive:
+            embeddings = np.ascontiguousarray(archive["embeddings"], dtype=np.float32)
+        digest = hashlib.sha256(embeddings.tobytes()).hexdigest()
+        if manifest.get("embeddings_sha256") != digest:
+            raise RuntimeError("existing episode checksum mismatch")
+    except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"invalid existing episode artifacts: {exc}") from exc
+    return True
+
+
 def publish_files(paths: tuple[Path, ...], destination: str, region: str) -> None:
     """Upload an episode's artifacts, failing if any upload is not durable."""
     failures = []
@@ -73,15 +109,6 @@ def main() -> int:
     a = ap.parse_args()
 
     dtype_name, tf32, batch, threads = CONDITIONS[a.condition]
-
-    import torch
-    if threads is not None:
-        torch.set_num_threads(threads)
-    torch.backends.cuda.matmul.allow_tf32 = tf32
-    torch.backends.cudnn.allow_tf32 = tf32
-
-    from sentence_transformers import SentenceTransformer
-
     texts = []
     with open(a.inputs) as fh:
         for line in fh:
@@ -91,6 +118,28 @@ def main() -> int:
             texts.append(rec.get("text") or rec.get("input") or "")
             if len(texts) >= a.n:
                 break
+
+    data_path, manifest_path = _episode_paths(Path(a.out), a.condition, a.episode)
+    expected = {
+        "condition": a.condition,
+        "episode": a.episode,
+        "model": a.model,
+        "n_inputs": len(texts),
+        "inputs_sha256": _inputs_sha256(texts),
+    }
+    if _reuse_existing_episode((data_path, manifest_path), expected):
+        print(f"{a.condition} ep{a.episode}: existing validated artifacts reused",
+              flush=True)
+        return 0
+
+    import torch
+    if threads is not None:
+        torch.set_num_threads(threads)
+    torch.backends.cuda.matmul.allow_tf32 = tf32
+    torch.backends.cudnn.allow_tf32 = tf32
+
+    from sentence_transformers import SentenceTransformer
+
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer(a.model, device=dev)
@@ -130,7 +179,7 @@ def main() -> int:
         },
         "encode_seconds": round(encode_s, 3),
         "embeddings_sha256": hashlib.sha256(emb.tobytes()).hexdigest(),
-        "inputs_sha256": hashlib.sha256("\n".join(texts).encode()).hexdigest(),
+        "inputs_sha256": _inputs_sha256(texts),
         "torch": torch.__version__,
         "python": platform.python_version(),
         "pid": os.getpid(),
