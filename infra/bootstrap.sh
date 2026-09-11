@@ -33,7 +33,35 @@ sudo -u ubuntu $VP/pip install -q --upgrade pip wheel
 # The Deep Learning AMI ships a CUDA driver; install a matching torch wheel.
 sudo -u ubuntu $VP/pip install -q torch --index-url https://download.pytorch.org/whl/cu121
 sudo -u ubuntu $VP/pip install -q \
-  transformers sentence-transformers datasets scikit-learn accelerate semq peft
+  transformers sentence-transformers datasets scikit-learn accelerate peft einops
+
+# semq carries the QBIN probe, and ari/probe.py imports it to compute codes, so
+# an experiment that needs codes cannot run without it. It resolves from
+# CodeArtifact, never from PyPI, which needs an auth step. Without the login
+# below pip reports "No matching distribution found for semq". Because pip
+# fails a whole install command when one requirement is unresolvable, semq used
+# to take transformers down with it, and this script has no `set -e`, so the
+# box reached the GPU with no transformers and still logged "bootstrap
+# complete". Keep semq on its own line whatever happens to the login.
+CA_DOMAIN=semq
+CA_REPO=semq-sdk
+CA_REGION=us-east-2
+CA_OWNER=127348475353
+if CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" \
+      --domain-owner "$CA_OWNER" --region "$CA_REGION" \
+      --query authorizationToken --output text 2>/dev/null) && [ -n "$CA_TOKEN" ]; then
+  CA_URL="https://aws:${CA_TOKEN}@${CA_DOMAIN}-${CA_OWNER}.d.codeartifact.${CA_REGION}.amazonaws.com/pypi/${CA_REPO}/simple/"
+  # --extra-index-url, not --index-url: the latter REPLACES PyPI, and this
+  # CodeArtifact repository serves only semq. semq depends on cffi, so an
+  # --index-url install resolves semq and then fails on "No matching
+  # distribution found for cffi".
+  sudo -u ubuntu $VP/pip install -q --extra-index-url "$CA_URL" semq \
+    && echo "semq installed from CodeArtifact" \
+    || echo "WARNING: semq install failed; anything computing codes will not run"
+else
+  echo "WARNING: no CodeArtifact token (instance role missing codeartifact"
+  echo "         permissions?); semq not installed and codes cannot be computed"
+fi
 # hf_transfer is the Rust download path. It matters only for the ARI-D
 # reference session, where the checkpoint is ~141 GB and the default
 # single-stream python downloader turns a 10-minute fetch into an hour of
@@ -63,7 +91,10 @@ try:
     import semq
     print("semq        ", getattr(semq, "__version__", "?"))
 except Exception as e:
+    # Loud, because ari/probe.py needs it and a silent absence is what let a
+    # box look ready while it could not compute a single code.
     print("semq        FAILED:", e)
+    print("*** codes cannot be computed on this box ***")
 PY
 
 chown -R ubuntu:ubuntu /home/ubuntu
