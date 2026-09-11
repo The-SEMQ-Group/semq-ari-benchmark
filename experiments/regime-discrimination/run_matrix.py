@@ -51,7 +51,11 @@ HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 CACHE = RESULTS / "cache"
 
-ENCODER = "sentence-transformers/all-MiniLM-L6-v2"
+# Overridable so the same conditions can be run against another encoder
+# (the probe sweep needs a second dimension). The default is the encoder
+# every committed result in this experiment was produced with.
+ENCODER = os.environ.get("ARI_ENCODER",
+                         "sentence-transformers/all-MiniLM-L6-v2")
 TOP_K = 10
 QUANT_BINS = 8
 CALIBRATION_PERCENTILE = 0.99
@@ -324,9 +328,15 @@ def write_cache_manifest() -> None:
     path.write_text(json.dumps(identity, indent=2, sort_keys=True) + "\n")
 
 
-def run_worker(name: str, out: Path) -> None:
+def run_worker(name: str, out: Path, limit: int | None = None) -> None:
     cond = next(c for c in CONDITIONS if c.name == name)
     _, doc_texts, _, q_texts, _ = load_scifact()
+    # A subset is enough for a study of coordinate statistics rather than
+    # retrieval quality, and the corpus is long enough that the full encode
+    # costs hours on CPU. Retrieval metrics need the whole corpus, so this
+    # stays opt-in and the committed results are unaffected.
+    if limit is not None:
+        doc_texts = doc_texts[:limit]
     v = encode(cond, doc_texts, q_texts)
     out.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out, docs=v["docs"], queries=v["queries"])
@@ -345,10 +355,12 @@ def main() -> None:
     ap.add_argument("--worker")
     ap.add_argument("--out", type=Path)
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--limit", type=int,
+                    help="encode only the first N documents")
     args = ap.parse_args()
 
     if args.worker:
-        run_worker(args.worker, args.out)
+        run_worker(args.worker, args.out, args.limit)
         return
 
     have_gpu = gpu_available()

@@ -14,6 +14,7 @@ Experiment scripts can overwrite their result files. Use a separate checkout to 
 | Decoding baselines | Sensitivity and storage for alternative detectors. | [Baseline comparison](decoding-reproducibility/BASELINES.md). |
 | Drift rank profile | Distribution of changes across logit ranks. | [Results](drift-rank-profile/RESULTS.md). |
 | Probe verifiability | Reproducibility of frozen vector quantizers. | [Results](probe-verifiability/RESULTS.md). |
+| Probe sweep | Bin count and calibration, against storage and saturation. | [Results](probe-sweep/RESULTS.md), [procedure](probe-sweep/README.md). |
 | ARI-D power | Statistical power of the hosted-output protocol. | [Simulation](arid-power-sim/RESULTS.md). |
 | ARI-D dry run | Hosted API captures and protocol calibration. | [Procedure](arid-dry-run/README.md), [results](arid-dry-run/RESULTS.md). |
 | ARI-D references | Output from published weights at fixed precision. | [Procedure](arid-fp32-refs/README.md). |
