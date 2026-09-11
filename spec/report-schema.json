@@ -340,6 +340,24 @@
               "additionalProperties": {
                 "type": "number"
               }
+            },
+            "bound_quality": {
+              "type": "object",
+              "description": "How informative the movement bounds are, under the generic codec guarantee. Every rate names its denominator: _of_all covers every coordinate compared, _of_changed only those whose symbol changed, and a rate over changed coordinates is null when none changed. These are results for the probe and intervention measured, not constants of the method. Added 2026-09-11.",
+              "additionalProperties": true
+            },
+            "norm_bound_quality": {
+              "type": "object",
+              "description": "Bounds that hold only under a declared assumption about vector norms, reported separately from the generic bounds and carrying the assumption they rest on. Absent when no assumption was declared. Added 2026-09-11.",
+              "additionalProperties": true
+            },
+            "thresholds": {
+              "type": "array",
+              "description": "For each predeclared movement threshold, the counts definitely below, definitely above, and unresolved. A threshold on the representation, not on functional harm. Added 2026-09-11.",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
             }
           },
           "additionalProperties": false

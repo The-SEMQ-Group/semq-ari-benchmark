@@ -6,6 +6,40 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Bound quality reported beside the bounds
+- Having a bound is not the same as knowing something. `ari.bound_quality`
+  reports the strictly-positive lower-bound count, the finite and unbounded
+  upper-bound counts, and quantiles of the finite interval widths, so a
+  vacuous interval is distinguishable from an informative one.
+- **Every rate names its denominator.** `_of_all` covers every coordinate
+  compared; `_of_changed` only those whose symbol changed. When nothing
+  changed, the rates over changed coordinates are `null` rather than zero —
+  no coordinate was available to be informative about, which is not the same
+  as every coordinate being uninformative. `n_unbounded` stays a count,
+  because which denominator it should carry depends on the question.
+- Predeclared movement thresholds report the counts definitely below,
+  definitely above, and unresolved. A coordinate with an unbounded upper
+  bound can never be definitely below. These are thresholds on the
+  representation and are not labelled as functional harm.
+- Generic codec bounds and norm-constrained bounds are reported in separate
+  blocks, the latter carrying the assumption it rests on, so a declared
+  assumption cannot travel silently into a figure.
+- **Measured: at the canonical probe the bounds resolve almost nothing.**
+  Adjacent regions touch, so a positive lower bound requires a move of two
+  or more regions — asserted as an exact identity, not an approximation. At
+  `n_bins=2` under 1e-3 drift every detected change is a single-region move,
+  so every lower bound is zero and a 0.01 threshold leaves every change
+  unresolved. Positive lower bounds first appear at 5e-2 drift, where
+  multi-region moves do. This is a result for this probe and this
+  intervention, recorded as such.
+- `cost_record` reports reference-state bytes, report bytes and runtime
+  separately, each with the input count and machine configuration they were
+  measured under.
+- `spec/report-schema.json` gains optional `bound_quality`,
+  `norm_bound_quality` and `thresholds` on the change profile. HER and
+  aggregate ARI keep their exact-code-equality semantics untouched;
+  `ari_version` stays `0.1` and earlier reports still validate.
+
 ### Extent, quantized movement and location, beside equality
 - A 32-byte SHA-256 detects every change and costs a fraction of a code,
   so equality is not where a code earns its size. `ari.change_profile`
