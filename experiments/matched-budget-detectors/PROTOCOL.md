@@ -1,29 +1,24 @@
 # Matched-budget detector study — frozen protocol v2
 
 **Status: frozen 2026-09-11, before any confirmatory collection.**
-Supersedes v1, which the pilot in `results/` was scored under and which git
-holds at commit `57d91e7`:
+Supersedes v1, used for the pilot and retained at commit `57d91e7`:
 
     git show 57d91e7:experiments/matched-budget-detectors/PROTOCOL.md
 
-Section numbering is unchanged so existing citations in `run_pilot.py` still
-resolve; §2.1, §3.1, §4.1 and §8 are new. The CHANGELOG records what changed
-and why.
+Section numbering is unchanged for `run_pilot.py`; new sections are §2.1,
+§3.1, §4.1 and §8. See the CHANGELOG for details.
 
 **Original v1 status line:**
 Repository commit at freeze: `a961b3516b58` (branch `research/ari-review-response`).
 
-Addresses major concern 1 of the paper review: does ARI provide a useful
-detection / storage / runtime / verification tradeoff against simpler
-measurements? A negative result is an acceptable outcome and this document is
-written so that it can be reported as one.
+Evaluates ARI's detection, storage, runtime and verification tradeoffs against
+simpler measurements. Negative results are valid outcomes.
 
 ---
 
 ## 0. Audit findings that constrain the design
 
-Established before writing anything below. Each changes what the study can
-claim, so they are recorded first.
+These findings constrain the study's claims.
 
 ### 0.1 The existing cache is TinyLlama-1.1B on CPU
 
@@ -31,28 +26,20 @@ claim, so they are recorded first.
 (`reference`, `proc`, `threads1`, `batched`, `bf16`, `int8`), each
 `logits (539, 32000) float32` over 12 prompts.
 
-Vocabulary 32,000 identifies the model by elimination: Llama-3.1-8B is 128,256,
-Mistral-7B-v0.3 is 32,768, Qwen2.5 is about 152k. Only
-`TinyLlama/TinyLlama-1.1B-Chat-v1.0` matches, and `decoding_matrix.json` is the
-sole `device: cpu` run, names TinyLlama, and reports the same 12 prompts. The
-539 steps decompose as 11x48 + 1x11.
+The 32,000-token vocabulary and `decoding_matrix.json` identify this as
+`TinyLlama/TinyLlama-1.1B-Chat-v1.0` on CPU. The cache contains 539 steps
+(11×48 + 1×11) over 12 prompts.
 
-**Consequence.** The Appendix I baseline comparisons were computed on a 1.1B
-CPU model, not on any decoder the paper reports. Nothing derived from this
-cache may be presented as a property of the paper's decoders.
+**Consequence.** Appendix I baselines are TinyLlama CPU results, not results for
+the paper's reported decoders.
 
 ### 0.2 The cache is unreadable by its own loader, and unlabelled
 
-`baselines.py::_cache()` delegates to `run_matrix.cache_dir()`, which resolves
-`results/cache/<fingerprint>/`. The files on disk are flat, with no fingerprint
-directory and no manifest, although `write_cache_manifest()` exists for exactly
-that purpose. Provenance above was recovered by elimination, not read from the
-artifacts.
+`baselines.py::_cache()` expects `results/cache/<fingerprint>/`, but the files
+are flat and lack a manifest. Their provenance was reconstructed from metadata.
 
-**Consequence.** These arrays are usable for implementation testing and
-synthetic diagnostics only. They are not admissible evidence for a
-confirmatory result, and this study writes its own manifest for everything it
-collects.
+**Consequence.** Use these arrays only for implementation tests and synthetic
+diagnostics. Confirmatory collection must write a manifest.
 
 ### 0.3 There are two probes, not one
 
@@ -61,10 +48,8 @@ collects.
 | embedding probe | 2 | 2 | paper §2 and Appendix A |
 | logit probe | 8 | 4 | `baselines.py:75`, `run_matrix.py:63`, published Llama artifact |
 
-Different probes for embeddings and logits are defensible. Presenting them as
-one declared probe is not. This study specifies them separately throughout and
-never quotes a storage number from one against a detection number from the
-other.
+The probes are specified and reported separately; storage and detection results
+are never combined across probes.
 
 ### 0.4 The published ARI score compares packed bytes, not symbols
 
@@ -78,9 +63,8 @@ one coordinate of 4096 gives a byte rate of 0.000488 against a true coordinate
 rate of 0.000244: **2x overstatement**, the coordinates-per-byte factor, which
 would be 4x at 2 bits/dim. The effect saturates as changes become dense.
 
-**Consequence.** The published ARI score is not on the same footing as the
-coordinate-wise baselines it is compared against. This study scores three
-distinct quantities and never conflates them:
+**Consequence.** The published ARI score is not coordinate-wise comparable.
+Report these quantities separately:
 
 - `ari_code_hamming` — bit Hamming distance over unpacked code bits
 - `ari_symbol_mismatch` — fraction of coordinates whose decoded symbol changed
@@ -90,21 +74,17 @@ distinct quantities and never conflates them:
 
 ## 1. Two questions, kept separate
 
-**Q1 — exact representation change.** Any difference in a declared canonical
-vector is a positive. Identical arrays are a serialization control. Raw-vector
-SHA-256 is a valid and strong baseline here, and is expected to be optimal by
-construction: it detects every change and nothing else.
+**Q1 — exact representation change.** Any difference in a canonical vector is a
+positive; identical arrays are serialization controls. SHA-256 is the exact
+equality baseline.
 
 **Q2 — condition-change monitoring.** Detect a declared serving intervention
-beyond the variation of repeated runs under a fixed nominal configuration.
-Same-configuration repeats define the operational null even when their vectors
-differ. Tolerating baseline variability is not a claim that such variability is
-absent or harmless.
+against repeated-run variation under a fixed nominal configuration. This null
+does not imply that baseline variation is harmless.
 
-Neither target establishes functional harm. ARI disagreement is never used to
-define ground-truth positives; positives are defined by the declared
-intervention. Interventions that produce no measured vector change are reported
-separately, alongside both results.
+Neither question establishes functional harm. Positives are defined by the
+declared intervention, not ARI disagreement; interventions with no measured
+change are reported separately.
 
 ## 2. Alarm unit and splitting
 
@@ -123,33 +103,24 @@ no prompt, prefix, reference or episode. Three disjoint roles:
 Resampling is grouped by prompt and by episode. Reused reference pairs are not
 independent and are resampled as blocks.
 
-**An episode** is one complete collection of the frozen input set under one
-declared configuration, in its own process, recorded with its own manifest.
-Two episodes differ in at least their process and wall-clock time. Documents
-or prompts inside one episode are *not* episodes: they share the process,
-the machine and the session, so they support corpus-level uncertainty and
-nothing about run-to-run variation.
+**Episode:** one complete collection of the frozen input set under one
+configuration, run in its own process and recorded in its own manifest. Episodes
+must differ in process and wall-clock time. Inputs within an episode are not
+independent run-to-run trials.
 
 ### 2.1 Deployment alarm policy, declared separately
 
-The per-input unit above answers "did this embedding change". An operator
-asks "did this deployment change", and the two give different answers from the
-same data. Measured on the cached SciFact panel, comparing a raw-vector
-SHA-256 against the canonical code under four benign conditions:
+The per-input unit asks whether an embedding changed; the deployment unit asks
+whether the aggregate rate exceeded a threshold. On the cached SciFact panel:
 
 | | per input | per deployment |
 | --- | --- | --- |
 | raw SHA-256 false-alarm rate | ~0.45% | **50%** (fires on 2 of 4) |
 | canonical code false-alarm rate | 0% | 0% |
 
-Two orders of magnitude, same data, from a definition. So the deployment
-policy is declared here rather than chosen after the results are in:
-
 **A deployment alarm fires when the per-input alarm rate over the frozen input
-set exceeds a threshold calibrated on control episodes.** It is not "any input
-changed". A raw hash detecting a benign byte change is not an integrity
-failure, and a policy that treats it as one measures the input set's size
-rather than the deployment's state.
+set exceeds a threshold calibrated on control episodes. A per-input byte change
+is not itself a deployment failure.
 
 Both units are reported for every method. Neither is presented alone.
 
@@ -168,9 +139,8 @@ establish. The one-sided 95% upper bound is `1 - 0.05^(1/N)`:
 | 299 | **1.00%** |
 | 2,995 | 0.10% |
 
-v1 quoted 1.83% at N=200 from a two-sided interval. For an upper bound on a
-false-alarm rate the one-sided convention is the right one, and it is used
-here. **200 control episodes do not support a 1% claim**; 299 do.
+v1 quoted a two-sided interval. This protocol uses the one-sided bound; 200
+controls do not support a 1% claim, while 299 do when zero alarms occur.
 
 **Collection target: 300 control episodes and 300 per intervention**, which
 establishes a sub-1% upper bound only when zero control alarms are observed.
@@ -186,23 +156,16 @@ matched.
 
 ### 3.1 The null is expected to be degenerate
 
-On the cached panel the canonical code gives **zero** alarms across every
-benign condition, so its control distribution has no variance. This is the
-expected case, not a surprise, and it has a consequence the study has to
-accept in advance: **with a degenerate null there is no threshold to trade and
-no FPR to fix.** A nominal "5% FPR" is unachievable, because no threshold
-produces 5% false alarms.
+The canonical code gives **zero** alarms across every cached benign condition.
+With this degenerate null, no threshold realizes a nominal nonzero FPR.
 
-Three rules follow, fixed here:
+Therefore:
 
 1. A method whose controls are alarm-free is reported at its **achieved** FPR
    of zero with the one-sided upper bound its episode count supports, never at
    a nominal rate it cannot realise.
-2. Methods are then separated on **sensitivity at zero achieved false alarms**,
-   which is a well-defined comparison and the one the data can support.
-3. Ties among alarm-free methods are reported as ties. Noise is not injected
-   into controls to manufacture a threshold, and a method is not credited for
-   discrimination the null cannot demonstrate.
+2. Separate methods on **sensitivity at zero achieved false alarms**.
+3. Report ties among alarm-free methods as ties; do not inject control noise.
 
 ## 4. Methods compared
 
@@ -240,31 +203,22 @@ and KL and JS computed in float64 log-space, validated against a
 high-precision oracle on tiny perturbations, identical inputs and extreme
 logits. These are not dismissed for float32 cancellation observed elsewhere.
 
-KL and JS take **logits**, and the functions are named `kl_from_logits` and
-`js_from_logits` for it. The softmax inside them turns a row into a
-distribution over a vocabulary, which is what logits are; an embedding
-coordinate is not an unnormalised log-probability of anything, so softmaxing
-one returns a number with no meaning. Nothing at runtime distinguishes the
-two — both are float arrays — so no guard can catch the misuse and the name
-carries the precondition instead. Support and zero handling are declared with
-the implementation and covered by the oracle tests.
+KL and JS take logits; `kl_from_logits` and `js_from_logits` apply softmax
+internally. Do not apply them to embeddings: the float-array type cannot be
+checked at runtime, so the function name carries the precondition. Support and
+zero handling are specified in the implementation and tested against the
+oracle.
 
 ### 4.1 Every comparison stays inside one probe
 
-The methods above are not all available at both probes, so the comparison is
-run **per probe** and no result crosses between them:
+Methods are compared **within each probe**; no result crosses probes:
 
 | probe | methods compared |
 | --- | --- |
 | embedding (`n_bins=2`) | ARI family, vector distances, equality and block hashes, uniform scalar quantization, sketch, float16 anchor |
 | logit (`n_bins=8`) | all of the above, plus `kl_from_logits`, `js_from_logits`, top-2 margin, token flip, top-k set change |
 
-A table placing KL at the logit probe beside ARI at the embedding probe would
-compare two different measurements of two different objects and report the
-difference as if it were a property of the methods. §0.3 already forbids
-quoting storage from one probe against detection from the other; this extends
-the same rule to every comparison, and each probe carries its own family for
-the correction in §8.
+Each probe has its own comparison family for the correction in §8.
 
 **Sketch** — seeded Gaussian random projection; its seed and projection
 metadata count toward its storage budget.
@@ -274,64 +228,50 @@ per method in `scorers.py` and asserted in tests.
 
 ## 5. Storage accounting
 
-Actual serialized bytes, partial bytes rounded up, plus scale, threshold, seed,
-codebook and manifest metadata. Per-example and amortized shared state are
-reported separately. Theoretical packed size is never reported as implemented
-size. One float32 top-2 margin is included as a storage option, since storing
-one scalar is a legitimate competitor to storing two logits.
+Charge actual serialized bytes, rounding partial bytes up, including scale,
+threshold, seed, codebook and manifest metadata. Report per-example and
+amortized shared state separately; do not report theoretical packed size as
+implemented size. Include a one-float32 top-2 margin as a storage baseline.
 
 ## 6. Verification
 
-The *same frozen vectors* are scored on local CPU and on the p5 CPU and GPU.
-Re-running inference on another platform tests something else and is not
-substituted for this. Reported: bit-exact agreement of codes and hashes,
-floating score error against declared tolerances, and agreement of the alarm
-decision. Fixtures include threshold-adjacent and quantization-boundary cases.
+Score the *same frozen vectors* on local CPU and p5 CPU/GPU; this tests the
+implementation, not cross-platform inference. Report bit-exact code/hash
+agreement, floating-score error against declared tolerances, and alarm-decision
+agreement. Include threshold-adjacent and quantization-boundary fixtures.
 Unsupported combinations are marked unmeasured rather than inferred.
 
-Signature checking and independent recomputation from raw vectors are reported
-separately, with bytes transferred and dependency cost for each. Simpler
-baselines get the same integrity mechanism and tolerance options as ARI.
+Report signature checking and independent recomputation separately, including
+bytes transferred and dependency cost. Apply the same integrity and tolerance
+options to simpler baselines.
 
 ## 7. Decision rule
 
-An ARI advantage is reported only where held-out results support it at
-comparable achieved FPR and comparable budget, with its scope stated. Equal
-detection at lower cost is a useful result. Inferiority, or no clear
-separation, is an equally valid outcome and is reported without hedging.
-
-Nothing here is described as early warning or as a capability-damage detector.
-That would need a separate operational validation which this study does not
-perform.
+Report an ARI advantage only when held-out results support it at comparable
+achieved FPR and budget, with scope stated. Equal detection at lower cost,
+inferiority and no separation are valid outcomes. Do not claim early warning,
+capability damage or index-rebuild requirements without operational validation.
 
 ## 8. Analysis, fixed before collection
 
-**Multiple comparisons.** The study compares roughly a dozen scorers across
-two probes and several interventions. Families are **per probe** (§4.1),
-since no comparison crosses probes. Within each probe the primary family is
-the scorers against ARI at the declared alarm policy, corrected by
-Holm–Bonferroni at the family level, with uncorrected p-values reported
-alongside. Comparisons outside a primary family are labelled exploratory and
-are not used to support a claim. The two probes' families are corrected
-separately and their results are never pooled.
+**Multiple comparisons.** Families are per probe (§4.1). Holm–Bonferroni is
+applied within each primary family of scorers versus ARI at the declared alarm
+policy; uncorrected p-values are also reported. Other comparisons are
+exploratory, and probe families are never pooled.
 
-**Paired testing.** All scorers see identical episodes, so every comparison is
-paired at the episode level and resampled by episode, never by input. An
-interval over inputs within an episode measures corpus sampling and is
-reported as such.
+**Paired testing.** All scorers see identical episodes. Test comparisons are
+paired and resampled by episode, never by input. Input-level intervals describe
+corpus sampling only.
 
-**Power and stopping.** Collection stops at the declared 300 control and 300
-intervention episodes, or earlier only on a declared failure of the collection
-itself. There is no interim analysis of detection performance and no stopping
-on a result. If collection falls short, the achieved counts and the bounds
-they support are reported, and the shortfall is stated rather than absorbed.
+**Power and stopping.** Stop at the declared 300 control and 300 intervention
+episodes, or earlier only for a recorded collection failure. Do not inspect
+detection performance interim. Report any shortfall and its resulting bounds.
 
-**Exclusions.** An episode is excluded only for a recorded collection fault —
-a failed upload, a scorer error, a manifest mismatch — never for its scores.
-Every exclusion is listed with its cause and the analysis is reported with and
-without them.
+**Exclusions.** Exclude episodes only for recorded collection faults (failed
+upload, scorer error or manifest mismatch), never for their scores. List every
+exclusion and report analyses with and without them.
 
-**What a result may say.** With the null expected to be degenerate (§3.1), the
-supportable comparative statement is about sensitivity at zero achieved false
-alarms, at equal retained bytes, on declared interventions. It is not about
-early warning, functional harm, or a need to rebuild an index.
+**Permitted claim.** With the expected degenerate null (§3.1), compare
+sensitivity at zero achieved false alarms and equal retained bytes on declared
+interventions. Do not claim early warning, functional harm or index-rebuild
+requirements.
