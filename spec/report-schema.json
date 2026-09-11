@@ -340,6 +340,77 @@
               "additionalProperties": {
                 "type": "number"
               }
+            },
+            "bound_quality": {
+              "type": "object",
+              "description": "How informative the movement bounds are, under the generic codec guarantee. Every rate names its denominator: _of_all covers every coordinate compared, _of_changed only those whose symbol changed, and a rate over changed coordinates is null when none changed. These are results for the probe and intervention measured, not constants of the method. Added 2026-09-11.",
+              "required": ["basis", "n_coordinates", "n_changed", "finite_width_basis"],
+              "properties": {
+                "basis": { "type": "string", "enum": ["generic", "norm"] },
+                "n_coordinates": { "type": "integer", "minimum": 0 },
+                "n_changed": { "type": "integer", "minimum": 0 },
+                "n_lower_positive": { "type": "integer", "minimum": 0 },
+                "n_upper_finite": { "type": "integer", "minimum": 0 },
+                "n_upper_unbounded": { "type": "integer", "minimum": 0 },
+                "lower_positive_rate_of_all": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "upper_finite_rate_of_all": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "lower_positive_rate_of_changed": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "upper_finite_rate_of_changed": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "finite_width_quantiles": {
+                  "type": "object",
+                  "description": "Quantiles of the finite interval widths, keyed pNN.",
+                  "additionalProperties": { "type": "number", "minimum": 0 }
+                },
+                "finite_width_basis": {
+                  "type": "string",
+                  "enum": ["all", "changed"],
+                  "description": "Which coordinates the width quantiles were taken over."
+                },
+                "n_width_samples": { "type": "integer", "minimum": 0 }
+              },
+              "additionalProperties": false
+            },
+            "norm_bound_quality": {
+              "type": "object",
+              "description": "Bounds that hold only under a declared assumption about vector norms, reported separately from the generic bounds and carrying the assumption they rest on. Absent when no assumption was declared. Added 2026-09-11.",
+              "required": ["l2_lower", "l2_upper", "assumptions"],
+              "properties": {
+                "l2_lower": { "type": "number", "minimum": 0 },
+                "l2_upper": { "type": "number", "minimum": 0 },
+                "cosine_lower": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+                "cosine_upper": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+                "n_coordinates": { "type": "integer", "minimum": 0 },
+                "n_saturated_resolved": { "type": "integer", "minimum": 0 },
+                "assumptions": {
+                  "type": "object",
+                  "description": "The declared norm constraint and its provenance. Must be non-empty: a norm block without its assumption is not interpretable.",
+                  "minProperties": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "thresholds": {
+              "type": "array",
+              "description": "For each predeclared movement threshold, the counts definitely below, definitely above, and unresolved. A threshold on the representation, not on functional harm. Added 2026-09-11.",
+              "items": {
+                "type": "object",
+                "required": ["threshold", "basis"],
+                "properties": {
+                  "threshold": { "type": "number", "minimum": 0 },
+                  "basis": {
+                    "type": "string",
+                    "enum": ["all", "changed"],
+                    "description": "Which coordinates the counts were taken over."
+                  },
+                  "n_definitely_below": { "type": "integer", "minimum": 0 },
+                  "n_definitely_above": { "type": "integer", "minimum": 0 },
+                  "n_unresolved": { "type": "integer", "minimum": 0 },
+                  "definitely_below_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                  "definitely_above_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                  "unresolved_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+                },
+                "additionalProperties": false
+              }
             }
           },
           "additionalProperties": false
