@@ -70,22 +70,39 @@ Report these quantities separately:
 - `ari_symbol_mismatch` — fraction of coordinates whose decoded symbol changed
 - `ari_byte_mismatch` — the published quantity, retained for continuity
 
-### 0.5 The committed pilot results predate SDK-sourced scoring
+### 0.5 The committed pilot cannot be checked against the current scoring
 
 `results/pilot.json` and `results/pilot.scores.npz` were produced by an earlier
 `_ari_scores` that unpacked symbols itself and calibrated with
-`numpy.percentile`. Both are now taken from the SDK.
+`numpy.percentile`. Both now come from the SDK.
 
-Two differences follow. The hand-rolled unpacker read each byte's symbols in
-the wrong order, which left every aggregate rate correct and every
-changed-coordinate index wrong. `numpy.percentile` interpolates in float64
-while `Context.calibrate` takes the percentile in float32, so the recorded
-`ari_meta.scale` and a small number of codes near a bin boundary differ.
+The two changes do not have the same consequence.
 
-**Consequence.** Aggregate rates in the committed pilot still stand; any
-location-level output derived from it does not. The file is retained as the
-pilot record and is not regenerated. Confirmatory collection uses the current
-scoring path.
+**Unpacking.** The hand-rolled reader took each byte's symbols high-order
+first. It grouped the right bits into the right coordinates and only permuted
+them within a byte, identically in both operands, so every aggregate rate it
+produced was correct and every changed-coordinate index was wrong. This is
+pinned by `tests/test_sdk_surface.py::test_symbol_order_within_a_byte_is_not_arbitrary`.
+
+**Calibration.** `numpy.percentile` interpolates in float64;
+`Context.calibrate` takes the percentile in float32. When the percentile falls
+between two distinct float32 values the scales differ, which moves codes near a
+bin boundary and therefore moves all three aggregate rates. Whether it does is
+a property of the data, not of the change: on the cache in
+`experiments/decoding-reproducibility/results/cache/` at the pilot's settings
+the two scales are bit-identical (`9.41488265991211`) and every rate is
+unchanged, while at dim 384, `n_bins=8`, percentile 0.999 they diverge.
+
+**The pilot's own inputs are not in this repository.** `pilot.json` records its
+cache as `/home/ubuntu/mbd/cache`, which is not the cache above and is not
+committed, and the scale it recorded (`9.414882678985599`) is not what either
+path produces on the cache that is here. Nothing in `pilot.json` can be
+re-derived, so no claim that its numbers survive the change can be checked.
+
+**Consequence.** Treat `pilot.json` as a record that a run happened, not as a
+result. It is retained unregenerated, and no number in it is comparable with a
+number produced by the current scoring path. Confirmatory collection starts
+from freshly collected episodes with manifests.
 
 ---
 

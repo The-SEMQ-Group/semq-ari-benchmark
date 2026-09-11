@@ -6,6 +6,28 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### The SDK is the authority on layout and calibration
+- `run_pilot.py` took the packed layout, the symbol unpacking and the
+  calibration percentile from the core instead of reimplementing them. The
+  inline unpacker read each byte's symbols high-order first: aggregate rates
+  came out right, because the permutation is the same in both operands, and
+  every changed-coordinate index came out wrong.
+- A probe wider than one context is chunked again, which the rewrite had
+  replaced with a refusal. Calibration stays global — the core takes the
+  percentile over the whole buffer, so calibrating on the array reshaped to
+  the chunk width gives the same float32 scale a single wide context would,
+  and that one scale is fixed across every chunk. Chunk comparisons are joined
+  with `CodeComparison.concatenate`, so counts are summed rather than rates
+  averaged and `changed_coordinates` stays usable. The reported score is
+  bit-identical however the probe was split, which is tested at five chunk
+  widths.
+- `semq_compat` no longer claims `calibrate` and `numpy.percentile` give
+  bit-identical codes. They differ when the percentile falls between two
+  float32 values.
+- PROTOCOL.md §0.5 records that the committed pilot cannot be checked against
+  the current scoring: its input cache is not in this repository and the scale
+  it recorded is not what either path produces on the cache that is.
+
 ### Matched-budget protocol v2
 - `experiments/matched-budget-detectors/PROTOCOL.md` is reissued as v2.
   The committed pilot was scored under v1, which git holds at commit

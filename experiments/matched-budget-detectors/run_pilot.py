@@ -42,6 +42,26 @@ INTERVENTIONS = ["threads1", "batched", "bf16", "int8"]
 QUANT_BINS_LOGIT = 8          # PROTOCOL §0.3: the logit probe, 4 bits/dim
 
 
+def _chunk_width(dim: int, max_dim: int, coords_per_byte: int) -> int:
+    """Widest equal chunk that fits a context and packs into whole bytes.
+
+    Equal widths keep the aggregation a plain mean: every chunk contributes
+    the same number of coordinates, bits and bytes. A width that did not
+    divide ``coords_per_byte`` would pad each chunk's last byte, and those
+    pad bits would then count toward the byte rate.
+    """
+    for n_chunks in range(-(-dim // max_dim), dim + 1):
+        if dim % n_chunks:
+            continue
+        width = dim // n_chunks
+        if width % coords_per_byte == 0:
+            return width
+    raise ValueError(
+        f"no chunk width divides dim {dim} into pieces of at most {max_dim} "
+        f"coordinates that pack into whole bytes at {coords_per_byte} "
+        "coordinates per byte")
+
+
 def _ari_scores(r, c, bins):
     """Three distinct ARI quantities. PROTOCOL §0.4.
 
@@ -55,31 +75,48 @@ def _ari_scores(r, c, bins):
     same aggregate rate, because the error permutes coordinates identically
     in both operands, but every changed-coordinate index it produced was
     wrong.
+
+    A probe wider than one context is split into equal chunks. Calibration
+    stays global: the core takes the percentile over the whole buffer it is
+    given, so calibrating on the array reshaped to the chunk width yields the
+    same float32 scale a single wide context would, and that one scale is
+    then fixed across every chunk. Calibrating each chunk separately is the
+    thing that does not compose, and is not what happens here.
     """
     from ari.semq_compat import MAX_DIM, quant_context
 
     dim = r.shape[1]
-    if dim > MAX_DIM:
-        raise ValueError(
-            f"probe dim {dim} exceeds SEMQ_MAX_DIM {MAX_DIM}; calibration is "
-            "global across coordinates and a percentile does not compose "
-            "across chunks, so chunked calibration needs its own design")
+    r = np.ascontiguousarray(r, np.float32)
+    c = np.ascontiguousarray(c, np.float32)
 
-    with quant_context(dim, n_bins=bins) as ctx:
-        scale = float(ctx.calibrate(np.ascontiguousarray(r, np.float32),
-                                    percentile=0.99))
+    with quant_context(min(dim, MAX_DIM), n_bins=bins) as ctx:
         bits = ctx.bits_per_coordinate
+    coords_per_byte = 8 // bits
+    width = (dim if dim <= MAX_DIM
+             else _chunk_width(dim, MAX_DIM, coords_per_byte))
 
-    with quant_context(dim, n_bins=bins, scale_max=scale) as ctx:
-        a = np.asarray(ctx.batch_encode(np.ascontiguousarray(r, np.float32)))
-        b = np.asarray(ctx.batch_encode(np.ascontiguousarray(c, np.float32)))
-        cmp = ctx.compare_codes(a, b, dim)
+    with quant_context(width, n_bins=bins) as ctx:
+        scale = float(ctx.calibrate(r.reshape(-1, width), percentile=0.99))
 
+    parts = []
+    with quant_context(width, n_bins=bins, scale_max=scale) as ctx:
+        for lo in range(0, dim, width):
+            a = np.asarray(ctx.batch_encode(
+                np.ascontiguousarray(r[:, lo:lo + width])))
+            b = np.asarray(ctx.batch_encode(
+                np.ascontiguousarray(c[:, lo:lo + width])))
+            parts.append(ctx.compare_codes(a, b, width))
+
+    # The SDK joins chunk comparisons: it sums the counts and shifts the
+    # coordinate indices, so the rates come out of one total rather than an
+    # average of averages, and changed_coordinates stays usable.
+    cmp = parts[0] if len(parts) == 1 else type(parts[0]).concatenate(parts)
     return {
         "ari_byte_mismatch": cmp.byte_change_rate,
         "ari_code_hamming": cmp.bit_hamming_rate,
         "ari_symbol_mismatch": cmp.coordinate_change_rate,
-    }, {"bits_per_dim": bits, "coords_per_byte": 8 // bits, "scale": scale}
+    }, {"bits_per_dim": bits, "coords_per_byte": coords_per_byte,
+        "scale": scale, "chunk_width": width, "n_chunks": dim // width}
 
 
 def _hash_scores(r, c, roundings):
