@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.7.1)  4 SEP 2026 13:39
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.7.1)  8 SEP 2026 12:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -409,91 +409,90 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 
 {/Users/ilona/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/Users/ilona/Library/TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc}]
-LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 66.
+LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 65.
  (/Users/ilona/Library/TinyTeX/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
 )
+Underfull \hbox (badness 10000) in paragraph at lines 74--75
+[]\T1/ptm/m/n/9 process-dependent ex-e-cu-tion (self-hosted);
+ []
 
-[2
-pdfTeX warning (ext4): destination with the same identifier (name{table.1}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.107 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.107 
-      ]
-<figure1.pdf, id=107, 397.485pt x 130.086pt>
-File: figure1.pdf Graphic file (type pdf)
-<use figure1.pdf>
-Package pdftex.def Info: figure1.pdf  used on input line 110.
-(pdftex.def)             Requested size: 397.48499pt x 130.08963pt.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 
+[2
+pdfTeX warning (ext4): destination with the same identifier (name{table.1}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.107 \end{table}
+                 ]
+<figure1.pdf, id=107, 397.485pt x 130.086pt>
+File: figure1.pdf Graphic file (type pdf)
+<use figure1.pdf>
+Package pdftex.def Info: figure1.pdf  used on input line 113.
+(pdftex.def)             Requested size: 397.48499pt x 130.08963pt.
+
+
 [3
+pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.128 \vspace{-7pt}\subsection
+                              {Small per-step divergence compounds into outc...
 pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.143 
-       <./figure1.pdf>]
-Underfull \hbox (badness 7558) in paragraph at lines 170--177
-[]\T1/ptm/m/n/9 [3] Ra-jput, S., Mehta, N., Singh, A., Ke-sha-van, R. H., Vu, T., Heldt, L., Hong, L.,
- []
-
-
-Underfull \hbox (badness 5681) in paragraph at lines 170--177
-\T1/ptm/m/n/9 Tay, Y., Tran, V. Q., Samost, J., Kula, M., Chi, E. H., and Sathi-amoor-thy, M. Rec-om-
- []
-
-
-Underfull \hbox (badness 2884) in paragraph at lines 170--177
-\T1/ptm/m/n/9 mender Sys-tems with Gen-er-a-tive Re-trieval. In \T1/ptm/m/it/9 Ad-vances in Neu-ral In-for-ma-tion Pro-cess-ing Sys-
- []
-
-
-Underfull \hbox (badness 2680) in paragraph at lines 170--177
-\T1/ptm/m/it/9 tems 36 (NeurIPS)\T1/ptm/m/n/9 , 2023. []$\T1/cmtt/m/n/9 https : / / proceedings . neurips . cc / paper _ files / paper / 2023 / hash /
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 178--182
-[]\T1/ptm/m/n/9 [4] Ope-nAI. Em-bed-dings with Ope-nAI ``text-embedding-ada-002'' Are Not De-ter-min-is-tic.
- []
-
-
-Underfull \vbox (badness 2564) has occurred while \output is active []
-
-
+l.128 \vspace{-7pt}\subsection
+                              {Small per-step divergence compounds into outc... <./figure1.pdf>]
 
 [4
 pdfTeX warning (ext4): destination with the same identifier (name{table.3}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.198 [
-       8] Yashwanth, T. S.]
-Underfull \hbox (badness 4634) in paragraph at lines 209--214
+l.173 [
+       3] Rajput, S., Mehta, N., Singh, A., Keshavan, R. H., Vu, T.,]
+Underfull \hbox (badness 7558) in paragraph at lines 173--180
+[]\T1/ptm/m/n/9 [3] Ra-jput, S., Mehta, N., Singh, A., Ke-sha-van, R. H., Vu, T., Heldt, L., Hong, L.,
+ []
+
+
+Underfull \hbox (badness 5681) in paragraph at lines 173--180
+\T1/ptm/m/n/9 Tay, Y., Tran, V. Q., Samost, J., Kula, M., Chi, E. H., and Sathi-amoor-thy, M. Rec-om-
+ []
+
+
+Underfull \hbox (badness 2884) in paragraph at lines 173--180
+\T1/ptm/m/n/9 mender Sys-tems with Gen-er-a-tive Re-trieval. In \T1/ptm/m/it/9 Ad-vances in Neu-ral In-for-ma-tion Pro-cess-ing Sys-
+ []
+
+
+Underfull \hbox (badness 2680) in paragraph at lines 173--180
+\T1/ptm/m/it/9 tems 36 (NeurIPS)\T1/ptm/m/n/9 , 2023. []$\T1/cmtt/m/n/9 https : / / proceedings . neurips . cc / paper _ files / paper / 2023 / hash /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 181--185
+[]\T1/ptm/m/n/9 [4] Ope-nAI. Em-bed-dings with Ope-nAI ``text-embedding-ada-002'' Are Not De-ter-min-is-tic.
+ []
+
+
+Underfull \hbox (badness 4634) in paragraph at lines 212--217
 []\T1/ptm/m/n/9 [10] The SEMQ Group. ARI: An Au-ditable Re-trieval In-sta-bil-ity Har-ness. Soft-ware repos-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 209--214
+Underfull \hbox (badness 10000) in paragraph at lines 212--217
 \T1/ptm/m/n/9 i-tory, 2026. []$\T1/cmtt/m/n/9 https : / / github . com / The-[]SEMQ-[]Group / semq-[]ari-[]benchmark$[]\T1/ptm/m/n/9 . Ver-sion
  []
 
 
 
 [5]
-Underfull \hbox (badness 1472) in paragraph at lines 242--243
+Underfull \hbox (badness 1472) in paragraph at lines 272--273
 \T1/ptm/m/n/10 ARI-E ap-plies the same dis-ci-pline --- re-peat, con-trol, at-tribute --- to agent out-comes on
  []
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
 
 
 
@@ -501,27 +500,29 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 pdfTeX warning (ext4): destination with the same identifier (name{table.4}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.301 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{table.5}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.301 
+l.291 
       ]
 
 [7
+pdfTeX warning (ext4): destination with the same identifier (name{table.5}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.347 
+      
 pdfTeX warning (ext4): destination with the same identifier (name{table.6}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.332 T
-       he TF32 row also shows the cost of strictness read in reverse. Over a...
+l.347 
+      ]
+
+[8
 pdfTeX warning (ext4): destination with the same identifier (name{table.7}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.332 T
-       he TF32 row also shows the cost of strictness read in reverse. Over a...]
+l.369 
+      ]
 
-[8] (./ari.aux)
+[9] (./ari.aux)
  ***********
 LaTeX2e <2024-06-01> patch level 2
 L3 programming layer <2024-05-27>
@@ -530,18 +531,18 @@ Package rerunfilecheck Info: File `ari.out' has not changed.
 (rerunfilecheck)             Checksum: 380F8D24956C3BA72BEC22FD68F9A842;3659.
  ) 
 Here is how much of TeX's memory you used:
- 10906 strings out of 475544
- 165578 string characters out of 5776852
- 1946905 words of memory out of 5000000
+ 10907 strings out of 475544
+ 165584 string characters out of 5776852
+ 1945905 words of memory out of 5000000
  33347 multiletter control sequences out of 15000+600000
  598478 words of font info for 88 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,11n,79p,987b,446s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,11n,79p,1141b,470s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/ilona/Library/TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt0900.600pk> </Users/ilona/Library/TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></Users/ilona/Library/TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on ari.pdf (8 pages, 290968 bytes).
+Output written on ari.pdf (9 pages, 296172 bytes).
 PDF statistics:
- 374 PDF objects out of 1000 (max. 8388607)
- 231 compressed objects within 3 object streams
- 36 named destinations out of 1000 (max. 500000)
+ 394 PDF objects out of 1000 (max. 8388607)
+ 245 compressed objects within 3 object streams
+ 37 named destinations out of 1000 (max. 500000)
  142 words of extra memory for PDF output out of 10000 (max. 10000000)
 
