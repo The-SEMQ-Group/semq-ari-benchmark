@@ -31,7 +31,7 @@ sys.path.insert(0, str(HERE))
 from scorers import (  # noqa: E402
     budget_ari, budget_margin_fp32, budget_projection, budget_raw_fp32,
     budget_sha256, budget_uniform_quant, canonical_bytes, coord_mismatch,
-    cosine_distance, js_div, kl_div, margin_delta, max_abs_diff,
+    cosine_distance, js_from_logits, kl_from_logits, margin_delta, max_abs_diff,
     random_projection_scorer, rel_l2, token_flip, topk_set_change,
 )
 
@@ -99,8 +99,8 @@ def score_pair(r, c, proj):
         "rel_l2": rel_l2(r, c),
         "coord_mismatch": coord_mismatch(r, c),
         "cosine_distance": cosine_distance(r, c),
-        "kl_fp64": kl_div(r, c),
-        "js_fp64": js_div(r, c),
+        "kl_fp64": kl_from_logits(r, c),
+        "js_fp64": js_from_logits(r, c),
         "margin_delta": margin_delta(r, c),
         "token_flip": token_flip(r, c),
         "topk20_change": topk_set_change(r, c, k=20),

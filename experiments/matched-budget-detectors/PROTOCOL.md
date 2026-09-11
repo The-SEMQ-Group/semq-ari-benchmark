@@ -229,12 +229,31 @@ and KL and JS computed in float64 log-space, validated against a
 high-precision oracle on tiny perturbations, identical inputs and extreme
 logits. These are not dismissed for float32 cancellation observed elsewhere.
 
-KL and JS apply to **probability distributions only**, so at the logit probe
-and never to signed embedding coordinates, which are not a distribution and
-for which the quantity is undefined rather than merely awkward. Support and
-zero handling are declared with the implementation and covered by the oracle
-tests. A scorer table that applies them to embeddings is a bug, and the
-scorer suite raises rather than returning a number.
+KL and JS take **logits**, and the functions are named `kl_from_logits` and
+`js_from_logits` for it. The softmax inside them turns a row into a
+distribution over a vocabulary, which is what logits are; an embedding
+coordinate is not an unnormalised log-probability of anything, so softmaxing
+one returns a number with no meaning. Nothing at runtime distinguishes the
+two — both are float arrays — so no guard can catch the misuse and the name
+carries the precondition instead. Support and zero handling are declared with
+the implementation and covered by the oracle tests.
+
+### 4.1 Every comparison stays inside one probe
+
+The methods above are not all available at both probes, so the comparison is
+run **per probe** and no result crosses between them:
+
+| probe | methods compared |
+| --- | --- |
+| embedding (`n_bins=2`) | ARI family, vector distances, equality and block hashes, uniform scalar quantization, sketch, float16 anchor |
+| logit (`n_bins=8`) | all of the above, plus `kl_from_logits`, `js_from_logits`, top-2 margin, token flip, top-k set change |
+
+A table placing KL at the logit probe beside ARI at the embedding probe would
+compare two different measurements of two different objects and report the
+difference as if it were a property of the methods. §0.3 already forbids
+quoting storage from one probe against detection from the other; this extends
+the same rule to every comparison, and each probe carries its own family for
+the correction in §8.
 
 **Sketch** — seeded Gaussian random projection; its seed and projection
 metadata count toward its storage budget.
@@ -277,12 +296,13 @@ perform.
 ## 8. Analysis, fixed before collection
 
 **Multiple comparisons.** The study compares roughly a dozen scorers across
-two probes and several interventions. Every reported comparison is one of a
-family, so the primary family — scorers against ARI at the embedding probe,
-at the declared alarm policy — is corrected by Holm–Bonferroni at the family
-level, and the uncorrected p-values are reported alongside. Comparisons
-outside the primary family are labelled exploratory and are not used to
-support a claim.
+two probes and several interventions. Families are **per probe** (§4.1),
+since no comparison crosses probes. Within each probe the primary family is
+the scorers against ARI at the declared alarm policy, corrected by
+Holm–Bonferroni at the family level, with uncorrected p-values reported
+alongside. Comparisons outside a primary family are labelled exploratory and
+are not used to support a claim. The two probes' families are corrected
+separately and their results are never pooled.
 
 **Paired testing.** All scorers see identical episodes, so every comparison is
 paired at the episode level and resampled by episode, never by input. An

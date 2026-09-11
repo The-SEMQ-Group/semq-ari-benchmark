@@ -146,14 +146,6 @@ def float16_roundtrip_delta(r: np.ndarray, c: np.ndarray) -> np.ndarray:
     return np.abs(b - a).max(axis=-1)
 
 
-def _reject_non_distribution(name: str) -> None:
-    raise ValueError(
-        f"{name} is defined for probability distributions, so for the logit "
-        "probe only. Applying it to signed embedding coordinates is undefined, "
-        "not merely awkward; pass logits or use a vector distance."
-    )
-
-
 def _log_softmax64(x: np.ndarray) -> np.ndarray:
     x = np.asarray(x, dtype=np.float64)
     m = x.max(axis=-1, keepdims=True)
@@ -161,18 +153,31 @@ def _log_softmax64(x: np.ndarray) -> np.ndarray:
     return z - np.log(np.exp(z).sum(axis=-1, keepdims=True))
 
 
-def kl_div(r, c):
-    """KL(P_r || P_c) in nats, float64 log-space.
+def kl_from_logits(r, c):
+    """KL(P_r || P_c) in nats, float64 log-space, from **logits**.
 
-    Nonnegative by construction up to rounding; a negative value here would
-    indicate a numerical fault rather than a property of the statistic.
+    Named for its input because nothing at runtime distinguishes a logit
+    vector from an embedding: both are float arrays, so a guard cannot
+    catch the misuse and the name has to. The softmax below turns a row
+    into a distribution over a vocabulary, which is what logits are. An
+    embedding coordinate is not an unnormalised log-probability of
+    anything, so softmaxing one produces a number with no meaning rather
+    than a worse estimate of a real quantity.
+
+    Nonnegative by construction up to rounding; a negative value here
+    would indicate a numerical fault rather than a property of the
+    statistic.
     """
     lr, lc = _log_softmax64(r), _log_softmax64(c)
     return (np.exp(lr) * (lr - lc)).sum(axis=-1)
 
 
-def js_div(r, c):
-    """Jensen-Shannon divergence in nats, via a log-space mixture."""
+def js_from_logits(r, c):
+    """Jensen-Shannon divergence in nats from **logits**, log-space mixture.
+
+    Same precondition as :func:`kl_from_logits`, and carried in the name
+    for the same reason.
+    """
     lr, lc = _log_softmax64(r), _log_softmax64(c)
     lm = np.logaddexp(lr, lc) - math.log(2.0)
     return 0.5 * (np.exp(lr) * (lr - lm)).sum(-1) + 0.5 * (np.exp(lc) * (lc - lm)).sum(-1)

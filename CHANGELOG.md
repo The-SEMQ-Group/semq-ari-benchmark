@@ -36,8 +36,17 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   exclusion rules that admit collection faults only.
 - Two baselines the comparison was missing: **budget-matched block hashes**,
   so a hash is given the same storage and can localise too, and a **float16
-  reference** as the larger-storage accuracy anchor. KL and JS are now
-  restricted to probability distributions and raise on signed embeddings.
+  reference** as the larger-storage accuracy anchor.
+- `kl_div` and `js_div` are renamed `kl_from_logits` and `js_from_logits`.
+  They already applied a softmax internally, so they always took logits; the
+  name now says so. Nothing at runtime tells a logit vector from an embedding
+  — both are float arrays — so a guard cannot catch the misuse and the name
+  has to. Result keys are unchanged.
+- **New §4.1: every comparison stays inside one probe.** KL and JS exist only
+  at the logit probe, so a table placing them beside embedding-probe ARI would
+  compare two measurements of two different objects. Families for the multiple
+  comparison correction are now per probe, corrected separately and never
+  pooled.
 
 ### Extent, quantized movement and location, beside equality
 - A 32-byte SHA-256 detects every change and costs a fraction of a code,

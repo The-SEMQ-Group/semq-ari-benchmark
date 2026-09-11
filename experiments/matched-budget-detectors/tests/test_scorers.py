@@ -30,8 +30,8 @@ from scorers import (  # noqa: E402
     canonical_bytes,
     coord_mismatch,
     cosine_distance,
-    js_div,
-    kl_div,
+    js_from_logits,
+    kl_from_logits,
     margin_delta,
     max_abs_diff,
     random_projection_scorer,
@@ -123,7 +123,7 @@ def test_kl_matches_exact_oracle_at_tiny_perturbation():
     rng = np.random.default_rng(3)
     r = rng.standard_normal(64) * 5.0
     c = r + rng.standard_normal(64) * 1e-4
-    got = float(kl_div(r[None, :], c[None, :])[0])
+    got = float(kl_from_logits(r[None, :], c[None, :])[0])
     want = _exact_kl(r, c)
     assert got >= 0.0, f"negative KL: {got}"
     assert abs(got - want) <= 1e-12 + 1e-6 * abs(want), (got, want)
@@ -132,7 +132,7 @@ def test_kl_matches_exact_oracle_at_tiny_perturbation():
 def test_kl_is_zero_and_nonnegative_on_identical_logits():
     rng = np.random.default_rng(4)
     r = rng.standard_normal((8, 128)) * 3.0
-    k = kl_div(r, r.copy())
+    k = kl_from_logits(r, r.copy())
     assert (k >= 0).all()
     assert np.allclose(k, 0.0, atol=1e-15)
 
@@ -141,7 +141,7 @@ def test_kl_survives_extreme_logits():
     """Large magnitudes are where a naive implementation overflows."""
     r = np.array([[800.0, -800.0, 0.0, 50.0]])
     c = r + 1e-3
-    k = kl_div(r, c)
+    k = kl_from_logits(r, c)
     assert np.isfinite(k).all() and (k >= 0).all()
 
 
@@ -149,7 +149,7 @@ def test_js_is_symmetric_bounded_and_nonnegative():
     rng = np.random.default_rng(5)
     a = rng.standard_normal((6, 64)) * 2.0
     b = a + rng.standard_normal((6, 64)) * 1e-3
-    j1, j2 = js_div(a, b), js_div(b, a)
+    j1, j2 = js_from_logits(a, b), js_from_logits(b, a)
     assert np.allclose(j1, j2, rtol=1e-12)
     assert (j1 >= 0).all()
     assert (j1 <= math.log(2) + 1e-12).all()
