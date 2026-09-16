@@ -1,6 +1,9 @@
-# Copyright (c) 2026 The SEMQ Group.
+# Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
-
+#
+# This repository computes SEMQ codes through the SEMQ SDK, a separate library
+# that is subject to a commercial license owned by The SEMQ Group Inc. and is
+# patent pending. The SDK is not covered by the Apache License.
 """Resolve the immutable Hub commit an experiment actually loaded.
 
 A name is not an identity: `all-MiniLM-L6-v2` or `BeIR/scifact` can both change

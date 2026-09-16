@@ -1,3 +1,9 @@
+# Copyright (c) 2026 The SEMQ Group Inc.
+# Licensed under the Apache License, Version 2.0. See LICENSE for terms.
+#
+# This repository computes SEMQ codes through the SEMQ SDK, a separate library
+# that is subject to a commercial license owned by The SEMQ Group Inc. and is
+# patent pending. The SDK is not covered by the Apache License.
 """Generate a schema-valid ARI report for one agent and (optionally) add it to the
 leaderboard. Runs baseline E0 + the conditions we can measure now (`same`, `proc`), builds
 the report, scores it with the leaderboard scorer, and appends a row.

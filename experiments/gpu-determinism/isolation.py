@@ -1,3 +1,9 @@
+# Copyright (c) 2026 The SEMQ Group Inc.
+# Licensed under the Apache License, Version 2.0. See LICENSE for terms.
+#
+# This repository computes SEMQ codes through the SEMQ SDK, a separate library
+# that is subject to a commercial license owned by The SEMQ Group Inc. and is
+# patent pending. The SDK is not covered by the Apache License.
 """Isolation 2x2 (TF32 on/off × determinism on/off) at fp32, to attribute the GPU
 cross-process (`proc`) drift to TF32 vs nondeterministic kernels — and to record the
 framework's *default* allow_tf32 (settles the "by default" question). See RESULTS.md.

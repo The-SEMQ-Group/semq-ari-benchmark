@@ -1,3 +1,9 @@
+# Copyright (c) 2026 The SEMQ Group Inc.
+# Licensed under the Apache License, Version 2.0. See LICENSE for terms.
+#
+# This repository computes SEMQ codes through the SEMQ SDK, a separate library
+# that is subject to a commercial license owned by The SEMQ Group Inc. and is
+# patent pending. The SDK is not covered by the Apache License.
 """Coordinate, bit and byte differences between two sets of SEMQ codes.
 
 SEMQ QUANT returns bit-packed bytes, and it packs whether or not the

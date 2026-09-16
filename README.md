@@ -74,4 +74,6 @@ See the [condition specification](spec/condition-set.md) and [measurement scope]
 
 Code under `ari/` uses Apache-2.0. Specifications and benchmark selections use CC BY 4.0.
 Source documents retain their original licenses. See [LICENSE](LICENSE) and [dataset licensing](data/README.md).
+This version uses the SEMQ SDK, a library that is subject to a commercial license owned by The SEMQ Group Inc. and is patent pending.
+The SDK is not covered by the Apache License. See [NOTICE](NOTICE).
 Use [CITATION.cff](CITATION.cff) for citation metadata.
