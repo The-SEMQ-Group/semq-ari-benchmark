@@ -19,6 +19,7 @@ Experiment scripts can overwrite their result files. Use a separate checkout to 
 | ARI-D references | Output from published weights at fixed precision. | [Procedure](arid-fp32-refs/README.md). |
 | Harness effect | Within-harness and cross-harness agreement. | [Results](harness-effect/RESULTS.md). |
 | Harness power | Case counts and repeated runs for harness comparisons. | [Simulation](harness-power/RESULTS.md). |
+| Retrieval outcomes | Whether ARI diagnostics predict retrieval loss and rebuild benefit. | [Protocol draft](retrieval-outcomes/PROTOCOL.md), [pilot plan](retrieval-outcomes/PILOT.md), [scope](retrieval-outcomes/README.md). |
 
 ## Dependencies
 
