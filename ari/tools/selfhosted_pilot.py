@@ -44,7 +44,6 @@ def main(argv=None) -> int:
     ap.add_argument("--model", default="BAAI/bge-large-en-v1.5")
     ap.add_argument("--n", type=int, default=64)
     ap.add_argument("--resamples", type=int, default=3)
-    ap.add_argument("--probe-backend", choices=["auto", "semq", "mock"], default="semq")
     ap.add_argument("--pin-threads", dest="pin", action="store_true", default=True)
     ap.add_argument("--no-pin-threads", dest="pin", action="store_false")
     ap.add_argument("--out", type=Path, default=Path("selfhosted_pilot.json"))
@@ -75,7 +74,7 @@ def main(argv=None) -> int:
             return np.load(out)
 
     base = encode_inproc(inputs.texts)
-    probe = load_probe(base, backend=args.probe_backend)
+    probe = load_probe(base)
     base_codes = probe.encode(base)
 
     conditions = {}

@@ -6,6 +6,29 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### The mock probe is gone
+- `ari/probe.py` binds to the SDK only. The development stand-in quantizer is
+  removed: its magnitude edge and byte layout differed from the canonical
+  probe, so its HER and byte rates were comparable with nothing, and a
+  stand-in that matched the SDK would be the reimplementation CONTRIBUTING.md
+  forbids. `load_probe(X)` takes no backend and raises a clear error without
+  the SDK. The `--probe-backend` flag is gone from `ari.run`, `run_report`,
+  `selfhosted_pilot` and `proc_pilot`, and `proc_pilot` no longer falls back
+  to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
+- The CI step that runs the mock-agent pipeline now runs only when the SDK
+  was installed. `refresh_leaderboard --mock` also uses the canonical SDK
+  probe; it only replaces provider responses with a fake agent.
+
+### SciFact codes committed beside the results
+- `experiments/regime-discrimination/results/codes/` holds the packed QUANT
+  codes for the reference and the six CPU conditions, with the calibration
+  scale, bit layout and file hashes in `MANIFEST.json`. `export_codes.py`
+  writes them (SDK required) and `--check` recomputes HER from them with
+  `ari.code_metrics` alone, so the code-level rows can be verified without
+  the SDK. Verified equal to the committed table on every condition.
+- The paper's reproducibility statement now says that computing a code
+  requires the SDK, which is commercially licensed, and what can be
+  regenerated without it.
 ### The SDK is the authority on layout and calibration
 - `run_pilot.py` took the packed layout, the symbol unpacking and the
   calibration percentile from the core instead of reimplementing them. The

@@ -45,7 +45,7 @@ def sweep_from_embeddings(X: np.ndarray, model_id: str, seed: int = 0) -> dict:
     SentenceTransformer or a black-box API both land here)."""
     X = np.ascontiguousarray(X, dtype=np.float32)
     dim = int(X.shape[1])
-    probe = load_probe(X, backend="semq")
+    probe = load_probe(X)
     clean = probe.encode(X)
     mean_norm = float(np.linalg.norm(X, axis=1).mean())
     rng = np.random.default_rng(seed)

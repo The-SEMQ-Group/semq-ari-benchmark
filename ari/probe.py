@@ -4,13 +4,11 @@
 # This file calls the SEMQ SDK, a separate library that is subject to a
 # commercial license owned by The SEMQ Group Inc. and is patent pending.
 # The SDK is not covered by the Apache License.
-"""The ARI canonical probe (SEMQ QBIN n=2, 99th-percentile calibration).
+"""SEMQ QBIN probe — the canonical ARI probe. **Codes must be bit-comparable across runs.**
 
-At run time this binds to the `semq` SDK. When the SDK is not importable (local
-dry-runs, CI), a deterministic reference **mock** stands in so the whole harness is
-testable end-to-end. The mock is NOT the canonical probe — it only reproduces the
-discrete-attractor behaviour (`encode(v) == encode(v)` bit-exact) needed to exercise
-the pipeline. Real numbers require the SDK.
+Binds to the `semq` SDK. There is no substitute: the operators are distributed only in
+that package, and this repository carries no reimplementation of them (CONTRIBUTING.md).
+Without the SDK, `load_probe` raises and nothing here can produce a code.
 
 See ../../spec/ari-canonical-v0.1.md.
 """
@@ -77,39 +75,15 @@ class _SemqProbe(Probe):
             pass
 
 
-class _MockProbe(Probe):
-    """Deterministic quantile-bin reference. Global scale `s` at the 99th percentile
-    of |component|; symbols from edges {-s, 0, +s} (4 symbols ≈ 2 bits/dim), matching
-    the canonical n=2 setting's bit budget. Deterministic ⇒ discrete-attractor holds."""
-
-    backend = "mock"
-
-    def __init__(self, s: float):
-        self.s = float(s)
-        self._edges = np.array([-self.s, 0.0, self.s])
-
-    @classmethod
-    def calibrate(cls, X: np.ndarray) -> "_MockProbe":
-        s = float(np.percentile(np.abs(X), PERCENTILE))
-        return cls(s if s > 0 else 1.0)
-
-    def encode(self, X: np.ndarray) -> np.ndarray:
-        return np.digitize(X, self._edges).astype(np.uint8)
-
-
-def load_probe(calibration_vectors: np.ndarray, backend: str = "auto") -> Probe:
-    """Calibrate and return a probe. `backend`: 'auto' (semq if available, else mock),
-    'semq' (require the SDK), or 'mock' (force the reference mock)."""
-    if backend in ("auto", "semq"):
-        try:
-            return _SemqProbe.calibrate(calibration_vectors)
-        except ImportError:
-            if backend == "semq":
-                raise RuntimeError(
-                    "backend='semq' requested but the `semq` SDK is not installed. "
-                    "Install it from the private index (pre-launch) or PyPI (post-launch)."
-                )
-    return _MockProbe.calibrate(calibration_vectors)
+def load_probe(calibration_vectors: np.ndarray) -> Probe:
+    """Calibrate the canonical probe on `calibration_vectors`. Requires the `semq` SDK."""
+    try:
+        return _SemqProbe.calibrate(calibration_vectors)
+    except ImportError as exc:
+        raise RuntimeError(
+            "the `semq` SDK is not installed and this repository has no substitute for it; "
+            "see ari/README.md for how to obtain it"
+        ) from exc
 
 
 def fixed_scale_codes(vectors: np.ndarray, s: float, dim: int) -> np.ndarray:

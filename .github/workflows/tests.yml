@@ -56,7 +56,10 @@ jobs:
       - name: Run tests
         run: pytest -v -rs
 
-      - name: Validate the documented mock pipeline
+      # The mock agent needs no credentials, but every code comes from the SDK,
+      # so this step only runs when semq was installed above.
+      - name: Validate the mock-agent pipeline
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
         run: python -m ari.run --out /tmp/ari-report.json --validate
 
       - name: Build the package
