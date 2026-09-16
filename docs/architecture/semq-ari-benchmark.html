@@ -1,0 +1,251 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SEMQ–ARI benchmark architecture</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55;color:#17202a;max-width:1180px;margin:0 auto;padding:32px}h1,h2,h3{line-height:1.2;color:#102a43}table{border-collapse:collapse;width:100%;margin:1em 0}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left}th{background:#eef2f7}pre{background:#f6f8fa;padding:14px;overflow:auto;border-radius:6px}.mermaid{background:white;border:1px solid #e2e8f0;padding:12px;border-radius:8px}code{background:#f1f5f9;padding:2px 4px;border-radius:3px}.note{color:#52606d}</style><script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script><script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script></head><body><main id="content"><p class="note">Loading architecture…</p></main><textarea id="source" hidden># SEMQ–ARI benchmark architecture
+
+This document describes the current repository and the proposed boundary
+between the ARI benchmark and the SEMQ SDK. ARI owns the measurement protocol
+and analysis; SEMQ owns the canonical QUANT representation and codec.
+
+## System context
+
+```mermaid
+flowchart LR
+    U[Model or embedding provider] --&gt; C[Capture tools and experiment runners]
+    C --&gt; V[Reference and condition vectors\nNPZ/JSON episode artifacts]
+    V --&gt; P[ARI probe adapter\nari/probe.py + semq_compat.py]
+    P --&gt; S[SEMQ SDK\nPython binding]
+    S --&gt; N[Native libsemq\ncanonical QUANT codec]
+    V --&gt; D[Detector and baseline scorers]
+    P --&gt; D
+    D --&gt; A[Analysis\nthresholds and paired statistics]
+    A --&gt; R[ARI report\nJSON + schema validation]
+    R --&gt; T[Attestation\nmanifest + signature]
+    R --&gt; O[Results\nS3, paper, leaderboard]
+```
+
+| Path | Input | Current implementation | Output |
+| --- | --- | --- | --- |
+| **ARI harness** | Provider outputs and condition metadata | [`ari/`](../../ari/) | Versioned report and attestation |
+| **Research experiments** | Frozen vectors or cached embeddings/logits | [`experiments/`](../../experiments/) | Detector comparisons and sweep tables |
+
+The experiment path deliberately includes non-SEMQ baselines. A detector does
+not need to use SEMQ to be a valid comparator.
+
+## Capture and artifact flow
+
+```mermaid
+flowchart TD
+    I[Input manifest\nIDs, texts/prompts, hashes] --&gt; E0[Reference execution]
+    I --&gt; E1[Condition execution\none declared axis]
+    E0 --&gt; X0[Reference vectors\ncanonical float32 NPZ]
+    E1 --&gt; X1[Condition vectors\ncanonical float32 NPZ]
+    X0 --&gt; M[Episode manifest\nmodel, device, dtype, flags, seeds, versions, checksums]
+    X1 --&gt; M
+    M --&gt; G{Artifact gate}
+    G --&gt;|valid| U[Reuse or publish]
+    G --&gt;|partial, mismatch, upload failure| F[Fail closed\nretain local artifacts]
+    U --&gt; S3[(Durable result store\nS3 / immutable prefix)]
+    U --&gt; L[Local analysis workspace]
+```
+
+An episode is a complete frozen input set under one configuration. Inputs within
+an episode are not independent episodes; confirmatory uncertainty must therefore
+be resampled at the episode level.
+
+## Current module map
+
+```mermaid
+flowchart TB
+    subgraph Capture[Capture and orchestration]
+      agents[ari/agents.py\nprovider and self-hosted capture]
+      tools[ari/tools/*\nGPU, process, concurrency, time]
+      collect[matched-budget-detectors/collect_embeddings.py\nresumable collector]
+    end
+    subgraph Probe[Probe layer]
+      probe[ari/probe.py\nbackend selection]
+      compat[ari/semq_compat.py\nSDK compatibility + chunking]
+      mock[reference mock\nnon-canonical]
+    end
+    subgraph SDK[SEMQ boundary]
+      py[SEMQ Python binding]
+      core[libsemq native core\npacking, calibration, encode/decode]
+    end
+    subgraph Metrics[Measurement and baselines]
+      metrics[ari/metrics.py\nHER, Hamming, cosine]
+      codes[ari/code_metrics.py\nbyte/symbol/bit differences]
+      bounds[ari/bound_quality.py\nmovement bounds]
+      scores[matched-budget-detectors/scorers.py\nSHA, distances, KL/JS, hashes, sketches]
+    end
+    subgraph Analysis[Analysis and publication]
+      sweep[probe-sweep/run_sweep.py + decide.py]
+      report[ari/report.py + ari/run.py]
+      attest[ari/attest.py + verify_report.py]
+      schema[spec/report-schema.json]
+    end
+    agents --&gt; probe
+    tools --&gt; probe
+    collect --&gt; probe
+    probe --&gt; compat --&gt; py --&gt; core
+    probe --&gt; mock
+    Probe --&gt; Metrics
+    Metrics --&gt; sweep --&gt; report
+    Metrics --&gt; report
+    report --&gt; schema
+    report --&gt; attest
+```
+
+## Current SDK boundary
+
+| Operation | Owner today | Standardization value |
+| --- | --- | --- |
+| QUANT calibration | SEMQ context via `semq_compat.quant_context` | Native float32 behavior defines the scale |
+| QUANT encoding and packing | SEMQ binding → `libsemq` | Production-compatible, parity-testable codes |
+| Symbol unpacking | SDK where available; ARI compatibility path | Coordinate-level mismatch instead of byte confusion |
+| Region geometry and displacement | SEMQ region API | Finite bounds derived from encoder behavior |
+| Code metrics | ARI derived metrics | Explicit comparison with non-SEMQ baselines |
+
+ARI independently implements SHA-256, vector distances, KL/JS, top-k metrics,
+block hashes, float16 anchors, sketches, thresholds, retrieval evaluation,
+reports, and attestations.
+
+## Data and decision flow
+
+```mermaid
+sequenceDiagram
+    participant E as Encoder/provider
+    participant C as Capture
+    participant Q as SEMQ Context
+    participant B as Baseline scorers
+    participant A as ARI analysis
+    participant R as Report/notary
+    E-&gt;&gt;C: Encode frozen inputs under reference and intervention
+    C-&gt;&gt;Q: Reference vectors + frozen calibration data
+    Q--&gt;&gt;C: Scale, packed codes, symbols, region geometry
+    C-&gt;&gt;B: Reference/current vectors and codes
+    B--&gt;&gt;A: Per-input scores for declared methods
+    A-&gt;&gt;A: Fit thresholds on development controls
+    A-&gt;&gt;A: Evaluate held-out episodes and bootstrap by episode
+    A--&gt;&gt;R: Metrics, intervals, budgets, provenance
+    R-&gt;&gt;R: Validate schema and sign manifest
+```
+
+Every headline comparison should state the alarm unit, total reference-storage
+budget, intervention set, and uncertainty unit. A nominal FPR is not guaranteed
+when a score is discrete or its control null is degenerate.
+
+## Storage and resolution tradeoff
+
+For a 384-dimensional embedding, the current QUANT sweep has this code payload:
+
+```mermaid
+xychart-beta
+    title &quot;QUANT payload versus magnitude-bin count (dim 384)&quot;
+    x-axis [2, 4, 8]
+    y-axis &quot;code bytes&quot; 0 --&gt; 220
+    bar [96, 144, 192]
+```
+
+| Probe | Code payload | Saturation | Int8 multi-region share | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| MiniLM, 384, 2 bins | 96 B | 19.6% | 0.03% | Compact, weak resolution |
+| MiniLM, 384, 4 bins | 144 B | 5.3% | 3.91% | First useful int8 lower bounds |
+| MiniLM, 384, 8 bins | 192 B | 2.4% | 27.4% | More resolution; bf16 HER saturates |
+| bge-large, 1024, 4 bins | 384 B | 5.5% | 0.45% | Lower-bound behavior differs |
+| bge-large, 1024, 8 bins | 512 B | 2.4% | 13.45% | Finer probe required here |
+
+These are development measurements, not universal SDK defaults. The 1024 run
+omitted bf16 because the host lacked native CPU bf16 support.
+
+## Opportunities for deeper SDK integration
+
+### 1. Make the SDK the sole source of QUANT semantics
+
+Use a versioned SDK surface for calibration, packing, symbol unpacking, region
+edges, and displacement. ARI should retain aggregation and statistical
+definitions, eliminating Python/native behavior drift.
+
+### 2. Define a canonical observation envelope
+
+| Field | Purpose |
+| --- | --- |
+| `operator`, `n_bins`, dimension, packing version | Decode and interpret codes |
+| `scale_max` or calibration identifier | Reproduce region geometry |
+| input/model/condition hashes | Bind measurements to source data |
+| SDK, core, binding, compiler versions | Explain platform differences |
+| code and optional raw-vector checksums | Verify integrity |
+| capability list | State whether location, bounds, or reconstruction are available |
+
+The envelope should be readable by every binding and independently verifiable
+without importing the ARI Python package.
+
+### 3. Move deterministic code metrics into the core
+
+```text
+semq_code_symbol_mismatch(ref, cur, n, dim, out)
+semq_code_hamming(ref, cur, n, dim, out)
+semq_code_diff_rows(ref, cur, n, dim, out)
+semq_quant_regions(ctx, out_edges)
+semq_quant_displacement(ref_symbols, cur_symbols, n, dim, out_bounds)
+```
+
+Return integer counts and region IDs from the core; let bindings expose floating
+summaries. This keeps arithmetic and packing semantics identical across Python,
+Rust, Go, and TypeScript.
+
+### 4. Expose capabilities and cost metadata
+
+```json
+{
+  &quot;operator&quot;: &quot;QUANT&quot;,
+  &quot;bits_per_coordinate&quot;: 3,
+  &quot;shared_state_bytes&quot;: 4,
+  &quot;supports&quot;: [&quot;symbol_mismatch&quot;, &quot;region_location&quot;, &quot;movement_bounds&quot;],
+  &quot;packing&quot;: &quot;little-endian-bitstream-v1&quot;
+}
+```
+
+Machine-readable descriptors would let every binding apply the same budget and
+capability accounting.
+
+### 5. Keep production probes separate from research baselines
+
+SEMQ should provide the canonical probe and low-level primitives. ARI should
+continue to own SHA-256, KL/JS, random projections, thresholds, retrieval
+metrics, and statistical tests.
+
+## Target architecture
+
+```mermaid
+flowchart LR
+    subgraph Core[SEMQ native core]
+      codec[Calibration + encode/decode]
+      symbols[Packed symbols + exact distances]
+      geometry[Region edges + displacement bounds]
+      envelope[Versioned artifact metadata]
+    end
+    subgraph Bindings[SEMQ bindings]
+      py[Python]
+      rs[Rust]
+      go[Go]
+      ts[TypeScript/WASM]
+    end
+    subgraph Ari[ARI benchmark]
+      capture[Capture adapters]
+      baselines[Independent baselines]
+      policy[Threshold/FPR/TPR policy]
+      retrieval[Recall@10, NDCG@10, top-k stability]
+      reports[Reports and attestations]
+    end
+    Core --&gt; Bindings --&gt; capture
+    capture --&gt; baselines
+    capture --&gt; policy
+    capture --&gt; retrieval
+    baselines --&gt; reports
+    policy --&gt; reports
+    retrieval --&gt; reports
+```
+
+The highest-leverage sequence is: stabilize the native observation envelope,
+move symbol/distance/bound primitives into the core, add golden cross-language
+fixtures, then use ARI to evaluate detector and retrieval behavior. This makes
+SEMQ the verifiable substrate without turning every ARI baseline into an SDK
+feature.
+</textarea><script>mermaid.initialize({startOnLoad:false,theme:'neutral',securityLevel:'loose'});const source=document.getElementById('source').value;document.getElementById('content').innerHTML=marked.parse(source);for(const block of document.querySelectorAll('pre code.language-mermaid')){const d=document.createElement('div');d.className='mermaid';d.textContent=block.textContent;block.parentElement.replaceWith(d)}mermaid.run();</script></body></html>

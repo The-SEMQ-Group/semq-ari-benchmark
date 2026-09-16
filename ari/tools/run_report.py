@@ -59,7 +59,7 @@ def _load_st(model_id):
     return SentenceTransformer(model_id, device="cpu", trust_remote_code=True)
 
 
-def selfhosted_codes(model_id, probe_backend, texts):
+def selfhosted_codes(model_id, texts):
     model = _load_st(model_id)
 
     def enc(ts):
@@ -68,7 +68,7 @@ def selfhosted_codes(model_id, probe_backend, texts):
 
     base_vecs = enc(texts)
     dim = int(base_vecs.shape[1])
-    probe = load_probe(base_vecs, backend=probe_backend)
+    probe = load_probe(base_vecs)
     base = probe.encode(base_vecs)
     same = probe.encode(enc(texts))                   # in-process re-encode
     with tempfile.TemporaryDirectory() as d:          # proc: fresh subprocess (real cross-process)
@@ -88,7 +88,6 @@ def main(argv=None) -> int:
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--inputs", type=Path)
     ap.add_argument("--limit", type=int, default=None, help="use only the first N inputs of --inputs")
-    ap.add_argument("--probe-backend", choices=["auto", "semq", "mock"], default="semq")
     ap.add_argument("--max-workers", type=int, default=16)
     ap.add_argument("--submit", action="store_true", help="score + append to leaderboard")
     args = ap.parse_args(argv)
@@ -100,7 +99,7 @@ def main(argv=None) -> int:
     if args.agent == "bge":
         os.environ.update(PIN)   # pin BLAS threads (parent + inherited subprocess) before torch
         model_id = args.model or "BAAI/bge-large-en-v1.5"
-        probe, base_codes, cond_codes, dim = selfhosted_codes(model_id, args.probe_backend, inputs.texts)
+        probe, base_codes, cond_codes, dim = selfhosted_codes(model_id, inputs.texts)
         agent_id, agent_class = model_id, "self_hosted"
         import torch
         environment = {"blas": "torch-default", "threads": torch.get_num_threads(),
@@ -114,7 +113,7 @@ def main(argv=None) -> int:
         agent = cls(**kwargs)
         base_vecs = agent.encode(inputs.texts)
         dim = int(base_vecs.shape[1])
-        probe = load_probe(base_vecs, backend=args.probe_backend)
+        probe = load_probe(base_vecs)
         base_codes = probe.encode(base_vecs)
         cond_codes = api_codes(agent, probe, inputs.texts)
         agent_id, agent_class = f"{args.agent}/{agent.agent_id}", "api"

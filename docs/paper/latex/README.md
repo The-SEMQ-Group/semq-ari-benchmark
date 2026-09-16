@@ -15,6 +15,18 @@ No TEXINPUTS or other tricks needed. Two passes: the page-count check uses a
 `bodyend` is the page the body ends on. The CFP limit is 4 pages excluding
 references and appendices, so this must read 4 or less.
 
+## Figures
+
+Three scripts in this directory write the PDFs `ari.tex` includes:
+
+    python make_figure1.py   # figure1.pdf: SciFact gap (inline) + trajectory compounding (hash-checked archive)
+    python make_figure2.py   # figure2.pdf: hosted decoding panel, reads experiments/arid-dry-run/results/
+    python make_figure3.py   # figure3.pdf: batch invariance, reads experiments/batch-invariance/results/
+
+They need `matplotlib` and `numpy` only. `make_figure2.py` selects the published
+row for each cell by transcript name, because `analysis.json` also holds prefix
+smokes and confounder arms that are not the published numbers.
+
 ## Toolchain
 
 Earlier builds failed because this TeX Live (2024) was missing `environ.sty`,
@@ -32,8 +44,7 @@ so `pdflatex` finds them. Nothing is stubbed any more.
 changed locally: package name, `\@neuripsordinal` 39th to 40th, and
 `\@neuripsyear` 2025 to 2026. NeurIPS has still not published a 2026 Styles.zip
 (`media.neurips.cc/Conferences/NeurIPS2026/Styles.zip` is a 404). Swap in the
-official file when it appears. Geometry does not change year to year, so the
-page count will hold.
+official file when it appears. Recheck layout and page count against the official style; future geometry is not guaranteed.
 
 ## Line numbers
 
@@ -44,3 +55,14 @@ distribute." The CFP does not require line numbers. Pick one:
 
     \usepackage[final,sglblindworkshop]{neurips_2026}   % workshop footer, no line numbers (current)
     \usepackage[sglblindworkshop]{neurips_2026}         % line numbers, "Submitted to" footer
+
+## Independent publication review
+
+See [advisor review](../REVIEW.md) for technical corrections and evidence still
+needed for archival publication. The abstract was preserved. The revised source
+is an independent draft, not a replacement for the submitted workshop PDF;
+check `bodyend` after building rather than assuming the four-page limit still holds.
+
+The advisor revision leads with the measurement protocol. Two-pass compilation
+verified `bodyend` on page 4; the abstract remains unchanged. Retrieval stress-test
+details and archive limitations appear in the appendix.

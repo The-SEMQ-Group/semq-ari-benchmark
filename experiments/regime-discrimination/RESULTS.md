@@ -39,6 +39,23 @@ measures that degeneracy rather than the instrument. The mistake is recorded in
 CIs are paired bootstrap over queries, 10,000 resamples. "Significant" means the interval
 excludes zero.
 
+## Code matrices
+
+[`results/codes/`](results/codes/) holds the packed SEMQ codes for every CPU condition,
+one `.npz` per condition with a `codes` array of shape (5183, 192) uint8, plus
+[`MANIFEST.json`](results/codes/MANIFEST.json) with the calibration scale, the bit layout,
+the SDK version and a SHA-256 for each file and for the embedding cache it was encoded from.
+Written by [`export_codes.py`](export_codes.py), which needs the SDK. Checking them does not:
+
+```bash
+python experiments/regime-discrimination/export_codes.py --check
+```
+
+This recomputes HER from the codes with `ari.code_metrics` (numpy only) and compares it with
+the table above. The embedding cache itself is not committed and has no manifest, so the
+encoder revision behind these codes is not recorded; the codes are the measurement as
+made, not a fresh one.
+
 ## Reading
 
 **1. Aggregate retrieval quality is blind to both precision changes.** Neither bf16 nor

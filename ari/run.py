@@ -14,8 +14,8 @@ Two stages, so the panel can fan out across instances:
   stage 2 (aggregate) — diff each condition's codes against the baseline, compute HER / H̄
                         with bootstrap CIs, and assemble the signed ARI report.
 
-This module wires both for the **mock** agent so the pipeline runs end-to-end with no SDK
-or credentials. For real agents, stage 1 is executed per environment (producing code
+This module wires both for the **mock** agent so the pipeline runs end-to-end with no
+credentials or network. The SEMQ SDK is still required: there is no substitute probe. For real agents, stage 1 is executed per environment (producing code
 bundles) and stage 2 aggregates them; the seams are the `encode_condition` /
 `aggregate_report` functions below.
 """
@@ -78,11 +78,11 @@ def aggregate_report(
     )
 
 
-def run_mock_panel(inputs: InputSet | None = None, dim: int = 256, probe_backend: str = "mock") -> dict:
+def run_mock_panel(inputs: InputSet | None = None, dim: int = 256) -> dict:
     """Full end-to-end on the mock agent — the reference the test asserts against."""
     inputs = inputs or sample_inputs()
     agent = MockAgent(dim=dim, drift=MOCK_DRIFT)
-    probe = load_probe(agent.encode(inputs.texts), backend=probe_backend)
+    probe = load_probe(agent.encode(inputs.texts))
     codes = {c: encode_condition(agent, probe, inputs, c) for c in FULL_CONDITIONS}
     environment = {
         "blas": "mock", "threads": 1, "hardware": "mock", "precision": "fp32",
@@ -115,15 +115,14 @@ def _validate_schema(report_path: Path) -> int:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Run the ARI harness (mock end-to-end for now).")
+    ap = argparse.ArgumentParser(description="Run the ARI harness end-to-end on the mock agent (SDK required).")
     ap.add_argument("--inputs", type=Path, help="ARI-Bench JSONL; omit for the dry-run sample")
     ap.add_argument("--out", type=Path, default=Path("report.json"))
-    ap.add_argument("--probe-backend", choices=["auto", "semq", "mock"], default="mock")
     ap.add_argument("--validate", action="store_true", help="validate against the local report schema")
     args = ap.parse_args(argv)
 
     inputs = load_ari_bench(args.inputs) if args.inputs else sample_inputs()
-    rep = run_mock_panel(inputs, probe_backend=args.probe_backend)
+    rep = run_mock_panel(inputs)
     report.write_report(args.out, rep)
     print(f"ARI = {rep['ARI']:.4f}  ({rep['agent_id']}, {len(inputs)} inputs)  -> {args.out}")
     print(f"input-set content hash: {inputs.content_hash[:16]}…")
