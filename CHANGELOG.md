@@ -6,6 +6,14 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### The leaderboard refresh has no mock mode
+- `refresh_leaderboard.py --mock` is removed, with its fake agent and its
+  numpy stand-in quantizer. The stand-in rounded to 256 uniform levels and
+  shared nothing with the canonical probe, so the rows it produced were
+  comparable with nothing; a stand-in that matched the SDK would be the
+  reimplementation CONTRIBUTING.md forbids. Every code the tool writes now
+  comes from the SDK.
+
 ### The SDK is the authority on layout and calibration
 - `run_pilot.py` took the packed layout, the symbol unpacking and the
   calibration percentile from the core instead of reimplementing them. The

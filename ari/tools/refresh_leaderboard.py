@@ -17,9 +17,6 @@ produced the current board): `agents`, `probe.fixed_scale_codes`, `metrics.aggre
 `report.build_report`. The only new logic here is orchestration, the rolling `time`
 baseline, and the upsert.
 
-    # dry run — no network, no keys; exercises the whole pipeline with a fake agent
-    python refresh_leaderboard.py --mock --limit 64 --agents openai,cohere
-
     # real run (keys in env: OPENAI_API_KEY, VOYAGE_API_KEY, CO_API_KEY, MISTRAL_API_KEY,
     # GEMINI_API_KEY). --baseline-dir persists the `time` baseline between runs (S3-synced
     # by CI). First run per agent has no baseline -> `time` is skipped (bootstrap) and a
@@ -63,11 +60,9 @@ BURST_OVERRIDE = {"mistral": 8}
 WORKERS_CAP = {"mistral": 4}
 
 
-def _semq_version(mock: bool) -> str:
+def _semq_version() -> str:
     """The pinned SEMQ SDK version that produced these codes — recorded in the report so a
     calibration bump (and any encoding change) is auditable."""
-    if mock:
-        return "mock"
     try:
         import semq
         return str(getattr(semq, "__version__", "unknown"))
@@ -75,41 +70,7 @@ def _semq_version(mock: bool) -> str:
         return "unavailable"
 
 
-# --------------------------------------------------------------------------- mock
-class _MockAgent:
-    """A deterministic-per-seed fake for --mock: lets us exercise orchestration, report
-    assembly, and the upsert end-to-end with no network. `drift` fakes provider
-    non-determinism so the produced HER is < 1 (a realistic-looking row)."""
-
-    def __init__(self, provider, model_id, drift=2e-3, dim=256, max_workers=8):
-        self.provider, self._model, self.dim, self.drift = provider, model_id, dim, drift
-        self.snapshot = "mock"
-        self._rng = np.random.default_rng(abs(hash(provider)) % (2**32))
-        self._base = self._rng.standard_normal((1, dim)).astype(np.float32)  # replaced per call size
-
-    @property
-    def agent_id(self):
-        return self._model
-
-    def _emit(self, texts):
-        n = len(texts)
-        base = np.random.default_rng(abs(hash((self.provider, n))) % (2**32)).standard_normal(
-            (n, self.dim)).astype(np.float32)
-        return base + self._rng.standard_normal((n, self.dim)).astype(np.float32) * self.drift
-
-    def encode(self, texts):
-        return self._emit(texts)
-
-    def encode_fresh(self, texts):
-        return self._emit(texts)
-
-    def encode_batched(self, texts, batch_size=128):
-        return self._emit(texts)   # mock: batch composition changes nothing → batch HER = 1.0
-
-
-def make_agent(provider, model, workers, mock):
-    if mock:
-        return _MockAgent(provider, model or API[provider][1], max_workers=workers)
+def make_agent(provider, model, workers):
     cls, default = API[provider]
     return cls(model_id=model or default, max_workers=workers)
 
@@ -142,24 +103,21 @@ def save_baseline(base_dir, slug, codes, scale_s, dim, content_hash, n, now):
 
 
 # --------------------------------------------------------------------------- measure
-def measure_agent(provider, model, inputs, base_dir, workers, mock, now):
+def measure_agent(provider, model, inputs, base_dir, workers, now):
     """Measure the full core for one API and return its report — or None on a bootstrap run
     (no prior baseline yet), which only seeds the baseline and leaves the row untouched."""
     workers = min(workers, WORKERS_CAP.get(provider, workers))   # rate-limit-friendly per provider
-    agent = make_agent(provider, model, workers, mock)
+    agent = make_agent(provider, model, workers)
     slug = _slug(provider, agent)
     ch = inputs.content_hash
     prior = load_baseline(base_dir, slug, ch)
-    # fixed-scale quantiser: the real SEMQ probe, or a self-contained numpy stand-in for --mock
-    # (so --mock needs no SDK/keys/network — its whole purpose).
-    q = ((lambda v, s, dim: np.clip(np.round(v / (s or 0.07)).astype(np.int32) + 128, 0, 255).astype(np.uint8))
-         if mock else fixed_scale_codes)
+    q = fixed_scale_codes
 
     if prior is None:
         # bootstrap: capture the baseline (one encode + calibration) and stop — no row change,
         # no PR. Next run measures a real `time` against this and publishes the full row.
         v0 = agent.encode(inputs.texts)
-        probe = load_probe(v0, backend="mock" if mock else "semq")
+        probe = load_probe(v0, backend="semq")
         s, dim = float(probe.s), int(v0.shape[1])
         # save via the same path the comparison uses next run, so the baseline and future `time`
         # codes are guaranteed shape/scale-consistent.
@@ -174,9 +132,9 @@ def measure_agent(provider, model, inputs, base_dir, workers, mock, now):
     base = fs(agent.encode(inputs.texts))          # E0 (this run)
     same = fs(agent.encode(inputs.texts))          # within-session re-encode
     proc = fs(agent.encode_fresh(inputs.texts))    # fresh client/connection
-    calm = fs(make_agent(provider, model, CALM_WORKERS, mock).encode(inputs.texts))
+    calm = fs(make_agent(provider, model, CALM_WORKERS).encode(inputs.texts))
     bw = BURST_OVERRIDE.get(provider, BURST_WORKERS)
-    burst = fs(make_agent(provider, model, bw, mock).encode(inputs.texts))
+    burst = fs(make_agent(provider, model, bw).encode(inputs.texts))
     time_codes = fs(agent.encode(inputs.texts))    # vs the baseline captured a run ago
 
     metrics_by = {"same": metrics.aggregate(base, same),
@@ -198,8 +156,8 @@ def measure_agent(provider, model, inputs, base_dir, workers, mock, now):
 
     environment = {"blas": "provider-internal", "threads": 0, "hardware": "provider-internal",
                    "precision": "provider-internal",
-                   "library_versions": {"probe_backend": "mock" if mock else "semq",
-                                        "semq": _semq_version(mock),
+                   "library_versions": {"probe_backend": "semq",
+                                        "semq": _semq_version(),
                                         "snapshot": str(agent.snapshot)}}
     # The signed report stays schema-clean (spec/report-schema.json is additionalProperties:
     # false). measured_at is leaderboard *display* metadata, attached to the row at upsert,
@@ -244,12 +202,9 @@ def main(argv=None) -> int:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--baseline-dir", type=Path, default=Path.home() / "ari_time_baseline")
     ap.add_argument("--max-workers", type=int, default=16)
-    ap.add_argument("--mock", action="store_true", help="fake agents; no network/keys")
     ap.add_argument("--leaderboard", type=Path, default=LEADERBOARD)
-    ap.add_argument("--submissions-dir", type=Path, default=None,
-                    help="where measured reports are written (default: "
-                         "leaderboard/submissions, or leaderboard/_mock_submissions "
-                         "under --mock)")
+    ap.add_argument("--submissions-dir", type=Path, default=SUBMISSIONS,
+                    help="where measured reports are written")
     ap.add_argument("--scorer", type=Path, default=SCORER,
                     help="score.py used as the row gate (default: leaderboard/scoring/)")
     args = ap.parse_args(argv)
@@ -261,8 +216,7 @@ def main(argv=None) -> int:
     lb = json.loads(args.leaderboard.read_text())
     now = time.time()
     measured_at = time.strftime("%Y-%m-%d", time.gmtime(now))
-    sub_dir = args.submissions_dir or (
-        (REPO / "leaderboard" / "_mock_submissions") if args.mock else SUBMISSIONS)
+    sub_dir = args.submissions_dir
     changed, seeded, failures = [], [], []
     for provider in [a.strip() for a in args.agents.split(",") if a.strip()]:
         if provider not in API:
@@ -270,7 +224,7 @@ def main(argv=None) -> int:
         print(f"[{provider}] measuring same/proc/conc/time ...")
         try:
             rep, slug = measure_agent(provider, None, inputs, args.baseline_dir,
-                                      args.max_workers, args.mock, now)
+                                      args.max_workers, now)
         except Exception as e:                       # one provider failing must not sink the run
             print(f"  [{provider}] FAILED: {e}"); failures.append(provider); continue
 
