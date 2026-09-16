@@ -1,7 +1,7 @@
 # Batch Invariance — results
 
 **Run 2026-09-08 on `p5.48xlarge` (8x H100 80GB, Hopper), torch 2.5.1+cu121, semq 1.5.0.**
-1,000 frozen inputs, fixed QBIN scale from `spec/fingerprints-v0.1.csv`, one process per
+1,000 frozen inputs, fixed QUANT scale from `spec/fingerprints-v0.1.csv`, one process per
 capture, batch 32 as the reference inside each cell.
 
 Seven encoders. `BAAI/bge-m3` is excluded: it ships no safetensors, and transformers 5.x

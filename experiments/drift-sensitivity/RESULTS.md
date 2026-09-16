@@ -127,7 +127,7 @@ precision, batched routing, a library bump), giving ARI a quantitative null hypo
 
 ## Caveats
 
-- **Single probe.** Only QBIN `n_bins=2` is characterised here; other SEMQ operators may
+- **Single probe.** Only QUANT `n_bins=2` is characterised here; other SEMQ operators may
   fit differently. Whether `b`'s universality holds across operators is open.
 - **Thin query set.** After truncating the corpus, only a handful of qrels-matched dev
   queries remained; the Hamming side is robust (thousands of passages × 1,000 bootstrap),

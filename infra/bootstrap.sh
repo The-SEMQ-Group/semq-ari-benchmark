@@ -35,7 +35,7 @@ sudo -u ubuntu $VP/pip install -q torch --index-url https://download.pytorch.org
 sudo -u ubuntu $VP/pip install -q \
   transformers sentence-transformers datasets scikit-learn accelerate peft einops
 
-# semq carries the QBIN probe, and ari/probe.py imports it to compute codes, so
+# semq carries the QUANT probe, and ari/probe.py imports it to compute codes, so
 # an experiment that needs codes cannot run without it. It resolves from
 # CodeArtifact, never from PyPI, which needs an auth step. Without the login
 # below pip reports "No matching distribution found for semq". Because pip
