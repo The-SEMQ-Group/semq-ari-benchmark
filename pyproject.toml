@@ -19,7 +19,7 @@ scoring = ["jsonschema>=4.20"]
 apis = ["openai>=1.0", "cohere>=5.0", "voyageai>=0.2", "google-genai>=0.3"]
 selfhosted = ["sentence-transformers>=3.0", "torch>=2.0"]
 data = ["datasets>=2.0"]
-# The SEMQ QBIN probe (`semq`) is required to compute codes. It is the SEMQ SDK —
+# The SEMQ QUANT probe (`semq`) is required to compute codes. It is the SEMQ SDK —
 # public on PyPI once the SDK ships; `pip install semq` at that point.
 
 [project.urls]

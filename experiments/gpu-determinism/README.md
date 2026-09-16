@@ -54,7 +54,7 @@ and by default it is not.* An actionable governance finding, invisible to cosine
 | `g5.xlarge` | A10G, 24 GB | Ampere | yes | primary; TF32 on/off contrast |
 | `g4dn.xlarge` | T4, 16 GB | Turing | no | the `mach` GPU↔GPU contrast (different SM arch) |
 
-CPU-fp32 baselines are the reference (recomputed deterministically; QBIN is calibrated on the
+CPU-fp32 baselines are the reference (recomputed deterministically; QUANT is calibrated on the
 frozen ARI-Bench-v0.1, so `s` is fixed and codes are comparable across machines).
 
 ## Condition matrix (per model)
@@ -75,7 +75,7 @@ n = 1000 (frozen ARI-Bench-v0.1); the 7B at n ≥ 200. Per-condition SHA-256 aud
 ## Protocol & tooling
 
 - A GPU-capable capture tool encodes each (model, device, dtype, tf32, deterministic) cell and
-  **persists the full QBIN code matrix + a meta record** (`scale_s`, `content_hash`, device,
+  **persists the full QUANT code matrix + a meta record** (`scale_s`, `content_hash`, device,
   `sm_arch`, dtype, tf32, deterministic) to S3 — extending the capture/compare pattern already
   in `ari/tools/capture_time_baseline.py`. `mach` is then a compare across two machines'
   stored code matrices (rebuild the probe from the pinned `scale_s`, diff codes) — exactly the

@@ -7,7 +7,7 @@
 """GPU-determinism capture/compare for the self-hosted condition matrix.
 
 Encodes a SentenceTransformer model under a controlled (device, dtype, TF32, deterministic)
-config, quantizes with a **fixed** QBIN scale `s` (so codes are comparable across machines),
+config, quantizes with a **fixed** QUANT scale `s` (so codes are comparable across machines),
 and either computes in-machine conditions (`same`/`proc`) or stores the code matrix + meta for
 a cross-machine `mach` compare. See experiments/gpu-determinism/README.md.
 
@@ -181,7 +181,7 @@ def main(argv=None) -> int:
     c.add_argument("--dtype", default="fp32", choices=["fp32", "fp16", "bf16"])
     c.add_argument("--tf32", default="off", choices=["on", "off"])
     c.add_argument("--deterministic", action="store_true")
-    c.add_argument("--scale-s", type=float, default=None, help="fixed QBIN scale (omit to calibrate)")
+    c.add_argument("--scale-s", type=float, default=None, help="fixed QUANT scale (omit to calibrate)")
     c.add_argument("--conditions", default="", help="comma list: same,proc")
     c.add_argument("--inputs", type=Path, required=True)
     c.add_argument("--n", type=int, default=1000)

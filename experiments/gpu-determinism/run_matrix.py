@@ -10,7 +10,7 @@ reference captures are produced locally (off-instance); `mach` is compared offli
 import argparse, subprocess, sys, os
 from pathlib import Path
 
-# Canonical QBIN scales from spec/fingerprints-v0.1.csv (calibrated on ARI-Bench-v0.1) — fixed
+# Canonical QUANT scales from spec/fingerprints-v0.1.csv (calibrated on ARI-Bench-v0.1) — fixed
 # so every capture across every machine quantizes with identical bin edges.
 S = {
     "BAAI/bge-large-en-v1.5": 0.077546, "BAAI/bge-m3": 0.082476,
