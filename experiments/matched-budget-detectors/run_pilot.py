@@ -42,42 +42,81 @@ INTERVENTIONS = ["threads1", "batched", "bf16", "int8"]
 QUANT_BINS_LOGIT = 8          # PROTOCOL §0.3: the logit probe, 4 bits/dim
 
 
+def _chunk_width(dim: int, max_dim: int, coords_per_byte: int) -> int:
+    """Widest equal chunk that fits a context and packs into whole bytes.
+
+    Equal widths keep the aggregation a plain mean: every chunk contributes
+    the same number of coordinates, bits and bytes. A width that did not
+    divide ``coords_per_byte`` would pad each chunk's last byte, and those
+    pad bits would then count toward the byte rate.
+    """
+    for n_chunks in range(-(-dim // max_dim), dim + 1):
+        if dim % n_chunks:
+            continue
+        width = dim // n_chunks
+        if width % coords_per_byte == 0:
+            return width
+    raise ValueError(
+        f"no chunk width divides dim {dim} into pieces of at most {max_dim} "
+        f"coordinates that pack into whole bytes at {coords_per_byte} "
+        "coordinates per byte")
+
+
 def _ari_scores(r, c, bins):
     """Three distinct ARI quantities. PROTOCOL §0.4.
 
     The published score counts packed bytes; symbol mismatch and bit Hamming
     are what the coordinate-wise baselines are actually comparable against.
+
+    Every quantity here comes from the SDK. The packed layout, the symbol
+    unpacking and the calibration percentile all live in the core, so this
+    file cannot drift from the encoder it is measuring. An earlier inline
+    unpacking read each byte's symbols in the wrong order: it reported the
+    same aggregate rate, because the error permutes coordinates identically
+    in both operands, but every changed-coordinate index it produced was
+    wrong.
+
+    A probe wider than one context is split into equal chunks. Calibration
+    stays global: the core takes the percentile over the whole buffer it is
+    given, so calibrating on the array reshaped to the chunk width yields the
+    same float32 scale a single wide context would, and that one scale is
+    then fixed across every chunk. Calibrating each chunk separately is the
+    thing that does not compose, and is not what happens here.
     """
     from ari.semq_compat import MAX_DIM, quant_context
 
-    scale = float(np.percentile(np.abs(r), 99.0))
     dim = r.shape[1]
-    bounds = list(range(0, dim, MAX_DIM)) + [dim]
+    r = np.ascontiguousarray(r, np.float32)
+    c = np.ascontiguousarray(c, np.float32)
 
-    def enc(X):
-        out = []
-        for lo, hi in zip(bounds, bounds[1:]):
-            ctx = quant_context(hi - lo, n_bins=bins, scale_max=scale)
-            out.append(np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(X[:, lo:hi], np.float32))))
-            ctx.close()
-        return out[0] if len(out) == 1 else np.concatenate(out, axis=1)
+    with quant_context(min(dim, MAX_DIM), n_bins=bins) as ctx:
+        bits = ctx.bits_per_coordinate
+    coords_per_byte = 8 // bits
+    width = (dim if dim <= MAX_DIM
+             else _chunk_width(dim, MAX_DIM, coords_per_byte))
 
-    a, b = enc(r), enc(c)
-    byte_mismatch = (a != b).mean(axis=1)
-    bits_per_dim = int(round(a.shape[1] * 8 / dim))
-    per_byte = 8 // bits_per_dim                     # coordinates packed per byte
-    xor = np.bitwise_xor(a, b)
-    hamming = np.unpackbits(xor, axis=1).sum(axis=1) / (dim * bits_per_dim)
-    # Unpack to symbols so a changed coordinate counts once, not once per byte.
-    sym_a = np.unpackbits(a, axis=1).reshape(len(a), -1, bits_per_dim)
-    sym_b = np.unpackbits(b, axis=1).reshape(len(b), -1, bits_per_dim)
-    symbol_mismatch = (sym_a != sym_b).any(axis=2).mean(axis=1)
+    with quant_context(width, n_bins=bins) as ctx:
+        scale = float(ctx.calibrate(r.reshape(-1, width), percentile=0.99))
+
+    parts = []
+    with quant_context(width, n_bins=bins, scale_max=scale) as ctx:
+        for lo in range(0, dim, width):
+            a = np.asarray(ctx.batch_encode(
+                np.ascontiguousarray(r[:, lo:lo + width])))
+            b = np.asarray(ctx.batch_encode(
+                np.ascontiguousarray(c[:, lo:lo + width])))
+            parts.append(ctx.compare_codes(a, b, width))
+
+    # The SDK joins chunk comparisons: it sums the counts and shifts the
+    # coordinate indices, so the rates come out of one total rather than an
+    # average of averages, and changed_coordinates stays usable.
+    cmp = parts[0] if len(parts) == 1 else type(parts[0]).concatenate(parts)
     return {
-        "ari_byte_mismatch": byte_mismatch,
-        "ari_code_hamming": hamming,
-        "ari_symbol_mismatch": symbol_mismatch,
-    }, {"bits_per_dim": bits_per_dim, "coords_per_byte": per_byte, "scale": scale}
+        "ari_byte_mismatch": cmp.byte_change_rate,
+        "ari_code_hamming": cmp.bit_hamming_rate,
+        "ari_symbol_mismatch": cmp.coordinate_change_rate,
+    }, {"bits_per_dim": bits, "coords_per_byte": coords_per_byte,
+        "scale": scale, "chunk_width": width, "n_chunks": dim // width}
 
 
 def _hash_scores(r, c, roundings):

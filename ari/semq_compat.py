@@ -39,10 +39,16 @@ def quant_context(max_dim: int, n_bins: int = 8, scale_max: float | None = None)
     """A Context on the magnitude-binning operator.
 
     Pass ``scale_max`` to fix the calibration scale instead of calling
-    ``calibrate``. The two are equivalent: an explicit scale of
-    ``percentile(abs(x), 99)`` gives codes bit-identical to
-    ``calibrate(x, percentile=0.99)``. Fixing it explicitly is what lets one
-    scale cover several chunks of a vector too long for a single context.
+    ``calibrate``. Fixing it explicitly is what lets one scale cover several
+    chunks of a vector too long for a single context.
+
+    The two are **not** interchangeable. ``calibrate`` takes the percentile in
+    the core in float32; ``numpy.percentile`` interpolates in float64, and the
+    scales differ by up to 2e-4 relative at the 0.999 percentile. That moves
+    coordinates sitting near a boundary across it: measured at dim 384, 60 of
+    38,400 code bytes differ at ``n_bins=8``. Prefer ``calibrate`` — it is the
+    definition every language binding shares — and treat a switch between the
+    two as a change that needs results regenerated, not a refactor.
     """
     kwargs = {"max_dim": max_dim, "op": QUANT_OP, _BINS_KW: n_bins}
     if scale_max is not None:
