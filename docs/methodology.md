@@ -8,7 +8,7 @@ Use the [panel results](../experiments/deployed-agent-panel/RESULTS.md) for cano
 
 The illustrative pilot used 1,000 sample inputs and three repeats per condition.
 It used `text-embedding-3-large`, 3,072 dimensions, float output, one input per request, and SEMQ 1.2.0.
-Calibration used QBIN n=2 at the 99th percentile.
+Calibration used QUANT n=2 at the 99th percentile.
 The input sample differed from the frozen benchmark.
 
 | Condition | HER | 95% bootstrap interval |

@@ -29,7 +29,7 @@ Then fit the power law `Hamming = a · σ^b` on the linear-regime window σ ∈ 
 | --- | --- |
 | **Models** | 6 embedding models spanning three families — BERT-style 1024-d encoders (`BAAI/bge-large-en-v1.5`, `BAAI/bge-m3`, `intfloat/multilingual-e5-large`), 7B decoder embedders (`intfloat/e5-mistral-7b-instruct` 4096-d, `Alibaba-NLP/gte-Qwen2-7B-instruct` 3584-d), and a closed-source API (`openai/text-embedding-3-large` 3072-d). |
 | **Corpus** | BEIR MS MARCO, 3,000-passage subset (primary run). Corpus extension adds BEIR NFCorpus (3,633 docs) and SciFact (5,183 docs). |
-| **Probe** | SEMQ QBIN, `n_bins = 2`, 99th-percentile calibration. Single probe — this characterises the instrument, not a probe comparison. |
+| **Probe** | SEMQ QUANT, `n_bins = 2`, 99th-percentile calibration. Single probe — this characterises the instrument, not a probe comparison. |
 | **σ grid** | 11 points log-spaced over [1e-7, 1e-2]. The lower bound sits below the BLAS-thread-scheduling regime (~1e-6); the upper bound is where Hamming approaches its max-entropy ceiling (0.5). |
 | **Fit window** | σ ∈ [1e-5, 1e-3] — the clean linear regime. Below it, discrete-code quantization noise dominates the per-cell mean; above it, the power law bends toward saturation. |
 | **Bootstrap** | 1,000 resamples per `(model, σ)` cell for the Recall@10 95% CI. Hamming CIs are computed analytically from the per-passage Hamming distribution. |
@@ -41,7 +41,7 @@ Primary run: **66 cells** (6 models × 11 σ). Corpus extension: **132 cells**
 
 The measurement is model-agnostic and cheap once embeddings are cached (the σ sweep is a
 few seconds per model on CPU). Any team can reproduce it independently — that is the point
-of a public benchmark. The only special dependency is the **SEMQ QBIN probe**, provided by
+of a public benchmark. The only special dependency is the **SEMQ QUANT probe**, provided by
 the `semq` package (`pip install semq`; public on PyPI once the SEMQ SDK ships).
 
 ### Reference algorithm
@@ -49,7 +49,7 @@ the `semq` package (`pip install semq`; public on PyPI once the SEMQ SDK ships).
 ```python
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from semq import qbin_calibrate, qbin_encode   # the canonical ARI probe
+from ari.probe import load_probe   # the canonical ARI probe, through the semq SDK
 
 SIGMAS = np.logspace(-7, -2, 11)
 FIT_LO, FIT_HI = 1e-5, 1e-3
@@ -58,14 +58,14 @@ def drift_sensitivity(model_id, passages, seed=0):
     rng = np.random.default_rng(seed)
     enc = SentenceTransformer(model_id)
     X = enc.encode(passages, normalize_embeddings=True)          # FP32 embeddings
-    probe = qbin_calibrate(X, n_bins=2, percentile=0.99)          # 99th-pct calibration
-    clean = qbin_encode(X, probe)                                 # clean SEMQ codes
+    probe = load_probe(X)          # QUANT n_bins=2, 99th-pct calibration
+    clean = probe.encode(X)                                 # clean SEMQ codes
     mean_norm = np.linalg.norm(X, axis=1).mean()
 
     rows = []
     for sigma in SIGMAS:
         noisy = X + rng.normal(0.0, sigma * mean_norm, size=X.shape)
-        codes = qbin_encode(noisy, probe)
+        codes = probe.encode(noisy)
         hamming = (codes != clean).mean()                         # fraction of bits flipped
         rows.append((sigma, hamming))
 

@@ -88,7 +88,7 @@ few tens of USD** for the self-hosted side, single-digit USD for the APIs.
 
 ## Probe, inputs, procedure
 
-- **Probe:** SEMQ QBIN, `n_bins=2`, 99th-pct calibration — the canonical probe
+- **Probe:** SEMQ QUANT, `n_bins=2`, 99th-pct calibration — the canonical probe
   ([`spec/ari-canonical-v0.1.md`](../../spec/ari-canonical-v0.1.md)). Calibrate once per
   model on the reference distribution; freeze `s`.
 - **Inputs:** ARI-Bench v0.1 ([`spec/ari-bench-v0.1.md`](../../spec/ari-bench-v0.1.md)) — a

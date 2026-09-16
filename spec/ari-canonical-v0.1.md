@@ -6,7 +6,7 @@ Registry additions do not change the probe definition.
 
 ## Probe requirements
 
-Use SEMQ QBIN with `n_bins = 2`, giving four symbols at approximately two bits per dimension.
+Use SEMQ QUANT with `n_bins = 2`, giving four symbols at approximately two bits per dimension.
 Fix scale `s` at the 99th percentile of the reference distribution.
 For v0.1, use the frozen ARI-Bench-v0.1 inputs as that distribution.
 The reference model is `BAAI/bge-large-en-v1.5`, with `s = 0.0775` on ARI-Bench-v0.1.

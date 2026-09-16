@@ -51,7 +51,7 @@ python -m pip show semq
 The login command changes the local pip index configuration.
 Record the installed SDK version with each capture. Use an approved wheel if you cannot access the repository.
 Without SDK access, use the mock pipeline. Do not label mock reports as canonical measurements.
-The capture backend requires the QBIN interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
+The capture backend requires the QUANT interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
 
 ## Capture a real model
 

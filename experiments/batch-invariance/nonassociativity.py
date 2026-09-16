@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 
 # all-MiniLM-L6-v2 is 384-wide and the model behind the SciFact figure; bge-large is 1024.
-# Coordinate scale follows the published QBIN scales, which sit near 0.1 for these encoders.
+# Coordinate scale follows the published QUANT scales, which sit near 0.1 for these encoders.
 WIDTHS = (384, 1024)
 COORD_SCALE = 0.1
 
