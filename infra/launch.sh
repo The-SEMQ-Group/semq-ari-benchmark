@@ -150,7 +150,21 @@ else
 fi
 
 # --- launch ----------------------------------------------------------------
-USER_DATA=$(sed "s/__MAX_MINUTES__/$MAX_MINUTES/" "$(dirname "$0")/bootstrap.sh" | base64)
+# CodeArtifact coordinates come from infra/operator.env (gitignored; see
+# operator.env.example). Without it the instance boots without semq and says so.
+OPERATOR_ENV="${OPERATOR_ENV:-$(dirname "$0")/operator.env}"
+CA_DOMAIN="" CA_REPO="" CA_REGION="" CA_OWNER=""
+if [[ -f "$OPERATOR_ENV" ]]; then
+  # shellcheck disable=SC1090
+  source "$OPERATOR_ENV"
+  say "CodeArtifact coordinates from $OPERATOR_ENV"
+else
+  say "no $OPERATOR_ENV: semq will not be installed on the instance"
+fi
+USER_DATA=$(sed -e "s/__MAX_MINUTES__/$MAX_MINUTES/" \
+                -e "s/__CA_DOMAIN__/$CA_DOMAIN/" -e "s/__CA_REPO__/$CA_REPO/" \
+                -e "s/__CA_REGION__/$CA_REGION/" -e "s/__CA_OWNER__/$CA_OWNER/" \
+                "$(dirname "$0")/bootstrap.sh" | base64)
 
 if [[ -n "$IAM_PROFILE" ]]; then
   PROFILE_ARG=(--iam-instance-profile "Name=$IAM_PROFILE")

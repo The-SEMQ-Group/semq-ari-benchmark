@@ -35,17 +35,21 @@ This is a development check. Submit real reports through the separate leaderboar
 ## Install the canonical probe
 
 The public development dependencies do not include `semq`.
-The repository's CI installs it from AWS CodeArtifact when an authorized role is configured.
+The repository's CI installs it from a private AWS CodeArtifact repository when an authorized role is configured.
+The domain, repository, region and account are operator-only and are not committed;
+they live in `infra/operator.env` (see `infra/operator.env.example`).
 With AWS CLI credentials that can read the SDK repository:
 
 ```bash
-aws codeartifact login --tool pip --domain semq --repository semq-sdk --region us-east-2
+source infra/operator.env
+aws codeartifact login --tool pip --domain "$CA_DOMAIN" --domain-owner "$CA_OWNER" \
+    --repository "$CA_REPO" --region "$CA_REGION"
 python -m pip install semq
 python -m pip show semq
 ```
 
 The login command changes the local pip index configuration.
-Record the installed SDK version with each capture. Use an approved wheel if you cannot access CodeArtifact.
+Record the installed SDK version with each capture. Use an approved wheel if you cannot access the repository.
 Without SDK access, use the mock pipeline. Do not label mock reports as canonical measurements.
 The capture backend requires the QBIN interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
 

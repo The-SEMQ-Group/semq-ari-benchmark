@@ -5,7 +5,7 @@
   "signers": [
     {
       "public_key": "vN3pVHCbdCVTx08Q6CmxNo2gmqDf4sgPjVqTOF73BXw=",
-      "identity": "alias/semq-ari-attestation (KMS us-east-2 127348475353)",
+      "identity": "alias/semq-ari-attestation (AWS KMS, us-east-2)",
       "holder": "The SEMQ Group — ARI leaderboard operator",
       "custody": "AWS KMS ECC_NIST_EDWARDS25519; the private key never leaves the HSM and every signature lands in CloudTrail. Provisioned as code in semq-infra (kms/create-signing-key.sh).",
       "added": "2026-08-28"

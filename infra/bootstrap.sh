@@ -43,11 +43,16 @@ sudo -u ubuntu $VP/pip install -q \
 # to take transformers down with it, and this script has no `set -e`, so the
 # box reached the GPU with no transformers and still logged "bootstrap
 # complete". Keep semq on its own line whatever happens to the login.
-CA_DOMAIN=semq
-CA_REPO=semq-sdk
-CA_REGION=us-east-2
-CA_OWNER=127348475353
-if CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" \
+# Filled in by launch.sh from infra/operator.env, which is not committed, so
+# the public tree names no account, domain or repository.
+CA_DOMAIN="__CA_DOMAIN__"
+CA_REPO="__CA_REPO__"
+CA_REGION="__CA_REGION__"
+CA_OWNER="__CA_OWNER__"
+if [ -z "$CA_DOMAIN" ] || [ -z "$CA_OWNER" ]; then
+  echo "WARNING: no CodeArtifact coordinates (infra/operator.env missing at launch);"
+  echo "         semq not installed and codes cannot be computed"
+elif CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" \
       --domain-owner "$CA_OWNER" --region "$CA_REGION" \
       --query authorizationToken --output text 2>/dev/null) && [ -n "$CA_TOKEN" ]; then
   CA_URL="https://aws:${CA_TOKEN}@${CA_DOMAIN}-${CA_OWNER}.d.codeartifact.${CA_REGION}.amazonaws.com/pypi/${CA_REPO}/simple/"

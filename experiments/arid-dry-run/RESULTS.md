@@ -6,8 +6,9 @@ rehosted `time` pairs measured (2026-09-02). **The dry run's protocol
 cells are complete for every measured subject.** Evidence: `results/manifest.json` (transcript
 digests) + `results/analysis.json` + `results/door_compare.json` (regenerate
 with `analyze_dry.py` / `door_compare.py`); raw transcripts retained, gzipped,
-bound by digest in the manifest, and mirrored at
-`s3://semq-ari-baselines-127348475353/arid-dry-run/transcripts/`.
+bound by digest in the manifest, and mirrored in the operator's private
+baselines bucket (`BASELINES_BUCKET` in `infra/operator.env`, not committed) under
+`arid-dry-run/transcripts/`.
 
 **What these numbers are.** Dry-run measurements over the frozen set — the
 harness shakedown and calibrations the spec's rollout item 3 calls for. They
