@@ -8,7 +8,7 @@ Use a separate branch for each change. Keep unrelated generated files out of the
 1. Change the implementation and its documentation together.
 2. Add regression tests for changed behavior.
 3. Run `python -m pytest -q -rs` from the repository root.
-4. Run the mock report command in the root README.
+4. With the SDK installed, run the mock-agent report command in the root README.
 5. Run `python -m build` when packaging changes.
 6. Describe the behavior change and verification results in the pull request.
 
@@ -25,8 +25,8 @@ This repository does not contain them and must not contain them.
   This includes ports, translations, clean-room rewrites, and numerically equivalent approximations.
 - Do not copy or paraphrase code from the `semq` package into this repository.
 - Call the operators through the `semq` package. Use [semq_compat.py](ari/semq_compat.py) for version differences.
-- The mock probe in [probe.py](ari/probe.py) is a test double for the pipeline. It does not reproduce SDK output.
-  Do not extend it to match SDK behavior.
+- This repository contains no substitute for the operators. Code that needs them requires the SDK.
+  Tests that need them skip without it.
 
 Pull requests that add an operator implementation are closed without review.
 The Apache-2.0 license covers the benchmark harness in this repository.
