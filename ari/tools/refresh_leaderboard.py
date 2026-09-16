@@ -17,7 +17,8 @@ produced the current board): `agents`, `probe.fixed_scale_codes`, `metrics.aggre
 `report.build_report`. The only new logic here is orchestration, the rolling `time`
 baseline, and the upsert.
 
-    # dry run — no network, no keys; exercises the whole pipeline with a fake agent
+    # dry run — no network or provider keys; exercises the whole pipeline with a fake agent
+    # and the canonical SDK probe
     python refresh_leaderboard.py --mock --limit 64 --agents openai,cohere
 
     # real run (keys in env: OPENAI_API_KEY, VOYAGE_API_KEY, CO_API_KEY, MISTRAL_API_KEY,
@@ -63,11 +64,9 @@ BURST_OVERRIDE = {"mistral": 8}
 WORKERS_CAP = {"mistral": 4}
 
 
-def _semq_version(mock: bool) -> str:
+def _semq_version() -> str:
     """The pinned SEMQ SDK version that produced these codes — recorded in the report so a
     calibration bump (and any encoding change) is auditable."""
-    if mock:
-        return "mock"
     try:
         import semq
         return str(getattr(semq, "__version__", "unknown"))
@@ -85,7 +84,6 @@ class _MockAgent:
         self.provider, self._model, self.dim, self.drift = provider, model_id, dim, drift
         self.snapshot = "mock"
         self._rng = np.random.default_rng(abs(hash(provider)) % (2**32))
-        self._base = self._rng.standard_normal((1, dim)).astype(np.float32)  # replaced per call size
 
     @property
     def agent_id(self):
@@ -150,17 +148,15 @@ def measure_agent(provider, model, inputs, base_dir, workers, mock, now):
     slug = _slug(provider, agent)
     ch = inputs.content_hash
     prior = load_baseline(base_dir, slug, ch)
-    # fixed-scale quantiser: the real SEMQ probe, or a self-contained numpy stand-in for --mock
-    # (so --mock needs no SDK/keys/network — its whole purpose).
-    q = ((lambda v, s, dim: np.clip(np.round(v / (s or 0.07)).astype(np.int32) + 128, 0, 255).astype(np.uint8))
-         if mock else fixed_scale_codes)
+    # Every measured code comes from the canonical SEMQ SDK. --mock only replaces
+    # provider responses, so its reports remain comparable to real captures.
+    q = fixed_scale_codes
 
     if prior is None:
         # bootstrap: capture the baseline (one encode + calibration) and stop — no row change,
         # no PR. Next run measures a real `time` against this and publishes the full row.
         v0 = agent.encode(inputs.texts)
-        s = (float(np.percentile(np.abs(v0), 99.0)) if mock
-             else float(load_probe(v0).s))
+        s = float(load_probe(v0).s)
         dim = int(v0.shape[1])
         # save via the same path the comparison uses next run, so the baseline and future `time`
         # codes are guaranteed shape/scale-consistent.
@@ -199,8 +195,8 @@ def measure_agent(provider, model, inputs, base_dir, workers, mock, now):
 
     environment = {"blas": "provider-internal", "threads": 0, "hardware": "provider-internal",
                    "precision": "provider-internal",
-                   "library_versions": {"probe_backend": "mock" if mock else "semq",
-                                        "semq": _semq_version(mock),
+                   "library_versions": {"probe_backend": "semq",
+                                        "semq": _semq_version(),
                                         "snapshot": str(agent.snapshot)}}
     # The signed report stays schema-clean (spec/report-schema.json is additionalProperties:
     # false). measured_at is leaderboard *display* metadata, attached to the row at upsert,
@@ -245,7 +241,8 @@ def main(argv=None) -> int:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--baseline-dir", type=Path, default=Path.home() / "ari_time_baseline")
     ap.add_argument("--max-workers", type=int, default=16)
-    ap.add_argument("--mock", action="store_true", help="fake agents; no network/keys")
+    ap.add_argument("--mock", action="store_true",
+                    help="fake provider responses; requires the SEMQ SDK, but no network or keys")
     ap.add_argument("--leaderboard", type=Path, default=LEADERBOARD)
     ap.add_argument("--submissions-dir", type=Path, default=None,
                     help="where measured reports are written (default: "

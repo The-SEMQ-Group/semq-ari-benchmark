@@ -16,8 +16,8 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   `selfhosted_pilot` and `proc_pilot`, and `proc_pilot` no longer falls back
   to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
 - The CI step that runs the mock-agent pipeline now runs only when the SDK
-  was installed. `refresh_leaderboard --mock` computes its bootstrap scale
-  directly instead of borrowing the removed probe.
+  was installed. `refresh_leaderboard --mock` also uses the canonical SDK
+  probe; it only replaces provider responses with a fake agent.
 
 ### SciFact codes committed beside the results
 - `experiments/regime-discrimination/results/codes/` holds the packed QUANT
