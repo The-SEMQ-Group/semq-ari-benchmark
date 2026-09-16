@@ -6,6 +6,12 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### CI says when the probe was not tested
+- A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
+  install the SDK; with it set, the job installs `semq`, runs the suite and
+  fails if any test still skips for want of it. The public `pytest` job
+  prints how many SDK-gated modules skipped. A green check no longer looks
+  the same whether or not the probe ran (SEM-52).
 ### The leaderboard refresh has no mock mode
 - `refresh_leaderboard.py --mock` is removed, with its fake agent and its
   numpy stand-in quantizer. The stand-in rounded to 256 uniform levels and

@@ -54,10 +54,65 @@ jobs:
       # plainly (the attestation tests report as skipped) rather than looking
       # fully green while silently covering less.
       - name: Run tests
-        run: pytest -v -rs
+        run: pytest -v -rs | tee pytest.log
+
+      # A green check must not look the same whether or not the probe was
+      # tested. Count the modules that skipped for want of semq and put the
+      # number where a reader sees it; the sdk-tests job below turns it red.
+      - name: Report SDK-gated tests that did not run
+        if: always()
+        run: |
+          n=$(grep -c "could not import 'semq'" pytest.log || true)
+          echo "semq-gated skips: $n" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$n" != "0" ]; then
+            echo "::warning::$n test modules skipped because semq is not installed; see the sdk-tests job"
+          fi
 
       - name: Validate the documented mock pipeline
         run: python -m ari.run --out /tmp/ari-report.json --validate
 
       - name: Build the package
         run: python -m build
+
+  # Fails, visibly and by name, until CI can install the SDK. Every module that
+  # pins the probe, the packed layout or the calibration path is gated on semq;
+  # without this job a change to any of them lands green with none of them run.
+  sdk-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse to pass without the SDK
+        if: vars.CODEARTIFACT_ROLE_ARN == ''
+        run: |
+          n=$(grep -rl 'importorskip("semq")' tests experiments --include='*.py' | wc -l | tr -d ' ')
+          echo "::error::CODEARTIFACT_ROLE_ARN is not set, so $n semq-gated test modules cannot run in CI. Set the repository variable (SEM-52)."
+          exit 1
+
+      - uses: actions/setup-python@v5
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        with:
+          python-version: "3.12"
+
+      - name: Install the package, the test dependencies and the SDK
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.CODEARTIFACT_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - name: Install semq and run the gated tests
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          aws codeartifact login --tool pip --domain "${{ vars.CODEARTIFACT_DOMAIN }}" \
+            --repository "${{ vars.CODEARTIFACT_REPO }}" --region "${{ vars.AWS_REGION }}" > /dev/null
+          python -m pip install semq
+          python -c "import semq; print('semq', semq.__version__)"
+          pytest -v -rs | tee pytest.log
+          if grep -q "could not import 'semq'" pytest.log; then
+            echo "::error::semq is installed but some tests still skipped for want of it"
+            exit 1
+          fi
