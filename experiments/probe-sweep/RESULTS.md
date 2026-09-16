@@ -2,15 +2,13 @@
 
 **Status: exploratory, development data only.** Selects a configuration to carry
 forward. It establishes no comparative advantage and supports no deployment
-claim. Grid in [`PREREGISTRATION.md`](PREREGISTRATION.md), scored by
-[`run_sweep.py`](run_sweep.py).
+claim. Grid in [`PREREGISTRATION.md`](PREREGISTRATION.md), scripts
+[`run_sweep.py`](run_sweep.py) and [`decide.py`](decide.py).
 
 **Headline: more bins buy upper bounds and cost exact-code agreement. They buy
-no lower bound at all for bf16, at any bin count tested.**
-
-This records what the grid measures. The comparison against uniform scalar
-quantization, the decision rule and the configuration it selects are applied
-by `decide.py` and reported in the next change.
+no lower bound at all for bf16, at any bin count tested. Against ordinary
+uniform scalar quantization at the same bit width, QUANT has no consistent
+advantage — the difference reverses sign between three and four bits.**
 
 ## Setup
 
@@ -70,6 +68,75 @@ in the grid. Only int8 — a far coarser change — gains them.
 **The cost is HER saturation.** bf16's exact-code agreement falls 0.1016 →
 0.0077 → 0.0000. At eight bins the metric no longer separates bf16 from int8.
 
+## Against uniform scalar quantization
+
+Paired over the same documents, `int8`, multi-region share of changed
+coordinates, QUANT minus uniform, 95% percentile bootstrap over documents:
+
+| bits | QUANT | uniform | difference | 95% CI |
+| ---: | ---: | ---: | ---: | :--- |
+| 2 | 0.00027 | 0.00004 | +0.02 pp | [+0.02, +0.03] |
+| 3 | 0.03909 | 0.03453 | +0.46 pp | [+0.43, +0.49] |
+| 4 | 0.27404 | 0.29059 | −1.65 pp | [−1.72, −1.59] |
+
+Every interval excludes zero and the sign reverses: QUANT resolves more at two
+and three bits, uniform more at four. The effects are small, and the intervals
+cover corpus sampling within one run, not run-to-run variation. **The case for
+a configuration is not a case for the operator.**
+
+At the same bit width bf16 yields no multi-region moves under either operator,
+so the difference there is exactly zero and carries no information.
+
+## The decision rule, and where it lands
+
+The rule in [`decide.py`](decide.py) requires near-null codes intact, at least
+1% of changed coordinates moving two or more regions, and a bootstrap lower
+bound above zero.
+
+The 1% is applied to the point estimate, so qualifying is a screen and does not
+establish that the true share is at or above 1%. Applying it to the interval's
+lower end instead — `qualifies_strict` — selects the **same cell** on this data,
+`n_bins = 4` at percentile 0.999, because the qualifying 4-bin intervals sit
+clear of the threshold (0.01210 [0.01166, 0.01253]). The distinction changes
+nothing here; it is reported because it would elsewhere.
+
+- **Under the "any intervention" reading: `n_bins = 4` at percentile 0.999.**
+- **Under the "all interventions" reading: nothing qualifies.** bf16 never
+  reaches the threshold at any cell, so no configuration resolves both
+  declared interventions.
+
+Both declared interventions were scored in this run (`declared_but_unscored`
+is empty in `decision.json`), so the second line is a measurement and not an
+absence. A declared intervention that was never scored cannot satisfy that
+reading: the rule is evaluated against the roles as declared, not against
+whatever the cache happened to contain.
+
+The two readings disagree, which is why both are reported. Choosing between
+them now would be selecting on the outcome.
+
+### The tie-break picked the least sensitive qualifying cell
+
+`PREREGISTRATION.md` records the flaw in advance; this run is what it looks
+like. Ties break on `n_bins`, then storage, then saturation. All three 4-bin
+cells qualify at identical storage, so saturation decides, and lower
+saturation means a wider scale. The rule therefore selected percentile 0.999 —
+the widest scale and the least sensitive of the qualifying cells, whose
+multi-region share (0.01210) sits just above the 1% threshold, against 0.03909
+at percentile 0.99.
+
+**This does not agree with the configuration the sweep was expected to
+select.** A confirmatory rule has to break ties on something that is not in
+tension with the quantity being secured. Freezing a configuration on this
+run's output would be freezing the tie-break defect with it.
+
+### The original prose rule
+
+The first version of the rule read "a non-zero share of multi-region moves".
+On this data that is satisfied by `n_bins = 2` at percentile 0.99, where
+**66 coordinates out of 246,058 changed** move more than one region — a share
+of 0.00027. The rule is kept in `PREREGISTRATION.md` as written, and the
+defect recorded, rather than retrofitted.
+
 ## What this does not establish
 
 No claim about index incompatibility, retrieval degradation or functional
@@ -83,9 +150,12 @@ claim needs the freshly collected episodes of SEM-49.
 python experiments/probe-sweep/run_sweep.py \
   --cache experiments/regime-discrimination/results/cache \
   --out experiments/probe-sweep/results/sweep.json
+python experiments/probe-sweep/decide.py \
+  --sweep experiments/probe-sweep/results/sweep.json \
+  --out experiments/probe-sweep/results/decision.json
 ```
 
-Run of 2026-09-11 against the script as committed here, on the cache written
+Run of 2026-09-11 against the scripts as committed here, on the cache written
 by `regime-discrimination`. 12 cells over 3,111 documents, about 5 seconds.
 
 | artifact | sha256 (first 16) | size |
