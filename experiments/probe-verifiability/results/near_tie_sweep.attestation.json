@@ -1,0 +1,1 @@
+{"created_at":"2026-08-07T17:53:54+00:00","environment":{"implementation":"cpython","platform":"macOS-26.5.1-arm64-arm-64bit","python":"3.11.12"},"extra":{},"inputs":[],"metric":"probe-verifiability","metric_version":"0.1","report":{"name":"near_tie_sweep.json","sha256":"cfde034ed34659cd62bcf156a8124595fa69ac85f3a5afc5a585a5decadf1b87","size_bytes":2310},"schema":1}

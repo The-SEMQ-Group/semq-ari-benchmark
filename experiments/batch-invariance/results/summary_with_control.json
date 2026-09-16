@@ -1,0 +1,665 @@
+{
+  "label": "h100",
+  "n": 1000,
+  "reference_batch": 32,
+  "batches": [
+    1,
+    8,
+    32,
+    128,
+    512
+  ],
+  "cells": {
+    "sentence-transformers_all-MiniLM-L6-v2__cellA": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 1.0,
+      "exceeds_control": false,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-MiniLM-L6-v2__cellB": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 1.0,
+      "exceeds_control": false,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-MiniLM-L6-v2__cellC": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.947,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.947
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "BAAI_bge-large-en-v1.5__cellA": {
+      "model": "BAAI/bge-large-en-v1.5",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 1.0,
+      "exceeds_control": false,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "BAAI_bge-large-en-v1.5__cellB": {
+      "model": "BAAI/bge-large-en-v1.5",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 1.0,
+      "exceeds_control": false,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "BAAI_bge-large-en-v1.5__cellC": {
+      "model": "BAAI/bge-large-en-v1.5",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "intfloat_multilingual-e5-large__cellA": {
+      "model": "intfloat/multilingual-e5-large",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "intfloat_multilingual-e5-large__cellB": {
+      "model": "intfloat/multilingual-e5-large",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "intfloat_multilingual-e5-large__cellC": {
+      "model": "intfloat/multilingual-e5-large",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.998,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.998
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-mpnet-base-v2__cellA": {
+      "model": "sentence-transformers/all-mpnet-base-v2",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 1.0,
+      "exceeds_control": false,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-mpnet-base-v2__cellB": {
+      "model": "sentence-transformers/all-mpnet-base-v2",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 1.0,
+      "exceeds_control": false,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-mpnet-base-v2__cellC": {
+      "model": "sentence-transformers/all-mpnet-base-v2",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.849,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.856
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 0.853
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 0.882
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 0.849
+        }
+      ]
+    },
+    "nomic-ai_nomic-embed-text-v1.5__cellA": {
+      "model": "nomic-ai/nomic-embed-text-v1.5",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "nomic-ai_nomic-embed-text-v1.5__cellB": {
+      "model": "nomic-ai/nomic-embed-text-v1.5",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "nomic-ai_nomic-embed-text-v1.5__cellC": {
+      "model": "nomic-ai/nomic-embed-text-v1.5",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.867,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.867
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 0.997
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 0.999
+        }
+      ]
+    },
+    "mixedbread-ai_mxbai-embed-large-v1__cellA": {
+      "model": "mixedbread-ai/mxbai-embed-large-v1",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 0.556,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.556
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "mixedbread-ai_mxbai-embed-large-v1__cellB": {
+      "model": "mixedbread-ai/mxbai-embed-large-v1",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.556,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.556
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "mixedbread-ai_mxbai-embed-large-v1__cellC": {
+      "model": "mixedbread-ai/mxbai-embed-large-v1",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.556,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.556
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "Snowflake_snowflake-arctic-embed-l__cellA": {
+      "model": "Snowflake/snowflake-arctic-embed-l",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "Snowflake_snowflake-arctic-embed-l__cellB": {
+      "model": "Snowflake/snowflake-arctic-embed-l",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.999,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "Snowflake_snowflake-arctic-embed-l__cellC": {
+      "model": "Snowflake/snowflake-arctic-embed-l",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "control_HER": 1.0,
+      "min_HER": 0.998,
+      "exceeds_control": true,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 0.998
+        },
+        {
+          "batch": 128,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 512,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+ARI benchmark harness
+Copyright (c) 2026 The SEMQ Group Inc.
+
+Code in this repository is licensed under the Apache License, Version 2.0
+(see LICENSE). Specifications and benchmark selections are licensed under
+CC BY 4.0. Source documents retain their original licenses.
+
+This version uses the SEMQ SDK to compute SEMQ codes and to notarize results. The SDK is a separate
+library that is subject to a commercial license owned by The SEMQ Group Inc.
+and is patent pending. It is not part of this repository and is not covered
+by the Apache License.

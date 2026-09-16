@@ -1,0 +1,9 @@
+model,proc_default_tf32on,proc_det_tf32off,mach_gpu_vs_cpu_tf32on,mach_gpu_vs_cpu_det,prec_bf16_gpu
+bge-large-en-v1.5,0.8301,1.0,0.8301,1.0,0.0039
+bge-m3,0.6406,1.0,0.6406,1.0,0.0
+multilingual-e5-large,0.6699,1.0,0.6699,1.0,0.0
+all-mpnet-base-v2,0.793,1.0,0.793,0.9961,0.0156
+all-MiniLM-L6-v2,0.877,1.0,0.875,0.998,0.1309
+nomic-embed-text-v1.5,0.7305,1.0,0.7305,1.0,0.0176
+mxbai-embed-large-v1,0.793,1.0,0.541,0.5371,0.0039
+snowflake-arctic-embed-l,0.6582,1.0,0.6602,0.998,0.0039

@@ -1,0 +1,250 @@
+{
+  "label": "h100",
+  "n": 1000,
+  "reference_batch": 32,
+  "batches": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64
+  ],
+  "cells": {
+    "sentence-transformers_all-MiniLM-L6-v2__cellA": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "min_HER": 1.0,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 2,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 4,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 16,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 64,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-MiniLM-L6-v2__cellB": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "min_HER": 1.0,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 2,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 4,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 16,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 64,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "sentence-transformers_all-MiniLM-L6-v2__cellC": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "min_HER": 0.947,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.947
+        },
+        {
+          "batch": 2,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 4,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 16,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 64,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "BAAI_bge-large-en-v1.5__cellA": {
+      "model": "BAAI/bge-large-en-v1.5",
+      "cell": "A",
+      "tf32": "off",
+      "deterministic": true,
+      "min_HER": 1.0,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 2,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 4,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 16,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 64,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "BAAI_bge-large-en-v1.5__cellB": {
+      "model": "BAAI/bge-large-en-v1.5",
+      "cell": "B",
+      "tf32": "off",
+      "deterministic": false,
+      "min_HER": 1.0,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 2,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 4,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 16,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 64,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    },
+    "BAAI_bge-large-en-v1.5__cellC": {
+      "model": "BAAI/bge-large-en-v1.5",
+      "cell": "C",
+      "tf32": "on",
+      "deterministic": false,
+      "min_HER": 0.999,
+      "comparisons": [
+        {
+          "batch": 1,
+          "vs_batch": 32,
+          "HER": 0.999
+        },
+        {
+          "batch": 2,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 4,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 8,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 16,
+          "vs_batch": 32,
+          "HER": 1.0
+        },
+        {
+          "batch": 64,
+          "vs_batch": 32,
+          "HER": 1.0
+        }
+      ]
+    }
+  }
+}

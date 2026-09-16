@@ -1,0 +1,7 @@
+model_id,dim,slope_b,prefactor_a_empirical,prefactor_a_theory,kappa
+BAAI/bge-large-en-v1.5,1024,0.9939,73.7224,25.5323,2.887
+BAAI/bge-m3,1024,0.9944,70.8206,25.5323,2.774
+intfloat/e5-mistral-7b-instruct,4096,0.9600,105.4461,51.0646,2.065
+Alibaba-NLP/gte-Qwen2-7B-instruct,3584,0.9939,126.1278,47.7666,2.641
+intfloat/multilingual-e5-large,1024,0.9907,73.8742,25.5323,2.893
+openai/text-embedding-3-large,3072,0.9319,73.0719,44.2233,1.652

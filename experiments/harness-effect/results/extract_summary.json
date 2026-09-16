@@ -1,0 +1,30 @@
+{
+  "dataset": "nvidia/Open-SWE-Traces",
+  "max_rows_per_cell": 4000,
+  "kept": {
+    "sweagent/qwen35_122b": 3161,
+    "sweagent/minimax_m25": 3159,
+    "openhands/qwen35_122b": 3093,
+    "openhands/minimax_m25": 3152
+  },
+  "unknown_outcome": {
+    "sweagent/qwen35_122b": 839,
+    "sweagent/minimax_m25": 841,
+    "openhands/qwen35_122b": 907,
+    "openhands/minimax_m25": 848
+  },
+  "tool_vocabulary": {
+    "sweagent": {
+      "bash": 462467,
+      "str_replace_editor": 162721,
+      "submit": 12662
+    },
+    "openhands": {
+      "execute_bash": 284351,
+      "str_replace_editor": 166543,
+      "think": 11366,
+      "finish": 6245,
+      "fetch": 1
+    }
+  }
+}

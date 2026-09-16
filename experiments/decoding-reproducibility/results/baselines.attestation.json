@@ -1,0 +1,1 @@
+{"created_at":"2026-08-07T17:53:54+00:00","environment":{"implementation":"cpython","platform":"macOS-26.5.1-arm64-arm-64bit","python":"3.11.12"},"extra":{},"inputs":[],"metric":"ARI-D-baselines","metric_version":"0.1","report":{"name":"baselines.json","sha256":"ac2d71ca9b9615060851fad756e8bff92ad0ddf71f85380f485e3c04027af214","size_bytes":6126},"schema":1}

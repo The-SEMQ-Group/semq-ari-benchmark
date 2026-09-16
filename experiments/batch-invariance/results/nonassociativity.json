@@ -1,0 +1,58 @@
+{
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+  "numpy": "2.5.3",
+  "coord_scale": 0.1,
+  "seed": 20260908,
+  "dtypes": {
+    "float32": {
+      "pairwise": {
+        "max_abs_diff": 5.960464477539063e-08,
+        "triples_that_differ": 16015,
+        "triples_tried": 50000
+      },
+      "permutation": [
+        {
+          "width": 384,
+          "distinct_results": 8,
+          "orders_tried": 32,
+          "spread": 2.384185791015625e-07,
+          "max_abs_error_vs_float64": 1.2067368132528955e-07,
+          "mean_result": 0.26017795596271753
+        },
+        {
+          "width": 1024,
+          "distinct_results": 31,
+          "orders_tried": 32,
+          "spread": 5.848705768585205e-07,
+          "max_abs_error_vs_float64": 3.981846189993199e-07,
+          "mean_result": 0.028569641523063183
+        }
+      ]
+    },
+    "float16": {
+      "pairwise": {
+        "max_abs_diff": 0.00048828125,
+        "triples_that_differ": 15922,
+        "triples_tried": 50000
+      },
+      "permutation": [
+        {
+          "width": 384,
+          "distinct_results": 10,
+          "orders_tried": 32,
+          "spread": 0.003173828125,
+          "max_abs_error_vs_float64": 0.0015929397177387727,
+          "mean_result": 0.26027679443359375
+        },
+        {
+          "width": 1024,
+          "distinct_results": 30,
+          "orders_tried": 32,
+          "spread": 0.004302978515625,
+          "max_abs_error_vs_float64": 0.002798924058879493,
+          "mean_result": 0.028544902801513672
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,825 @@
+{
+  "provenance": {
+    "cache": "/home/ubuntu/mbd/cache",
+    "model_inferred": "TinyLlama/TinyLlama-1.1B-Chat-v1.0 (by elimination)",
+    "device_inferred": "cpu",
+    "vocab": 32000,
+    "n_prompts": 12,
+    "n_steps": 539,
+    "caveat": "legacy flat cache, no manifest; pilot only, not confirmatory"
+  },
+  "sizing": {
+    "finest_fpr": 0.08333333333333333,
+    "note": "12 prompts cannot support the 5% primary target"
+  },
+  "env": {
+    "python": "3.11.16",
+    "numpy": "2.4.6"
+  },
+  "conditions": {
+    "proc": {
+      "status": "scored",
+      "role": "control",
+      "arrays_identical": true,
+      "ari_meta": {
+        "bits_per_dim": 4,
+        "coords_per_byte": 2,
+        "scale": 9.414882678985599
+      },
+      "changed_steps": 0
+    },
+    "threads1": {
+      "status": "scored",
+      "role": "intervention",
+      "arrays_identical": true,
+      "ari_meta": {
+        "bits_per_dim": 4,
+        "coords_per_byte": 2,
+        "scale": 9.414882678985599
+      },
+      "changed_steps": 0
+    },
+    "batched": {
+      "status": "scored",
+      "role": "intervention",
+      "arrays_identical": true,
+      "ari_meta": {
+        "bits_per_dim": 4,
+        "coords_per_byte": 2,
+        "scale": 9.414882678985599
+      },
+      "changed_steps": 0
+    },
+    "bf16": {
+      "status": "scored",
+      "role": "intervention",
+      "arrays_identical": false,
+      "ari_meta": {
+        "bits_per_dim": 4,
+        "coords_per_byte": 2,
+        "scale": 9.414882678985599
+      },
+      "changed_steps": 539
+    },
+    "int8": {
+      "status": "scored",
+      "role": "intervention",
+      "arrays_identical": false,
+      "ari_meta": {
+        "bits_per_dim": 4,
+        "coords_per_byte": 2,
+        "scale": 9.414882678985599
+      },
+      "changed_steps": 539
+    }
+  },
+  "scoring_seconds": 31.9,
+  "detection": {
+    "ari_byte_mismatch": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.034948173137626264
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.8637751242897727
+      }
+    },
+    "ari_code_hamming": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0070206298828125
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.2556914457070707
+      }
+    },
+    "ari_symbol_mismatch": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.017656358506944445
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.6396625286063763
+      }
+    },
+    "coord_mismatch": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.9999957485006314
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.9999998372395833
+      }
+    },
+    "cosine_distance": {
+      "control_mean": 3.41512732795838e-17,
+      "control_max": 6.055761952500853e-17,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 6.055761952500853e-17,
+        "pos_mean": 3.41512732795838e-17
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 6.055761952500853e-17,
+        "pos_mean": 3.41512732795838e-17
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 6.055761952500853e-17,
+        "pos_mean": 2.3047809035427964e-05
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 6.055761952500853e-17,
+        "pos_mean": 0.04887754406756723
+      }
+    },
+    "js_fp64": {
+      "control_mean": 3.665902577637055e-18,
+      "control_max": 1.1644222713512082e-17,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 1.1644222713512082e-17,
+        "pos_mean": 3.665902577637055e-18
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 1.1644222713512082e-17,
+        "pos_mean": 3.665902577637055e-18
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 1.1644222713512082e-17,
+        "pos_mean": 5.55856397268711e-05
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 1.1644222713512082e-17,
+        "pos_mean": 0.08338621445577508
+      }
+    },
+    "kl_fp64": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.00022225875529544435
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.37623928393416434
+      }
+    },
+    "margin_delta": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.04033151795767775
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.2580957977910234
+      }
+    },
+    "max_abs_diff": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.12221992747726464
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 5.827350813405843
+      }
+    },
+    "rel_l2": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.006558928912119493
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.31859014703275523
+      }
+    },
+    "sha256_raw": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.0
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.0
+      }
+    },
+    "sha256_uniform_4bit": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.0
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.0
+      }
+    },
+    "sha256_uniform_8bit": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.0
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 1.0
+      }
+    },
+    "sketch_rp64": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 4.698033323732191
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 228.16369130188014
+      }
+    },
+    "token_flip": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 0.4166666666666667,
+        "tpr_ci": [
+          0.193,
+          0.68
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.008680555555555554
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.2588383838383838
+      }
+    },
+    "topk20_change": {
+      "control_mean": 0.0,
+      "control_max": 0.0,
+      "threads1": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "batched": {
+        "tpr": 0.0,
+        "tpr_ci": [
+          0.0,
+          0.243
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.0
+      },
+      "bf16": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.01961580086580086
+      },
+      "int8": {
+        "tpr": 1.0,
+        "tpr_ci": [
+          0.757,
+          1.0
+        ],
+        "achieved_fpr": 0.0,
+        "threshold": 0.0,
+        "pos_mean": 0.4586084205194106
+      }
+    }
+  },
+  "storage_bytes": {
+    "raw_fp32": {
+      "per_example": 128000,
+      "shared": 0,
+      "note": "full fp32 reference vector"
+    },
+    "sha256": {
+      "per_example": 32,
+      "shared": 0,
+      "note": "digest only; equality but no severity or location"
+    },
+    "ari_4bit": {
+      "per_example": 16000,
+      "shared": 4,
+      "note": "4-bit codes + scale"
+    },
+    "ari_2bit": {
+      "per_example": 8000,
+      "shared": 4,
+      "note": "2-bit codes + scale"
+    },
+    "uniform_4bit": {
+      "per_example": 16000,
+      "shared": 8,
+      "note": "4-bit uniform + min/max"
+    },
+    "uniform_8bit": {
+      "per_example": 32000,
+      "shared": 8,
+      "note": "8-bit uniform + min/max"
+    },
+    "margin_fp32": {
+      "per_example": 4,
+      "shared": 0,
+      "note": "one float32 top-2 margin"
+    },
+    "sketch_rp64": {
+      "per_example": 256,
+      "shared": 12,
+      "note": "k float32 sketch + seed/shape"
+    }
+  }
+}

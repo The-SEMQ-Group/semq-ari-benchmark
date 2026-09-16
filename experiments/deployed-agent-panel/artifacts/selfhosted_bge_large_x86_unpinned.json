@@ -1,0 +1,38 @@
+{
+  "agent": "BAAI/bge-large-en-v1.5",
+  "agent_class": "self_hosted",
+  "n_inputs": 64,
+  "resamples": 5,
+  "probe_backend": "semq",
+  "threads_pinned": false,
+  "conditions": {
+    "same": {
+      "HER_mean": 1.0,
+      "HER_min": 1.0,
+      "Hbar_mean": 0.0,
+      "per_resample_HER": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "proc": {
+      "HER_mean": 1.0,
+      "HER_min": 1.0,
+      "Hbar_mean": 0.0,
+      "per_resample_HER": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "findings": {
+    "within_process_deterministic": true,
+    "cross_process_reproducible": true
+  }
+}

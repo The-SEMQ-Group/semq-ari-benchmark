@@ -1,0 +1,84 @@
+{
+  "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+  "n_docs": 5000,
+  "dim": 384,
+  "centroids": 256,
+  "seed": 0,
+  "sweep": [
+    {
+      "subspaces": 32,
+      "dims_per_subvector": 12,
+      "near_tie_rate": {
+        "1e-06": 0.00045,
+        "1e-05": 0.00355,
+        "1e-04": 0.0350625
+      },
+      "median_margin": 0.001873127417638898,
+      "min_margin": 7.450580596923828e-09,
+      "form_disagreement_symbols": 0.0,
+      "form_disagreement_rows": 0.0,
+      "attractor_break_direct": 0.0,
+      "attractor_break_expanded": 0.0
+    },
+    {
+      "subspaces": 64,
+      "dims_per_subvector": 6,
+      "near_tie_rate": {
+        "1e-06": 0.0007,
+        "1e-05": 0.00744375,
+        "1e-04": 0.0723625
+      },
+      "median_margin": 0.0008678323356434703,
+      "min_margin": 1.3969838619232178e-09,
+      "form_disagreement_symbols": 6.25e-06,
+      "form_disagreement_rows": 0.0004,
+      "attractor_break_direct": 0.0,
+      "attractor_break_expanded": 0.0
+    },
+    {
+      "subspaces": 128,
+      "dims_per_subvector": 3,
+      "near_tie_rate": {
+        "1e-06": 0.00304375,
+        "1e-05": 0.030790625,
+        "1e-04": 0.27960625
+      },
+      "median_margin": 0.00020460104860831052,
+      "min_margin": 1.4915713109076023e-10,
+      "form_disagreement_symbols": 0.0,
+      "form_disagreement_rows": 0.0,
+      "attractor_break_direct": 0.0,
+      "attractor_break_expanded": 0.0
+    },
+    {
+      "subspaces": 192,
+      "dims_per_subvector": 2,
+      "near_tie_rate": {
+        "1e-06": 0.02620625,
+        "1e-05": 0.13753541666666666,
+        "1e-04": 0.8251833333333334
+      },
+      "median_margin": 4.495422763284296e-05,
+      "min_margin": 6.183853429320152e-11,
+      "form_disagreement_symbols": 0.0,
+      "form_disagreement_rows": 0.0,
+      "attractor_break_direct": 0.0,
+      "attractor_break_expanded": 0.0
+    },
+    {
+      "subspaces": 384,
+      "dims_per_subvector": 1,
+      "near_tie_rate": {
+        "1e-06": 0.9118729166666667,
+        "1e-05": 0.995359375,
+        "1e-04": 0.9991552083333334
+      },
+      "median_margin": 3.215769481812458e-07,
+      "min_margin": 0.0,
+      "form_disagreement_symbols": 0.000121875,
+      "form_disagreement_rows": 0.0464,
+      "attractor_break_direct": 0.0,
+      "attractor_break_expanded": 0.0
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+model_id,dataset_id,dim,slope_b,prefactor_a_empirical,prefactor_a_theory,kappa
+BAAI/bge-large-en-v1.5,BEIR/nfcorpus,1024,0.9912,72.96,25.53,2.86
+BAAI/bge-large-en-v1.5,BEIR/scifact,1024,1.0011,78.86,25.53,3.09
+BAAI/bge-m3,BEIR/nfcorpus,1024,1.0088,79.20,25.53,3.10
+BAAI/bge-m3,BEIR/scifact,1024,0.9927,70.22,25.53,2.75
+intfloat/e5-mistral-7b-instruct,BEIR/nfcorpus,4096,0.9557,101.98,51.06,2.00
+intfloat/e5-mistral-7b-instruct,BEIR/scifact,4096,0.9572,103.39,51.06,2.02
+Alibaba-NLP/gte-Qwen2-7B-instruct,BEIR/nfcorpus,3584,0.9928,122.21,47.77,2.56
+Alibaba-NLP/gte-Qwen2-7B-instruct,BEIR/scifact,3584,0.9937,124.11,47.77,2.60
+intfloat/multilingual-e5-large,BEIR/nfcorpus,1024,0.9899,71.17,25.53,2.79
+intfloat/multilingual-e5-large,BEIR/scifact,1024,1.0010,77.63,25.53,3.04
+openai/text-embedding-3-large,BEIR/nfcorpus,3072,0.9447,80.26,44.22,1.81
+openai/text-embedding-3-large,BEIR/scifact,3072,0.9479,81.98,44.22,1.85
