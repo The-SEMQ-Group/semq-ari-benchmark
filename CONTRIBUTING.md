@@ -17,7 +17,7 @@ Use the [SDK installation procedure](ari/README.md#install-the-canonical-probe) 
 
 ## Use the SEMQ operators through the SDK
 
-The SEMQ operators, including QBIN, are proprietary.
+The SEMQ operators, including QUANT, are proprietary.
 The SEMQ Group Inc. distributes them only in the `semq` package.
 That package is subject to a commercial license owned by The SEMQ Group Inc. and is patent pending.
 This repository does not contain them and must not contain them.
@@ -50,7 +50,7 @@ Use the [official specification](https://www.asd-ste100.org/) for vocabulary and
 - Update links when moving or removing a document.
 
 Code identifiers, equations, citations, and required schema terms retain their exact forms.
-Technical names include ARI, HER, Hamming distance, SEMQ, QBIN, calibration, logits, and bootstrap confidence interval.
+Technical names include ARI, HER, Hamming distance, SEMQ, QUANT, calibration, logits, and bootstrap confidence interval.
 Define additional technical names where they occur. A sentence-length check alone does not establish STE compliance.
 
 ## Change a specification
