@@ -6,6 +6,17 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Matched-budget study inventoried; protocol section 0.5 corrected
+- `experiments/matched-budget-detectors/INVENTORY.md` classifies every
+  surviving artifact, confirms that no confirmatory episode exists locally,
+  on any branch or in S3, and gives the confirmatory run's targets, commands,
+  cost estimate and a fail-closed checklist mapped to the code.
+- PROTOCOL.md section 0.5 said the pilot's inputs were absent and nothing in
+  `pilot.json` could be re-derived. The pilot's cache is the local decoding
+  cache, and re-scoring it with the current SDK path reproduces every ARI,
+  hash and distance array bit-for-bit. The section now says so. Editorial:
+  no scoring rule or target changes, and the pilot remains pilot data.
+
 ### The SDK is the authority on layout and calibration
 - `run_pilot.py` took the packed layout, the symbol unpacking and the
   calibration percentile from the core instead of reimplementing them. The

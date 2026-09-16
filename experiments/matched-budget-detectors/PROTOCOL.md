@@ -68,7 +68,7 @@ Report these quantities separately:
 - `ari_symbol_mismatch` — fraction of coordinates whose decoded symbol changed
 - `ari_byte_mismatch` — the published quantity, retained for continuity
 
-### 0.5 The committed pilot cannot be checked against the current scoring
+### 0.5 The committed pilot re-scores identically under the current path
 
 `results/pilot.json` and `results/pilot.scores.npz` were produced by an earlier
 `_ari_scores` that unpacked symbols itself and calibrated with
@@ -91,16 +91,19 @@ a property of the data, not of the change: on the cache in
 the two scales are bit-identical (`9.41488265991211`) and every rate is
 unchanged, while at dim 384, `n_bins=8`, percentile 0.999 they diverge.
 
-**The pilot's own inputs are not in this repository.** `pilot.json` records its
-cache as `/home/ubuntu/mbd/cache`, which is not the cache above and is not
-committed, and the scale it recorded (`9.414882678985599`) is not what either
-path produces on the cache that is here. Nothing in `pilot.json` can be
-re-derived, so no claim that its numbers survive the change can be checked.
+**The pilot's inputs are the local decoding cache.** `pilot.json` records
+its cache as `/home/ubuntu/mbd/cache`, a copy of
+`experiments/decoding-reproducibility/results/cache/`, which is ignored by
+git. The recorded scale `9.414882678985599` is the float64 `numpy.percentile`
+of that cache; its float32 value equals the SDK's `calibrate` output
+`9.41488265991211`. Re-scoring the cache with the current path reproduces
+every ARI, hash and distance array bit-for-bit (see [INVENTORY.md](INVENTORY.md)
+section 2). The cache itself is still unmanifested and is still pilot data.
 
-**Consequence.** Treat `pilot.json` as a record that a run happened, not as a
-result. It is retained unregenerated, and no number in it is comparable with a
-number produced by the current scoring path. Confirmatory collection starts
-from freshly collected episodes with manifests.
+**Consequence.** `pilot.json` is retained as committed and is comparable with
+the current scoring path. It remains pilot data: twelve prompts bound a
+false-alarm rate only below 22.1%. Confirmatory collection still starts from
+freshly collected episodes with manifests.
 
 ---
 
