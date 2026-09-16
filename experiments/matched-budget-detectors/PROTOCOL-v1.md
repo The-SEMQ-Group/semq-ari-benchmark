@@ -6,8 +6,8 @@
 **Status: frozen 2026-09-09, before any confirmatory evaluation.**
 Repository commit at freeze: `a961b3516b58` (branch `research/ari-review-response`).
 
-Addresses major concern 1 of the paper review: does ARI provide a useful
-detection / storage / runtime / verification tradeoff against simpler
+Defines the study question: does ARI provide a useful detection / storage /
+runtime / verification tradeoff against simpler
 measurements? A negative result is an acceptable outcome and this document is
 written so that it can be reported as one.
 
