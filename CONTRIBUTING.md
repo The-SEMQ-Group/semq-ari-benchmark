@@ -15,6 +15,23 @@ Use a separate branch for each change. Keep unrelated generated files out of the
 Report skipped tests. Public CI can skip SDK-dependent tests because `semq` requires separate access.
 Use the [SDK installation procedure](ari/README.md#install-the-canonical-probe) to test those paths when you have access.
 
+## Use the SEMQ operators through the SDK
+
+The SEMQ operators, including QBIN, are proprietary.
+The SEMQ Group distributes them only in the `semq` package under a commercial license.
+This repository does not contain them and must not contain them.
+
+- Do not add an implementation of a SEMQ operator to this repository.
+  This includes ports, translations, clean-room rewrites, and numerically equivalent approximations.
+- Do not copy or paraphrase code from the `semq` package into this repository.
+- Call the operators through the `semq` package. Use [semq_compat.py](ari/semq_compat.py) for version differences.
+- The mock probe in [probe.py](ari/probe.py) is a test double for the pipeline. It does not reproduce SDK output.
+  Do not extend it to match SDK behavior.
+
+Pull requests that add an operator implementation are closed without review.
+The Apache-2.0 license covers the benchmark harness in this repository.
+It does not grant any right to the SEMQ operators or to the `semq` package.
+
 ## Write documentation
 
 Use ASD-STE100 Simplified Technical English for explanatory text and procedures.
