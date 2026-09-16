@@ -90,7 +90,7 @@ python nonassociativity.py --out results/nonassociativity.json
 
 # 2. the batch sweep on the H100 box
 python run_batch_sweep.py --label h100 --n 1000 --out ~/batch_out \
-    --publish-s3 s3://semq-agent-memory-benchmark/batch-invariance/results
+    --publish-s3 "$BATCH_RESULTS_BUCKET/batch-invariance/results"   # from infra/operator.env
 
 # 3. read the summary
 cat ~/batch_out/summary.json

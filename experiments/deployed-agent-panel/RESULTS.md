@@ -159,5 +159,5 @@ identical in structure to the self-hosted rows, adapted for a 7B model:
   `ari.report.build_report`). **Evidence**: the report, its KMS attestation
   and the raw per-condition float matrices (a first for the panel — the
   float-detector gate can be exercised retroactively on this row) are
-  digest-bound; float matrices archived at
-  `s3://semq-ari-baselines-127348475353/capture-sessions/sfr-2r/`.
+  digest-bound; float matrices archived in the operator's private baselines bucket
+  (`BASELINES_BUCKET` in `infra/operator.env`, not committed) under `capture-sessions/sfr-2r/`.

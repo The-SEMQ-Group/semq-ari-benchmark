@@ -53,7 +53,10 @@ ARI_D_MODEL=Qwen/Qwen2.5-7B-Instruct bash ~/semq-ari-benchmark/infra/run_gpu.sh
 ## Procedure
 
 ```bash
-# 0. Once per account, before the first launch.
+# 0. Once per account, before the first launch. operator.env holds the
+#    CodeArtifact and bucket coordinates and is gitignored: nothing in the
+#    public tree names an AWS account, domain, repository or bucket.
+cp operator.env.example operator.env && $EDITOR operator.env
 ./budget.sh you@example.com 100
 
 # 1. Check what would happen without touching anything.

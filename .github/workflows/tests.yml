@@ -33,19 +33,21 @@ jobs:
       # role with CodeArtifact read exists, this is skipped and the attestation
       # tests skip with it (their pytest.importorskip("semq") handles that). Set
       # the CODEARTIFACT_ROLE_ARN repository variable to an OIDC role that can
-      # read the semq domain, and semq installs so the attestation round-trip
-      # runs instead of skipping.
+      # read the domain, plus CODEARTIFACT_DOMAIN, CODEARTIFACT_REPO and
+      # AWS_REGION, and semq installs so the attestation round-trip runs
+      # instead of skipping. The workflow file itself names none of them.
       - name: Configure AWS for CodeArtifact
         if: vars.CODEARTIFACT_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.CODEARTIFACT_ROLE_ARN }}
-          aws-region: us-east-2
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Install semq from CodeArtifact
         if: vars.CODEARTIFACT_ROLE_ARN != ''
         run: |
-          aws codeartifact login --tool pip --domain semq --repository semq-sdk --region us-east-2
+          aws codeartifact login --tool pip --domain "${{ vars.CODEARTIFACT_DOMAIN }}" \
+            --repository "${{ vars.CODEARTIFACT_REPO }}" --region "${{ vars.AWS_REGION }}"
           python -m pip install semq
 
       # -rs prints the reason for every skip, so a run without semq says so
