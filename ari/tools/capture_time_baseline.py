@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This repository computes SEMQ codes through the SEMQ SDK, a separate library
-# that is subject to a commercial license owned by The SEMQ Group Inc. and is
-# patent pending. The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library that is subject to a
+# commercial license owned by The SEMQ Group Inc. and is patent pending.
+# The SDK is not covered by the Apache License.
 """The `time` condition: capture an agent's SEMQ codes now, re-measure after a wall-clock
 gap (≥24h) to get the `time` HER — the most real-world drift axis (silent infra/snapshot
 updates over time). Also gives temporal replication of the drift rate.

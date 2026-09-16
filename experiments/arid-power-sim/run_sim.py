@@ -1,9 +1,5 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
-#
-# This repository computes SEMQ codes through the SEMQ SDK, a separate library
-# that is subject to a commercial license owned by The SEMQ Group Inc. and is
-# patent pending. The SDK is not covered by the Apache License.
 """ARI-D power simulation: does the frozen design see the effects we care about?
 
 Gate for ARI-D-Bench v0.1 rollout step 1 (spec/arid-bench-v0.1.md,

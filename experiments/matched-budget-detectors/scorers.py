@@ -1,9 +1,5 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
-#
-# This repository computes SEMQ codes through the SEMQ SDK, a separate library
-# that is subject to a commercial license owned by The SEMQ Group Inc. and is
-# patent pending. The SDK is not covered by the Apache License.
 """Detector scores over a reference/current vector pair, and their byte costs.
 
 Every score takes two arrays of identical shape and returns one float per row,

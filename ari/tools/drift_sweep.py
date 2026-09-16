@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This repository computes SEMQ codes through the SEMQ SDK, a separate library
-# that is subject to a commercial license owned by The SEMQ Group Inc. and is
-# patent pending. The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library that is subject to a
+# commercial license owned by The SEMQ Group Inc. and is patent pending.
+# The SDK is not covered by the Apache License.
 """Drift-sensitivity sweep → the `(b, κ)` fingerprint for a self-hosted model.
 
 Perturbs a model's embeddings with isotropic Gaussian noise across a σ grid, measures the
