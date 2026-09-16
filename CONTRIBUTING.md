@@ -18,7 +18,8 @@ Use the [SDK installation procedure](ari/README.md#install-the-canonical-probe) 
 ## Use the SEMQ operators through the SDK
 
 The SEMQ operators, including QBIN, are proprietary.
-The SEMQ Group distributes them only in the `semq` package under a commercial license.
+The SEMQ Group Inc. distributes them only in the `semq` package.
+That package is subject to a commercial license owned by The SEMQ Group Inc. and is patent pending.
 This repository does not contain them and must not contain them.
 
 - Do not add an implementation of a SEMQ operator to this repository.
