@@ -44,6 +44,8 @@ from typing import Any
 
 import numpy as np
 
+from ari.bound_quality import (BoundQuality, ThresholdResolution,
+                               resolve_threshold, summarize_bounds)
 from ari.code_metrics import CodeDiff, bits_per_coordinate
 
 # Storage a monitor must retain per encoded unit, for the alternatives a
@@ -67,6 +69,11 @@ class ChangeProfile:
     group_change_counts: list[int]
     group_sizes: list[int]
     displacement: dict[str, float | int] | None
+    # Generic codec bounds and norm-constrained bounds are separate fields so
+    # a declared assumption cannot reach a figure that did not declare it.
+    bound_quality: BoundQuality | None = None
+    norm_bound_quality: dict[str, Any] | None = None
+    thresholds: list[ThresholdResolution] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -79,6 +86,12 @@ class ChangeProfile:
         }
         if self.displacement is not None:
             out["displacement"] = self.displacement
+        if self.bound_quality is not None:
+            out["bound_quality"] = self.bound_quality.as_dict()
+        if self.norm_bound_quality is not None:
+            out["norm_bound_quality"] = self.norm_bound_quality
+        if self.thresholds:
+            out["thresholds"] = [t.as_dict() for t in self.thresholds]
         return out
 
 
@@ -117,10 +130,26 @@ def capabilities() -> dict[str, dict[str, bool]]:
     }
 
 
+def _mapping(obj: Any) -> dict[str, Any] | None:
+    """Serialize a bounds object. The SDK spells it to_dict, this repo as_dict."""
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        return obj
+    for name in ("as_dict", "to_dict"):
+        fn = getattr(obj, name, None)
+        if callable(fn):
+            return fn()
+    raise TypeError(
+        f"norm_bounds needs as_dict() or to_dict(), got {type(obj).__name__}")
+
+
 def profile(diff: CodeDiff, *, n_bins: int, group_size: int = 64,
             ref_symbols: np.ndarray | None = None,
             cur_symbols: np.ndarray | None = None,
-            regions: Any = None) -> ChangeProfile:
+            regions: Any = None,
+            thresholds: tuple[float, ...] = (),
+            norm_bounds: Any = None) -> ChangeProfile:
     """Build a profile from a comparison, and movement when regions are given.
 
     ``regions`` is a ``semq.regions.QuantRegions``. Without it the
@@ -137,11 +166,15 @@ def profile(diff: CodeDiff, *, n_bins: int, group_size: int = 64,
     if n % group_size:
         sizes[-1] = n % group_size
 
-    disp = None
+    disp = quality = resolved = None
     if regions is not None:
         if ref_symbols is None or cur_symbols is None:
             raise ValueError("regions need ref_symbols and cur_symbols")
-        disp = regions.displacement(ref_symbols, cur_symbols).summary()
+        d = regions.displacement(ref_symbols, cur_symbols)
+        disp = d.summary()
+        quality = summarize_bounds(d, over_changed_only=True)
+        resolved = [resolve_threshold(d, t, over_changed_only=True)
+                    for t in thresholds] or None
 
     return ChangeProfile(
         n_coordinates=n,
@@ -151,4 +184,7 @@ def profile(diff: CodeDiff, *, n_bins: int, group_size: int = 64,
         group_change_counts=counts.tolist(),
         group_sizes=sizes.tolist(),
         displacement=disp,
+        bound_quality=quality,
+        norm_bound_quality=_mapping(norm_bounds),
+        thresholds=resolved,
     )
