@@ -18,7 +18,7 @@ from .change_profile import ChangeProfile
 from .code_metrics import bits_per_coordinate
 from .metrics import ConditionMetrics
 from .probe import N_BINS
-from .rpc import semq_bytes_of_reference_state
+from .rpc import her, semq_bytes_of_reference_state
 
 CANONICAL_CONDITIONS = ["same", "proc", "mach", "prec", "lib", "conc", "time", "batch"]
 # Headline ARI averages over the *comparable core* — the conditions measurable for any agent
@@ -41,6 +41,35 @@ def condition_digest(codes: np.ndarray) -> str:
     return hashlib.sha256(np.ascontiguousarray(codes, dtype=np.uint8).tobytes()).hexdigest()
 
 
+def semq_condition_entry(m: ConditionMetrics, dim: int) -> dict:
+    """One condition in the multi-detector shape (spec/report-schema.json
+    $defs/conditionResult) for the `semq` detector."""
+    bors = semq_bytes_of_reference_state(int(dim))
+    # Hbar is a bit count, so it needs the code-bit total to become a rate.
+    bpc = bits_per_coordinate(N_BINS)
+    n_bits = int(dim) * bpc
+    return {"detectors": {"semq": {
+        "HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
+        "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],
+        "bits_per_coordinate": bpc,
+        "n_coordinates": int(dim),
+        "n_bits": n_bits,
+        "bit_hamming_rate": round(m.Hbar / n_bits, 9),
+        "criterion_type": "exact",
+        "bytes_of_reference_state": bors,
+        "unit": "code",
+    }}}
+
+
+def core_ari(results_per_condition: dict) -> float:
+    """Mean semq HER over the present comparable-core conditions."""
+    present = [her(results_per_condition[c]) for c in CORE_CONDITIONS
+               if c in results_per_condition]
+    if not present or any(h is None for h in present):
+        raise ValueError("no averaged conditions present — cannot compute ARI")
+    return float(np.mean(present))
+
+
 def build_report(
     *,
     agent_id: str,
@@ -54,10 +83,8 @@ def build_report(
     fingerprint: dict | None = None,
     change_profiles: dict[str, "ChangeProfile"] | None = None,
 ) -> dict:
-    present_averaged = [c for c in AVERAGED_CONDITIONS if c in metrics_by_condition]
-    if not present_averaged:
+    if not any(c in metrics_by_condition for c in AVERAGED_CONDITIONS):
         raise ValueError("no averaged conditions present — cannot compute ARI")
-    ari = float(np.mean([metrics_by_condition[c].HER for c in present_averaged]))
 
     # Conditions are born in the multi-detector shape
     # (spec/report-schema.json $defs/conditionResult); the flat pre-Matrix
@@ -66,23 +93,9 @@ def build_report(
     if dim is None:
         raise ValueError("fingerprint.dim is required to derive the semq "
                          "detector's bytes_of_reference_state")
-    bors = semq_bytes_of_reference_state(int(dim))
-    # Hbar is a bit count, so it needs the code-bit total to become a rate.
-    bpc = bits_per_coordinate(N_BINS)
-    n_bits = int(dim) * bpc
     results = {}
     for cond, m in metrics_by_condition.items():
-        results[cond] = {"detectors": {"semq": {
-            "HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
-            "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],
-            "bits_per_coordinate": bpc,
-            "n_coordinates": int(dim),
-            "n_bits": n_bits,
-            "bit_hamming_rate": round(m.Hbar / n_bits, 9),
-            "criterion_type": "exact",
-            "bytes_of_reference_state": bors,
-            "unit": "code",
-        }}}
+        results[cond] = semq_condition_entry(m, int(dim))
         # Extent and location, when the caller had a probe to compute them
         # with. Absent for a build without Context.quant_regions, and for
         # every report written before 2026-09-10.
@@ -99,7 +112,7 @@ def build_report(
         "agent_class": agent_class,
         "environment": environment,
         "results_per_condition": results,
-        "ARI": round(ari, 6),
+        "ARI": round(core_ari(results), 6),
         "audit_hashes": audit,
     }
     if input_content_hash is not None:

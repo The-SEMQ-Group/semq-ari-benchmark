@@ -52,6 +52,19 @@ A missing batch condition and batch HER 1.000 are different results.
 A precision change can alter codes while Recall@10 remains unchanged; retrieval lists can still change.
 See [regime results](../experiments/regime-discrimination/RESULTS.md).
 
+## Time evidence
+
+A `time` result must carry a `time_evidence` object. The object is defined in [report-schema.json](report-schema.json) under `$defs/timeEvidence`.
+Record the UTC start and end of the baseline encode and of the comparison encode.
+Compute `gap_hours` as the comparison start minus the baseline end. The gap must be greater than 24 hours.
+Record the probe id, the frozen calibration scale, the input content hash, the model and tokenizer revisions, the precision, the hardware, the SDK version, and the harness commit.
+Both captures must use the same values for these settings. A change in one of them is a different condition.
+Record a difference from this procedure in `deviations`.
+
+`python -m ari.check_evidence <report>` rejects a `time` result that lacks the object or whose gap is 24 hours or less.
+The object is optional in the schema. Reports signed before it existed do not carry it and were not re-signed.
+Read the `time` results of those reports with their panel documentation.
+
 ## Environment record
 
 Record baseline and condition settings: BLAS implementation, thread count, hardware, precision, and library versions.
