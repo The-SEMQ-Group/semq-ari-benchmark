@@ -251,31 +251,38 @@
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/MANIFEST.sha256",
-          "sha256": "6fc74c570f86b73485ffe7b6fbe64adf5c6dc4c8f6c1d1daf12f8d93b2d8bc29"
+          "sha256": "6fc74c570f86b73485ffe7b6fbe64adf5c6dc4c8f6c1d1daf12f8d93b2d8bc29",
+          "tracked": false
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/analysis.json",
-          "sha256": "62844562cd4bd30da1a55dddfe1bfa09b0cd175b188d5c9edab24f09073c3e21"
+          "sha256": "62844562cd4bd30da1a55dddfe1bfa09b0cd175b188d5c9edab24f09073c3e21",
+          "tracked": false
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/config.yaml",
-          "sha256": "2648d9c104b932eb6c10ca22696afab46879bd6e9fcc334bc88a04c8c3cfe209"
+          "sha256": "2648d9c104b932eb6c10ca22696afab46879bd6e9fcc334bc88a04c8c3cfe209",
+          "tracked": false
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/environment.json",
-          "sha256": "2a84939093dd016dd5ea14ed52304980e3a41e2dd3ecca53571d2182e30a8213"
+          "sha256": "2a84939093dd016dd5ea14ed52304980e3a41e2dd3ecca53571d2182e30a8213",
+          "tracked": false
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/replay.md",
-          "sha256": "25ccbaf598381c00073969250cc9489cb92f97eb7d1e0598807236bfafdb501c"
+          "sha256": "25ccbaf598381c00073969250cc9489cb92f97eb7d1e0598807236bfafdb501c",
+          "tracked": false
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/report.md",
-          "sha256": "e9c1548bb55eb3f0a0a4600ab082ba99bf614d4292c444f611dd55a73d0ea5fb"
+          "sha256": "e9c1548bb55eb3f0a0a4600ab082ba99bf614d4292c444f611dd55a73d0ea5fb",
+          "tracked": false
         },
         {
           "path": "docs/paper/evidence/L3_09_agentic_compounding/results.jsonl",
-          "sha256": "14be3ea7a6baaadfe752da4a234dd543af8193b27e3f59251f160b163bd4364a"
+          "sha256": "14be3ea7a6baaadfe752da4a234dd543af8193b27e3f59251f160b163bd4364a",
+          "tracked": false
         }
       ],
       "input_selection": "Left: regime_matrix.json rows proc, gpu_tf32_off, gpu_tf32_on, bf16, int8 (fields semq_her, recall_delta, recall_delta_ci95). Right: analysis.json divergence['0.0'|'0.0001'|'0.001'|'0.003'] and summary.n_hops, after MANIFEST.sha256 verification.",

@@ -1,6 +1,10 @@
 # Archived paper evidence
 
-`L3_09_agentic_compounding/` is an unchanged copy of the seven-file S3 bundle:
+`L3_09_agentic_compounding/` is an unchanged copy of the seven-file S3 bundle.
+It is not committed to this repository: its `environment.json` and `replay.md`
+record the container registry URI, which carries the AWS account id, and the
+files are hash-pinned so they cannot be redacted. Fetch the bundle into this
+directory from:
 
     s3://$RESEARCH_RESULTS_BUCKET/results/L3_09_agentic_compounding/2026-07-07_113131_20260707-112517/
 
