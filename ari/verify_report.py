@@ -29,9 +29,121 @@ import base64
 import hashlib
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 OK, BAD = "PASS", "FAIL"
+
+# spec/condition-set.md: the `time` condition repeats after more than 24 hours.
+MIN_GAP_HOURS = 24.0
+
+TIME_EVIDENCE_TIMESTAMPS = (
+    "baseline_started_at", "baseline_finished_at",
+    "comparison_started_at", "comparison_finished_at",
+)
+TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
+    "gap_hours", "probe_calibration", "calibration_scale", "input_content_hash",
+    "model_revision", "tokenizer_revision", "precision", "hardware",
+    "sdk_version", "source_commit",
+)
+# Fields that must name an immutable revision. Mirrors ari.hub.NON_PINS, which
+# this file cannot import.
+_PINNED_FIELDS = ("model_revision", "tokenizer_revision", "source_commit")
+_MOVING_REFS = frozenset({"", "unknown", "main", "master", "latest", "head"})
+_TS_FORMATS = ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def _parse_utc(value):
+    if not isinstance(value, str):
+        return None
+    for fmt in _TS_FORMATS:
+        try:
+            return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def check_time_condition(report: dict) -> list[str]:
+    """Violations in a report's `time` result, each naming the field at fault.
+
+    Empty when the report has no `time` result, or when the result carries a
+    complete `time_evidence` block whose timestamps give a gap above
+    MIN_GAP_HOURS and agree with the recorded `gap_hours`. Cross-checks the
+    block against the report's own input hash, probe id and precision, so a
+    `time` cell measured on different inputs or at another precision is caught
+    even when the block itself is complete.
+    """
+    rpc = report.get("results_per_condition")
+    if not isinstance(rpc, dict) or "time" not in rpc:
+        return []
+    cell = rpc["time"]
+    if not isinstance(cell, dict):
+        return ["results_per_condition.time: not an object"]
+    ev = cell.get("time_evidence")
+    pre = "results_per_condition.time.time_evidence"
+    if not isinstance(ev, dict):
+        return [f"{pre}: missing; a time result must record both captures "
+                f"(spec/condition-set.md, $defs/timeEvidence)"]
+
+    out = [f"{pre}.{f}: missing" for f in TIME_EVIDENCE_FIELDS if f not in ev]
+
+    stamps = {}
+    for f in TIME_EVIDENCE_TIMESTAMPS:
+        if f in ev:
+            dt = _parse_utc(ev[f])
+            if dt is None:
+                out.append(f"{pre}.{f}: {ev[f]!r} is not a UTC ISO-8601 instant "
+                           f"of the form YYYY-MM-DDTHH:MM:SSZ")
+            else:
+                stamps[f] = dt
+    if len(stamps) == len(TIME_EVIDENCE_TIMESTAMPS):
+        if stamps["baseline_finished_at"] < stamps["baseline_started_at"]:
+            out.append(f"{pre}.baseline_finished_at: earlier than baseline_started_at")
+        if stamps["comparison_finished_at"] < stamps["comparison_started_at"]:
+            out.append(f"{pre}.comparison_finished_at: earlier than comparison_started_at")
+        gap = ((stamps["comparison_started_at"] - stamps["baseline_finished_at"])
+               .total_seconds() / 3600.0)
+        if gap <= MIN_GAP_HOURS:
+            out.append(f"{pre}.gap_hours: timestamps give {gap:.2f} h between "
+                       f"baseline_finished_at and comparison_started_at; the time "
+                       f"condition requires more than {MIN_GAP_HOURS:g} h")
+        recorded = ev.get("gap_hours")
+        if isinstance(recorded, (int, float)) and abs(recorded - gap) > 0.01:
+            out.append(f"{pre}.gap_hours: recorded {recorded} but the timestamps "
+                       f"give {gap:.2f}")
+
+    recorded = ev.get("gap_hours", None)
+    if "gap_hours" in ev and (not isinstance(recorded, (int, float))
+                              or isinstance(recorded, bool)
+                              or recorded <= MIN_GAP_HOURS):
+        out.append(f"{pre}.gap_hours: {recorded!r} is not greater than {MIN_GAP_HOURS:g}")
+
+    for f in _PINNED_FIELDS:
+        v = ev.get(f)
+        if f in ev and (not isinstance(v, str) or v.strip().lower() in _MOVING_REFS):
+            out.append(f"{pre}.{f}: {v!r} does not name an immutable revision")
+    for f in ("probe_calibration", "hardware", "sdk_version", "precision"):
+        v = ev.get(f)
+        if f in ev and (not isinstance(v, str) or not v.strip()):
+            out.append(f"{pre}.{f}: {v!r} is empty")
+    scale = ev.get("calibration_scale")
+    if "calibration_scale" in ev and (not isinstance(scale, (int, float))
+                                      or isinstance(scale, bool) or scale <= 0):
+        out.append(f"{pre}.calibration_scale: {scale!r} is not a positive number")
+
+    # The block must describe this report's measurement, not another one's.
+    if "input_content_hash" in ev and ev["input_content_hash"] != report.get("input_content_hash"):
+        out.append(f"{pre}.input_content_hash: {ev['input_content_hash']!r} differs "
+                   f"from the report's input_content_hash")
+    if "probe_calibration" in ev and ev["probe_calibration"] != report.get("probe_calibration"):
+        out.append(f"{pre}.probe_calibration: {ev['probe_calibration']!r} differs "
+                   f"from the report's probe_calibration")
+    env_prec = (report.get("environment") or {}).get("precision")
+    if "precision" in ev and ev["precision"] != env_prec:
+        out.append(f"{pre}.precision: {ev['precision']!r} differs from "
+                   f"environment.precision {env_prec!r}")
+    return out
 
 
 def sha256_file(path: Path) -> str:
@@ -140,7 +252,21 @@ def verify(report_path: Path, search_dir: Path | None = None,
     except Exception as e:  # noqa: BLE001 - report the reason, do not hide it
         check(results, "Ed25519 signature verifies", False, f"{type(e).__name__}: {e}")
 
-    # 7. Timestamp, if the signer asked for one.
+    # 7. A `time` result must carry the evidence for its gap. Reports that are
+    #    not ARI reports (a harness-effect summary, say) have no such cell and
+    #    skip this. The check is stdlib-only and duplicated nowhere else:
+    #    ari/check_evidence.py imports it from here.
+    try:
+        report = json.loads(report_path.read_text())
+    except ValueError:
+        report = None
+    if isinstance(report, dict) and "time" in (report.get("results_per_condition") or {}):
+        violations = check_time_condition(report)
+        check(results, "time result carries its evidence", not violations,
+              "; ".join(violations) if violations else
+              f"gap {report['results_per_condition']['time']['time_evidence']['gap_hours']} h")
+
+    # 8. Timestamp, if the signer asked for one.
     if sidecar.get("tsa_token"):
         print("\n  note: an RFC-3161 token is present. This script does not "
               "parse it.\n        Use an RFC-3161 verifier to recover the "

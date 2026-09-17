@@ -6,6 +6,31 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### The time condition carries its evidence
+- `spec/report-schema.json` gains an optional `time_evidence` object on a
+  condition result (`$defs/timeEvidence`): UTC start and end of the baseline
+  and comparison encodes, `gap_hours` (greater than 24), the probe id and
+  frozen scale, the input hash, model and tokenizer revisions, precision,
+  hardware, SDK version, harness commit, and a `deviations` list. Optional, so
+  reports signed before it existed still validate; `ari_version` stays `0.1`.
+- `ari.verify_report.check_time_condition` rejects a `time` result without the
+  block, with a gap of 24 hours or less, with a `gap_hours` that disagrees with
+  its timestamps, with a moving ref (`main`, `unknown`) as a revision, or whose
+  block differs from the report's own input hash, probe id or precision. Each
+  violation names the field. The standalone verifier runs it on any report that
+  has a `time` cell; `python -m ari.check_evidence <report>` runs schema
+  validation and the same function.
+- `ari/tools/capture_time_baseline.py` records the block's baseline half in
+  `meta.json`, refuses a comparison whose revision, precision or SDK version
+  differs from the baseline, builds the `time` cell with `time_evidence`, and
+  with `--report`/`--out` merges it into an existing report and recomputes ARI.
+  `--agent st` captures a local sentence-transformers model on CPU with pinned
+  threads. A baseline holding only the pre-existing `unix_ts` is accepted with
+  a recorded deviation. Precision is read back and recorded, never changed.
+- `ari.report.semq_condition_entry` and `ari.report.core_ari` are factored out
+  of `build_report` so a tool can build one cell and recompute the aggregate.
+- `SentenceTransformerAgent` accepts a `revision` and reports its `precision()`.
+
 ### The SDK is the authority on layout and calibration
 - `run_pilot.py` took the packed layout, the symbol unpacking and the
   calibration percentile from the core instead of reimplementing them. The
