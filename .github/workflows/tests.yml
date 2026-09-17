@@ -68,7 +68,10 @@ jobs:
             echo "::warning::$n test modules skipped because semq is not installed; see the sdk-tests job"
           fi
 
+      # The mock agent needs no provider credentials, but every code comes
+      # from the SDK. Run this only in the SDK-enabled job configuration.
       - name: Validate the documented mock pipeline
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
         run: python -m ari.run --out /tmp/ari-report.json --validate
 
       - name: Build the package
