@@ -1,0 +1,107 @@
+{
+  "agent_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "ari_version": "0.1",
+  "probe_calibration": "ARI-Canonical-v0.1",
+  "input_set": "ARI-Bench-v0.1",
+  "input_content_hash": "e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d",
+  "measured_at": "2026-07-06",
+  "agent_class": "self_hosted",
+  "environment": {
+    "blas": "torch-default",
+    "threads": 8,
+    "hardware": "arm64",
+    "precision": "fp32",
+    "library_versions": {
+      "probe_backend": "semq"
+    }
+  },
+  "results_per_condition": {
+    "same": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 96,
+          "unit": "code"
+        }
+      }
+    },
+    "proc": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 96,
+          "unit": "code"
+        }
+      }
+    },
+    "prec": {
+      "detectors": {
+        "semq": {
+          "HER": 0.09375,
+          "Hbar": 2.339844,
+          "HER_ci": [
+            0.058594,
+            0.128906
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 96,
+          "unit": "code"
+        }
+      }
+    },
+    "conc": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 96,
+          "unit": "code"
+        }
+      }
+    },
+    "time": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 96,
+          "unit": "code"
+        }
+      }
+    }
+  },
+  "ARI": 1.0,
+  "audit_hashes": {
+    "same": "860ed00634d3c0fbd16ec8d95b4e2ca1b2fbeb4f74d361abdce64708d537aea4",
+    "proc": "860ed00634d3c0fbd16ec8d95b4e2ca1b2fbeb4f74d361abdce64708d537aea4",
+    "prec": "97b017364e98717ace43c8c26024a9997ffdd104613d5545c530cad064c4246c",
+    "conc": "3b15e50cc2ff5f13879768fc74bc3527e58f6f2a249bdc6337fc096ed6ba7451",
+    "time": "3b15e50cc2ff5f13879768fc74bc3527e58f6f2a249bdc6337fc096ed6ba7451"
+  },
+  "encoder_fingerprint": {
+    "dim": 384,
+    "s": 0.132349
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "agent_id": "Salesforce/SFR-Embedding-2_R",
+  "ari_version": "0.1",
+  "probe_calibration": "ARI-Canonical-v0.1",
+  "input_set": "ARI-Bench-v0.1",
+  "agent_class": "self_hosted",
+  "environment": {
+    "blas": "torch-default",
+    "threads": 1,
+    "hardware": "x86_64+L40S(g6e.xlarge)",
+    "precision": "fp32",
+    "library_versions": {
+      "probe_backend": "semq",
+      "threads_pinned": "true",
+      "torch": "2.9.1+cu130",
+      "cuda": "13.0",
+      "tf32": "off",
+      "deterministic_algorithms": "true",
+      "model_revision": "f62d15f411ca97b66acc0f34da2a65f3420b55b0"
+    }
+  },
+  "results_per_condition": {
+    "same": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 1024,
+          "unit": "code"
+        }
+      }
+    },
+    "proc": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 1024,
+          "unit": "code"
+        }
+      }
+    },
+    "conc": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 1024,
+          "unit": "code"
+        }
+      }
+    },
+    "time": {
+      "detectors": {
+        "semq": {
+          "HER": 1.0,
+          "Hbar": 0.0,
+          "HER_ci": [
+            1.0,
+            1.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 1024,
+          "unit": "code"
+        }
+      }
+    },
+    "prec": {
+      "detectors": {
+        "semq": {
+          "HER": 0.0,
+          "Hbar": 24.445,
+          "HER_ci": [
+            0.0,
+            0.0
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 1024,
+          "unit": "code"
+        }
+      }
+    }
+  },
+  "ARI": 1.0,
+  "audit_hashes": {
+    "same": "e8a2c3e423e894eb707856b6a54798deba0a60374a744deef0b312b64171463a",
+    "proc": "e8a2c3e423e894eb707856b6a54798deba0a60374a744deef0b312b64171463a",
+    "conc": "e8a2c3e423e894eb707856b6a54798deba0a60374a744deef0b312b64171463a",
+    "time": "e8a2c3e423e894eb707856b6a54798deba0a60374a744deef0b312b64171463a",
+    "prec": "7041d535162a9160bfdd6774729721dc352a25ba413822e963b1a912c53d3684"
+  },
+  "input_content_hash": "e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d",
+  "encoder_fingerprint": {
+    "dim": 4096,
+    "s": 0.042541
+  },
+  "measured_at": "2026-08-31"
+}
