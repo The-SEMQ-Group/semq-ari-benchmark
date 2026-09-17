@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "written": "2026-09-17",
+  "written": "2026-09-17; S3 verification and uploads 2026-09-17",
   "paper_source": {
     "path": "docs/paper/latex/ari.tex",
     "draft": "Labels, table numbers and captions follow the 2026-09-16 working draft on branch ilona/sdk-only-probe-and-paper (abstract: 'Under synthetic perturbations with clean top-10 overlap of 0.988, 11.5% of 15-hop retrieval trajectories diverge'). The tracked ari.tex on main is an earlier revision."
@@ -14,59 +14,83 @@
     {
       "what": "SciFact CPU embedding cache (7 files, 48 MB, gitignored)",
       "local": "experiments/regime-discrimination/results/cache/",
-      "planned_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/cache/",
       "manifest": "MANIFEST.sha256 staged beside the objects",
       "depends": [
         "fig:overview",
         "tab:scifact"
-      ]
+      ],
+      "status": "uploaded 2026-09-17",
+      "s3_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/cache/",
+      "objects": 7,
+      "bytes": 50810299,
+      "verified": "cache/bf16.npz downloaded 2026-09-17, sha256 matches MANIFEST.sha256"
     },
     {
       "what": "SciFact CPU packed codes (8 files, 6.1 MB, untracked)",
       "local": "experiments/regime-discrimination/results/codes/",
-      "planned_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/codes/",
       "manifest": "same MANIFEST.sha256",
       "depends": [
         "fig:overview",
         "tab:scifact"
-      ]
+      ],
+      "status": "uploaded 2026-09-17",
+      "s3_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/codes/",
+      "objects": 8,
+      "bytes": 6422628,
+      "verified": "codes/int8.npz and codes/reference.npz downloaded 2026-09-17; sha256 matches; HER recomputed from the downloaded codes alone is 0.0000 for int8, equal to regime_matrix.json"
     },
     {
       "what": "TinyLlama CPU pilot logits cache (6 files, 311 MB, gitignored)",
       "local": "experiments/decoding-reproducibility/results/cache/",
-      "planned_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/cache/",
       "manifest": "MANIFEST.sha256 staged beside the objects",
       "depends": [
         "app:deccontrol text (74.21%, 9 of 12)"
-      ]
+      ],
+      "status": "uploaded 2026-09-17",
+      "s3_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/cache/",
+      "objects": 6,
+      "bytes": 325926111,
+      "verified": "cache/bf16.npz downloaded 2026-09-17, sha256 matches MANIFEST.sha256"
     },
     {
       "what": "Hosted decoding transcripts",
       "local": null,
-      "expected_prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
       "depends": [
         "fig:arid",
         "tab:arid"
       ],
-      "action": "verify presence and count"
+      "action": "done",
+      "status": "present, verified 2026-09-17",
+      "s3_prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
+      "objects": 16,
+      "bytes": 214998719,
+      "verified": "salesforce_same.jsonl.gz and together_same_prefix3.jsonl.gz downloaded; sha256 equal to results/manifest.json runs[5] and runs[8]"
     },
     {
       "what": "H100 batch-invariance code matrices",
       "local": null,
-      "expected_prefix": "s3://$BATCH_RESULTS_BUCKET/<unrecorded>",
       "depends": [
         "fig:batch"
       ],
-      "action": "record prefix and count; verify one object"
+      "action": "verify one object's checksum against a capture meta.json before citing",
+      "status": "present, listed 2026-09-17",
+      "s3_prefix": "s3://$BATCH_RESULTS_BUCKET/batch-invariance/results/",
+      "objects": 553,
+      "bytes": 57329855,
+      "layout": "all-encoders/ 211 objects (the run behind fig:batch, one meta.json per capture), with-control/ 254, boundary/ 85, plus summary.json and logs"
     },
     {
       "what": "SFR-Embedding-2_R raw vectors",
       "local": null,
-      "expected_prefix": "s3://$BASELINES_BUCKET/capture-sessions/sfr-2r/",
       "depends": [
         "text:selfhosted-panel"
       ],
-      "action": "verify presence and count"
+      "action": "download and verify meta.json revision before citing",
+      "status": "present, listed 2026-09-17",
+      "s3_prefix": "s3://$BASELINES_BUCKET/capture-sessions/sfr-2r/",
+      "objects": 6,
+      "bytes": 84781245,
+      "layout": "sfr-out.tar.gz (83.9 MB, per sfr_capture.py holds report.json, meta.json and per-condition float matrices), ari-bundle.tar.gz, sfr_capture.py, resume_sfr.py, two semq-1.4.1 wheels"
     },
     {
       "what": "A10G/T4 GPU code tarballs; SciFact GPU-row vectors; L40S decoding logits",

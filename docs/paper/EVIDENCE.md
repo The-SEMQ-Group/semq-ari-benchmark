@@ -60,3 +60,23 @@ manifest's `s3_upload_list` gives the exact list. In short:
 
 See [Corpus size](evidence/README.md#corpus-size) and
 [Source revision](evidence/README.md#source-revision) in the evidence README.
+
+## S3 archive status, 2026-09-17
+
+Bucket names are operator configuration (`infra/operator.env`); the prefixes
+below are relative to the variables named.
+
+| Artifact set | Location | Objects | Verified |
+| --- | --- | ---: | --- |
+| SciFact CPU embedding cache | `$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/cache/` | 7 | one file downloaded, sha256 matches the archived MANIFEST.sha256 |
+| SciFact packed codes and manifest | `$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/codes/` | 8 | two files downloaded; HER recomputed from archived codes alone equals the table |
+| TinyLlama decoding pilot cache | `$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/cache/` | 6 | one file downloaded, sha256 matches |
+| Hosted decoding transcripts | `$BASELINES_BUCKET/arid-dry-run/transcripts/` | 16 | two downloaded, sha256 equal to `results/manifest.json` |
+| H100 batch-invariance code matrices | `$BATCH_RESULTS_BUCKET/batch-invariance/results/` | 553 | listed; `all-encoders/` holds the 211 objects behind the figure; not yet checksum-verified |
+| SFR-Embedding-2_R capture session | `$BASELINES_BUCKET/capture-sessions/sfr-2r/` | 6 | listed; not yet downloaded |
+| L3_09 retrieval-walk bundle | `$RESEARCH_RESULTS_BUCKET/results/L3_09_agentic_compounding/2026-07-07_113131_20260707-112517/` | 7 | MANIFEST.sha256 byte-identical to the local copy; all six files verify |
+
+Still in no archive: API panel raw vectors, replication pilot vectors,
+fingerprint calibration trials, SciFact GPU-row vectors and codes, L40S
+decoding logits and codes, and the retrieval-walk trajectories, which were
+never written.
