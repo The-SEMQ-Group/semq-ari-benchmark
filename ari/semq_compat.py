@@ -6,10 +6,10 @@
 # The SDK is not covered by the Apache License.
 """One way to build a SEMQ quantizer context across SDK versions.
 
-The magnitude-binning operator was renamed. Version 1.4.1, the newest wheel on
-CodeArtifact, exposes it as ``SEMQ_OP_QBIN`` with ``qbin_n_bins`` and
-``qbin_scale_max``. Later builds expose the same operator as ``SEMQ_OP_QUANT``
-with ``quant_n_bins`` and ``quant_scale_max``.
+The magnitude-binning operator was renamed across SDK builds. Some builds
+expose it as ``SEMQ_OP_QBIN`` with ``qbin_n_bins`` and ``qbin_scale_max``;
+others expose the same operator as ``SEMQ_OP_QUANT`` with ``quant_n_bins`` and
+``quant_scale_max``.
 
 An experiment written against one name raises ImportError on the other. That
 happened on the first GPU run: the scripts were developed against a local
