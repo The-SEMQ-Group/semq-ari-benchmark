@@ -47,7 +47,7 @@ jobs:
         if: vars.CODEARTIFACT_ROLE_ARN != ''
         run: |
           aws codeartifact login --tool pip --domain "${{ vars.CODEARTIFACT_DOMAIN }}" \
-            --repository "${{ vars.CODEARTIFACT_REPO }}" --region "${{ vars.AWS_REGION }}"
+            --repository "${{ vars.CODEARTIFACT_REPO }}" --region "${{ vars.AWS_REGION }}" > /dev/null
           python -m pip install semq
 
       # -rs prints the reason for every skip, so a run without semq says so
