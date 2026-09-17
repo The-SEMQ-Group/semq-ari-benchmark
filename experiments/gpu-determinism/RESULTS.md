@@ -1,5 +1,12 @@
 # GPU Determinism — Results (A10G + T4, v0.1-preview)
 
+> **Superseded (2026-09-16 audit).** Two kinds of statement on this page are narrowed.
+> "Invisible to cosine/retrieval" is true of the aggregate quality metric measured later
+> (Recall@10 did not detect the change) and false of ranked result lists and of float
+> comparisons on retained vectors; see the [regime experiment](../regime-discrimination/RESULTS.md).
+> Kernel-selection explanations are consistent with the measurements but were not established by
+> profiling. See the [repository audit](../../docs/REPOSITORY_AUDIT.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+
 **The self-hosted 1.000 breaks on GPU — but the cause is specifically TF32, not GPU
 nondeterminism in general, and it is *not* the framework default.** On modern PyTorch (2.3,
 where `matmul.allow_tf32` defaults to **False**), the 8 encoders are bit-reproducible
@@ -32,12 +39,11 @@ encoders, per-model in [`results/isolation_2x2.csv`](results/isolation_2x2.csv))
 - **It is not the framework default.** PyTorch 2.3 defaults `matmul.allow_tf32` to **False**,
   so a vanilla deployment is cross-process reproducible. The risk is TF32-on: the pre-1.12
   default, and common in speed-optimised serving (TensorRT, explicit `allow_tf32=True`).
-- **Mechanism.** `same` (in-process) is always 1.000. Across a fresh process, cuBLAS can pick a
+- **Candidate mechanism (not established by profiling).** `same` (in-process) is always 1.000. Across a fresh process, cuBLAS can pick a
   different kernel (per-process autotuning). At true fp32 that difference is ~1e-7 — below the
   quantizer floor → HER 1.0. TF32 truncates to ~19 bits, so the *same* cross-process kernel
-  difference becomes ~1e-3 → crosses the floor → the code flips. **TF32 amplifies cross-process
-  kernel variation from invisible to code-flipping** — which is exactly what the high-pass
-  instrument is built to expose.
+  difference could become ~1e-3 → cross the floor → flip the code. The measurements are consistent
+  with TF32 amplifying otherwise smaller differences past the probe threshold; no kernel trace was recorded.
 
 ## `mach` (GPU vs CPU) — the TF32 hidden cliff — H3, H2
 
@@ -57,7 +63,7 @@ Comparing each model's GPU codes against its CPU-fp32 baseline (same fixed scale
 - **H3 confirmed — TF32 is a hidden cliff.** "fp32 on GPU" runs matmul in **TF32** by default
   on Ampere, so it disagrees with a CPU (true-fp32) baseline on **12–46%** of inputs. Turning
   TF32 off recovers ≈ 1.000 for 7 of 8. A model audited at fp32/CPU and served at fp32/GPU is
-  **not** the same system — silently, and invisibly to cosine/retrieval.
+  **not** the same system. Whether retrieval metrics detect this was measured later; see the superseded note above.
 - **H2 confirmed.** The precision cliff persists on GPU: bf16 vs fp32 → HER ≈ 0, as on CPU.
 
 ## Cross-GPU (`mach`, A10G Ampere ↔ T4 Turing) — H4
@@ -117,7 +123,7 @@ code. Their cudnn-only determinism toggle is also a no-op for transformer matmul
 cross-process reproducible — consistent with prior work. But **enabling TF32 (common in
 speed-optimised serving) silently breaks cross-process reproducibility (HER 0.65–0.88), a
 determinism flag does not fix it, and TF32 also breaks equivalence with the fp32/CPU baseline**
-— all invisible to cosine/retrieval, quantified per-model only by a SEMQ-class instrument. This
+— none of which aggregate Recall@10 detected in the later regime experiment (ranked lists did change). This
 experiment is best read as an **instrument validation on a known phenomenon**, not a new
 discovery; the novel data is the black-box **API panel** (§ Deployed-Agent Panel).
 

@@ -1,8 +1,8 @@
 # Batch Invariance — does batch size change the codes on GPU?
 
 **Status: run on H100 (Hopper), seven encoders, with a same-batch control.** Every cell's
-control reads 1.0000, so capture-to-capture variation is zero and every lower reading is a
-batch effect. Batch size changes codes at true fp32 on four of seven encoders, concentrated at
+control reads 1.0000, which supports reading lower values as batch-associated differences;
+a finite repeat control does not exclude all capture variation. Batch size changes codes at true fp32 on four of seven encoders, concentrated at
 batch 1 and gone by batch 8 on all but one. The deterministic flag makes no difference
 anywhere. H1 and H2 refuted, H3 confirmed, H4 mixed. Results: [`RESULTS.md`](RESULTS.md). This
 document fixed the design *before* the run.

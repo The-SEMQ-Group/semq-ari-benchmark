@@ -12,9 +12,9 @@ url: "https://github.com/The-SEMQ-Group/semq-ari-benchmark"
 abstract: >-
   ARI (Agent Reproducibility Index) is a third-party-verifiable measurement of how
   reproducibly an AI agent's internal representation survives the operational noise of
-  real deployment. It is built on SEMQ, a deterministic quantiser whose invariance to the
-  host machine follows from the form of the operator rather than from a learned codebook,
-  so a third party can verify a reading in advance. This repository contains the
+  real deployment. It is built on SEMQ, a deterministic quantiser with a fixed calibration
+  scale rather than a learned codebook. The operator still requires verification on each
+  intended platform. This repository contains the
   specification, the reference implementation, the evidence experiments, the frozen
   ARI-Bench input set, and the public
   leaderboard.

@@ -1,5 +1,9 @@
 # Harness-effect power simulation
 
+> **Historical result; superseded (2026-09-16 audit).** This simulation predates the estimator
+> corrections in `ari/harness.py` and must be regenerated before it describes the corrected
+> method. See the [repository audit](../../docs/REPOSITORY_AUDIT.md).
+
 The simulation measures how often the ARI-E interval excludes zero when an effect is present.
 It uses 200 simulated experiments per cell and a baseline pass probability of 0.75.
 The result JSON records the random seed.

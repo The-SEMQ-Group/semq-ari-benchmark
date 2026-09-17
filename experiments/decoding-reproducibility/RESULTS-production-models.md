@@ -17,7 +17,7 @@ Chunked vocabularies use one calibration scale across contexts.
 ## Results
 
 Token agreement and HER use approximately 2,265 teacher-forced steps per model.
-H̄ measures differing code positions under the experiment's normalization.
+H̄ is the legacy packed-byte disagreement fraction (`semq_hbar`), not the embedding panel's mean changed-bit count and not a coordinate rate; see the [repository audit](../../docs/REPOSITORY_AUDIT.md).
 `tok-same/cd` uses all steps as its denominator.
 `free exact` counts identical complete generations out of 48. Its interval is a Wilson interval.
 
@@ -43,7 +43,7 @@ H̄ measures differing code positions under the experiment's normalization.
 
 The ratios below compare token and generation disagreement rates. They are not causal amplification estimates.
 
-| model | tokens lost under bf16 | generations lost | amplification |
+| model | tokens lost under bf16 | generations lost | ratio of the two rates |
 | --- | ---: | ---: | ---: |
 | Llama-3.1-8B | 0.79% | 20.8% | 26x |
 | Qwen2.5-7B | 0.79% | 35.4% | 45x |
