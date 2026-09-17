@@ -1,0 +1,92 @@
+{
+  "agent_id": "cohere/embed-v4.0",
+  "ari_version": "0.1",
+  "probe_calibration": "ARI-Canonical-v0.1",
+  "input_set": "ARI-Bench-v0.1",
+  "input_content_hash": "e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d",
+  "measured_at": "2026-07-06",
+  "agent_class": "api",
+  "environment": {
+    "blas": "provider-internal",
+    "threads": 0,
+    "hardware": "provider-internal",
+    "precision": "provider-internal",
+    "library_versions": {
+      "probe_backend": "semq",
+      "snapshot": "pinned"
+    }
+  },
+  "results_per_condition": {
+    "same": {
+      "detectors": {
+        "semq": {
+          "HER": 0.133,
+          "Hbar": 12.641,
+          "HER_ci": [
+            0.111,
+            0.154
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 384,
+          "unit": "code"
+        }
+      }
+    },
+    "proc": {
+      "detectors": {
+        "semq": {
+          "HER": 0.146,
+          "Hbar": 12.588,
+          "HER_ci": [
+            0.124,
+            0.169
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 384,
+          "unit": "code"
+        }
+      }
+    },
+    "time": {
+      "detectors": {
+        "semq": {
+          "HER": 0.232,
+          "Hbar": 11.157,
+          "HER_ci": [
+            0.205975,
+            0.262
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 384,
+          "unit": "code"
+        }
+      }
+    },
+    "conc": {
+      "detectors": {
+        "semq": {
+          "HER": 0.13,
+          "Hbar": 12.855,
+          "HER_ci": [
+            0.11,
+            0.152
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 384,
+          "unit": "code"
+        }
+      }
+    }
+  },
+  "ARI": 0.169333,
+  "audit_hashes": {
+    "same": "23df2144441ee10b0cff1bc9b18ca526151a2ce176e64d2cc22949bf08cbe4ee",
+    "proc": "f9502dea4c04db41c5e10270b1989f1ca595e4204eea4f214bfff08286c51192",
+    "time": "022405802b1a3dec76ea4e220dd8ed04708752c0a5558e2d1271d64797377e4a",
+    "conc": "e74f6b685590a9b0cab9ee4f6fc687edcefe34bd03904dcef23ab830394b3a2c"
+  },
+  "encoder_fingerprint": {
+    "dim": 1536,
+    "s": 0.069946
+  }
+}
