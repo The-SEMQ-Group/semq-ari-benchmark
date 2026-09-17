@@ -8,6 +8,7 @@ Compare reports only when their required artifacts and conditions match.
 | [ari-canonical-v0.1.md](ari-canonical-v0.1.md) | Embedding probe, calibration, and reference model. |
 | [ari-bench-v0.1.md](ari-bench-v0.1.md) | Frozen embedding inputs. |
 | [arid-bench-v0.1.md](arid-bench-v0.1.md) | Decoding inputs, protocol, and detectors. |
+| [ari-e-bench-v0.1.md](ari-e-bench-v0.1.md) | Outcome-layer estimator, eligibility rule, and pinned trace dataset. |
 | [condition-set.md](condition-set.md) | Embedding conditions and aggregation. |
 | [report-schema.json](report-schema.json) | Report JSON structure. |
 | [fingerprints-v0.1.csv](fingerprints-v0.1.csv) | Model calibration and response parameters. |

@@ -6,6 +6,20 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### ARI-E specification and pinned rerun
+- `spec/ari-e-bench-v0.1.md` defines the outcome-layer estimator, the
+  two-graded-runs eligibility rule, the case bootstrap, the reported values and
+  the pinned `nvidia/Open-SWE-Traces` revision
+  `f967cba3312573981a47fd7a7b80029b53909b5f`.
+- `experiments/harness-effect/fetch_outcomes.py` reads only the three outcome
+  columns from the Parquet files at a pinned revision and writes a manifest.
+  `run.py` reads that table offline, checks its digest, and adds a permutation
+  null, repeat-shape coverage and a split-half check. The 2026-08-07 output
+  moved to `results/superseded-2026-08-07/`; the paper rows are regenerated to
+  `results/arie_table.tex`.
+- `experiments/harness-power/power.py` covers unequal repeats (2/3, 2/5) and
+  records the estimator file digest.
+
 ### The SDK is the authority on layout and calibration
 - `run_pilot.py` took the packed layout, the symbol unpacking and the
   calibration percentile from the core instead of reimplementing them. The

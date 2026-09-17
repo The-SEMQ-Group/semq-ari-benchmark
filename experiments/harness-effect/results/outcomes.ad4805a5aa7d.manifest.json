@@ -1,0 +1,884 @@
+{
+  "dataset": "nvidia/Open-SWE-Traces",
+  "revision": "ad4805a5aa7de70d99cab0bb8f99b15304c76de0",
+  "revision_last_modified": "2026-08-03T07:33:42+00:00",
+  "columns": [
+    "instance_id",
+    "trajectory_id",
+    "resolved"
+  ],
+  "repository_bytes": 18338445574,
+  "cell_bytes": 18338420390,
+  "projected_column_bytes": 11567602,
+  "bytes_read": {
+    "footers": 5505024,
+    "columns": 17080290,
+    "total": 22585314
+  },
+  "files": [
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00000-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 208847553,
+      "lfs_sha256": "a3b289c8d93aa9327782088cf389782d9b088f2c0c69c7417f2f17ff49d3369f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139851
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00001-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 204174913,
+      "lfs_sha256": "6c02e7f5c2eeeca948f6304314a32a4b64c51fbca0f2595908389152720149c4",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139492
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00002-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 224802533,
+      "lfs_sha256": "75ddb7f5ffad2013f496c82491d598c1b0119c98f134ba651a8ee042d586c53d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139832
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00003-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 211071623,
+      "lfs_sha256": "9ee3efabe4b36a32761c608798467fd6cd564936f11d97895e1e2f1f840c4750",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140649
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00004-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 214252266,
+      "lfs_sha256": "fa106ec86d71d9da916dc867293d706f5eabb9f96f6ff9cea317bdd8d0b174e0",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139142
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00005-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 215933717,
+      "lfs_sha256": "6699279a929561d1bd81f6b4ebbe61d5158b706e5e70d689697640e2ee5c5d77",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140441
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00006-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 202841283,
+      "lfs_sha256": "63317291a19788b10a64094c9484680af70b805488121c571b682b8559ebfc60",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139687
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00007-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 212418713,
+      "lfs_sha256": "9d613e3af92c58fd87c8e1fdf0d7497f55a54da93ff284d739e6b68ade5d8cc7",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140490
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00008-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 212972314,
+      "lfs_sha256": "0ab092740c8fa113e90a61424f1fd661da888ff23c389c301e79eb9a0dc364e1",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140619
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00009-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 246530320,
+      "lfs_sha256": "7d72e55b439eae55b2273e00b15f0828bbd47a5b53668703ed64fba81e967672",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138524
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00010-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 211574514,
+      "lfs_sha256": "04f8f4b2882adb06273cf35f5edbe77737175ce0169b0afbd67efbbee5db7535",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140168
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00011-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 202909398,
+      "lfs_sha256": "fc04c34fd04a28df6dd887fffb404406d91106bc35a765c34b4bb1fc011e76a7",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139920
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00012-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 208195638,
+      "lfs_sha256": "eef92c62aafbfa495a8e54855bc24e91ddb4eb3a50276c7abd6a67a5f53e3c2d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140114
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00013-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 214672421,
+      "lfs_sha256": "01d144d3d6f61d82891f6da4a462d31b4eb263418cbf32332924a730445faa01",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139301
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00014-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 204211220,
+      "lfs_sha256": "f4741a7ce29d6aaaeb9b41094b0013c136c9a16af3adea9cc17bb009b4bbcc20",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139718
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00015-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 213697609,
+      "lfs_sha256": "c16f46e09175141d94d0552887db99cf1310e76ff79d38ec2798764e0128b953",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139423
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00016-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 215414412,
+      "lfs_sha256": "45cb756df89385b2bda3af71b42371a8177881dfebc4b59859dcbb8f62749671",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139990
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00017-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 222735694,
+      "lfs_sha256": "7c3264b28ac71287b6a85e14e1720fb7d80943f0ee216d670a26ae3d75886c2f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139181
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00018-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 236501984,
+      "lfs_sha256": "304dac68f3af8696a9c8de15727ef97f8b4445fd85179288b4fc16185fdecd34",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139199
+    },
+    {
+      "path": "data/minimax_m25_openhands_trajectories/train-00019-of-00020.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 240767680,
+      "lfs_sha256": "d1d2ebc39fb8c70e4ff5b79790d64c1e742b477ff97935bb4f8614573e137fba",
+      "rows": 2448,
+      "row_groups": 1,
+      "column_bytes": 135930
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00000-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 212662361,
+      "lfs_sha256": "fa43c50eaacf26d75e2e68bbd81f7dc60c10ade071b4bd6d33bfc4ee2cbf9d0f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139422
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00001-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 200725392,
+      "lfs_sha256": "4bf90e23a7d1b23a929a7596c0bacc793d6956f005b38bad69aa2a82daffd83e",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138867
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00002-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 197531634,
+      "lfs_sha256": "33ab70e56ce896098b46f9771fb4f19d938d23373d6573b7ec1aaa5f84b346d3",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139392
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00003-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 192661072,
+      "lfs_sha256": "ecbbbe581a405a9b9d295701d04497e7edcbe7209452d4ba73acf227cff173a1",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139523
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00004-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 188493360,
+      "lfs_sha256": "8662e8e9c091f8035bdaa418dc0e9dfb1c226c9a2597c47d1a0e9475e92445e3",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139736
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00005-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 187659506,
+      "lfs_sha256": "594212174bc48be52ae2dd0596253a9df8eb6a15b5689f9ceb151a97ce9737e1",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139020
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00006-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 185250924,
+      "lfs_sha256": "d6b46c6d27d2e0829244ae267a3c9d811b53977a96407af15e205f310e27233d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139309
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00007-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 198325245,
+      "lfs_sha256": "b9cbaef2f1e9cb51109f6f163fa3e5fa8e4cb0da83b8add48ffea43ea74282d5",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138728
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00008-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 184845566,
+      "lfs_sha256": "a20a7d41a7c7d3025d2a1ae828d4ad0c42fe9115dd3a772c7cfe79068cbc8bad",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140299
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00009-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 187376379,
+      "lfs_sha256": "0cad45b15364d3047f261e0563b4874fe698d05ad88a6958351900bbc5b357d8",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139426
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00010-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 191021129,
+      "lfs_sha256": "7f29ab253ca2b39467e687519fe8248c4d65e3472b2e78306a61601bcc07cdc7",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139963
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00011-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 185658000,
+      "lfs_sha256": "9d5c073a1c2c8bdc7d0b882b97dbc5a06af2f218ee98674817485c46099f9833",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139564
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00012-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 182306890,
+      "lfs_sha256": "b72d85807d52bfcb61ae972fb7734e4d6179cf2de3eff43fc54c789b3785ca57",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139482
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00013-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 185883644,
+      "lfs_sha256": "e4bf8bdc9aa1e5a7f1235170c2f306c8d7c7faedd6599ebd265a10202c29f4ba",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139529
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00014-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 179774853,
+      "lfs_sha256": "fac9244a05eb3bd338a55d27ef50b2d983031e8d0e9e1af8bc9e2cb235cb8308",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139110
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00015-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 177287158,
+      "lfs_sha256": "015f4307ef52758b2dae31361a430a69fab7aa669ec550fbf34ecc53c9b8367f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138676
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00016-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 179605683,
+      "lfs_sha256": "77130fad4fa3edc6bfd801df73db9cd4a679c0c24cc838287fe000501daad15f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139482
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00017-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 178477400,
+      "lfs_sha256": "b17b5ed5fc97c2012f77d90e4b6cc8af814a7bcf3ece8078cbd7a3de34802491",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139187
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00018-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 199103050,
+      "lfs_sha256": "d1620afab54f6a35a4f6f640f5e56257e0d1b0c9f98d2947bc893d34afeb2f26",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138879
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00019-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 202638954,
+      "lfs_sha256": "1e90749e566e9913834b36066785584ad9289018eede12f57cd3b354acd2ac37",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138905
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00020-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 216097143,
+      "lfs_sha256": "00e06c4142642347ba1e0e8bf3160ac39fa3762c5eb4a498bbaea2d137f55224",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 137824
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00021-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 231782202,
+      "lfs_sha256": "2ba7b77d7a7137edb7254fdf640baa5950c025c086065cbce90b3dbb0bd6c304",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138611
+    },
+    {
+      "path": "data/minimax_m25_sweagent_trajectories/train-00022-of-00023.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 230224655,
+      "lfs_sha256": "3a448b25720dbb712ac41348f5da51fd3baf4c82da2dfe4e54460e215429f621",
+      "rows": 2268,
+      "row_groups": 1,
+      "column_bytes": 124140
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00000-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 237468666,
+      "lfs_sha256": "c4cc413183e953c55d27be0fcaf818d2672c59b38116a1e8e6fbe06ef6cbabd3",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139339
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00001-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 225622646,
+      "lfs_sha256": "cba62fe00302492b59a2240ebb0af36796f98728ea59deac396dc290adb25603",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139048
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00002-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 238213085,
+      "lfs_sha256": "3ca6a099eae82fd76dafe275426b71f87002d7f8adc120b6b8f06d6423a900fa",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139342
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00003-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 226113310,
+      "lfs_sha256": "b7c4dfffb43dc34a247a5ea9861a435f0c9a86755ed83bdaf0b9fd06898e684d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139082
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00004-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 229052991,
+      "lfs_sha256": "87c045dae8759bb405ba842a03f71451e91029e2a93106834b8e23a04ba7e09b",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139426
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00005-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 249554650,
+      "lfs_sha256": "b793172f7abc3c73b9115d2f5558dfd3e062ae8312acc50e6507049b34d0dc67",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139501
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00006-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 242390244,
+      "lfs_sha256": "8e28320c4c0d60af8d9cd031f98ebf18ccd9c55fbf67d8f1712f44cc798c9bc8",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138594
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00007-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 232690964,
+      "lfs_sha256": "6653536009057eb145dc5250a0ff21442d454de62baa67ea8f154c471d6759d4",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139938
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00008-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 240344077,
+      "lfs_sha256": "30a6fb0d84448166582f9774a8a7b68815ac479f1bcf5eea70d23e907c432a67",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139402
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00009-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 228824219,
+      "lfs_sha256": "b95e2893c4015166f4fc9d30c51876704f02462b50aa863f57d0c5b4d851f943",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139247
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00010-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 231552682,
+      "lfs_sha256": "bfc7f619367142f71e05af72e58c2770ba4437afeff7b5d31b6e8f0f1a620e12",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139812
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00011-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 226559800,
+      "lfs_sha256": "5ac1a4a23ccdd309271e774777da7c585152d47f5edea42192e41033d839c199",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139027
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00012-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 240271850,
+      "lfs_sha256": "b453e86a7965442518cd97516d5feb7d5a5595f7d0e27ff7e4e7dbe88fdd8eb4",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138374
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00013-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 227975077,
+      "lfs_sha256": "0a48bcf276cd8e64cd0a83f68179c323f077253cac9547567216e821b7b431ae",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139496
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00014-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 234640081,
+      "lfs_sha256": "fd7ca099ab78a7aa61bec45efc50110d6ebb4faec397cf3431112e6ff98c780c",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139320
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00015-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 231280160,
+      "lfs_sha256": "430add3caf23ab513e957eac667feafc778407e7e8caac3de0ec58642fad4f1f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139039
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00016-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 225417773,
+      "lfs_sha256": "efff077f9096d88cb7408c345b5f610c147c95e0ddec6a3cd5592f026a52848b",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139337
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00017-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 224218674,
+      "lfs_sha256": "5b8801fbb28cf055452b20bac07039c4536a2c879c9bee888af46d74285bbecf",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139716
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00018-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 245061162,
+      "lfs_sha256": "0f72a2994ca3cdf6f6d10830900f048a1e2200f6f3fb3cf9a869fede4afa2362",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 137667
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00019-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 239155615,
+      "lfs_sha256": "9548ff04d111a1e2879b1f69bb555592ecce51714af68ec7bb18df6d519e48cb",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139343
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00020-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 242209832,
+      "lfs_sha256": "79730c519f87ec6d774087d13d3ae1f4b14661fd33ebc56efac39a598574fe58",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139041
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00021-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 242611309,
+      "lfs_sha256": "c3377812b6f4eedc43ad55d60c9119785411bd8577adbb77510f23f2b7330ee5",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138694
+    },
+    {
+      "path": "data/qwen35_openhands_trajectories/train-00022-of-00023.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 45178933,
+      "lfs_sha256": "6254fc60e14de38b853b1b10bd32d78b531acf2bfbabdf2aaac221809f562ee6",
+      "rows": 488,
+      "row_groups": 1,
+      "column_bytes": 28796
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00000-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 241951916,
+      "lfs_sha256": "03378d7f21c92db11399f248c329636484002b2d52729bd2be4d504b37e0b85c",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140368
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00001-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 239258475,
+      "lfs_sha256": "282ec216f2964a7dcce6cd969f2780ea99781b325c89cc651cc3279b0b387947",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139327
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00002-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 240246983,
+      "lfs_sha256": "8d61bd772eb9731fef0fde2a9d5df98a5127b9ebee8acbd40238908c5edceace",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139504
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00003-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 238936757,
+      "lfs_sha256": "b0eb060d6005031a05130944fa1e4079c8b7cde3f4e9856470c34264a841b28d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 141948
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00004-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 241420355,
+      "lfs_sha256": "dd76e63abb303215be1d4a998006b3e23b6141784313ac191127674b221a3c4b",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139991
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00005-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 242069982,
+      "lfs_sha256": "94b235107b50fd30c5834f66590b17b8d257d4fc258c17542de0350313959d9b",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139292
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00006-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 241983279,
+      "lfs_sha256": "dcdfd8eb9cbb15c35485f3d0b48d0d984eda5847cc87f7dd7220d04fb7cb74f3",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139835
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00007-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 246646071,
+      "lfs_sha256": "ba8c9e5f4603846890b60aad1b8e5f8b82d3cdc86205a9f78f1dc90ca4aab1fd",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139552
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00008-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 239097818,
+      "lfs_sha256": "521a36da42ee67f9627d8057c2c859dc7c5aa8a31c19e8101ebd75fc86582703",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138766
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00009-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 247462370,
+      "lfs_sha256": "fe4f28d4b1f325987db6f9bd67aeab7ad22ba82779d420b37b2c551337058080",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139063
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00010-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 232416998,
+      "lfs_sha256": "e4fce4f9eee268cd162aab2a2657fd3c46892a70978b35863e5751ce846fe04d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139350
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00011-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 233967421,
+      "lfs_sha256": "39c23b71dec29fece9253ad2a0a682279eafc083feca1043e76e9f44004f8b7d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140027
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00012-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 243971163,
+      "lfs_sha256": "b5545124041e4972d2e26b34fc21016e126aeeb5d651a868e69747ca5df41fa5",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139386
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00013-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 244866846,
+      "lfs_sha256": "e09a177058527b06ef859095e6e5c1973288ccb13403919d0812ff4ba40a5575",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139723
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00014-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 243824971,
+      "lfs_sha256": "60dbae93bce0e4dcfe0b12bbc6dc434cf23a879254b632f6c468c21d23f95de2",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139330
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00015-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 243419817,
+      "lfs_sha256": "b553d445c6e54a26b7a6c1317dcd1d64f0c3fbd2526d94572ccfb959c969bb13",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138791
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00016-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 244963049,
+      "lfs_sha256": "ee468e6467dde8592a1bb05780a0f195edf4ce5774bd6c719987bc8b2bba95c3",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138327
+    },
+    {
+      "path": "data/qwen35_sweagent_trajectories/train-00017-of-00018.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 225590314,
+      "lfs_sha256": "0e19128a229b67b3e56af251ba0c656c310f28ad0d207c34e0d756b85d366903",
+      "rows": 2285,
+      "row_groups": 1,
+      "column_bytes": 125696
+    }
+  ],
+  "output": {
+    "name": "outcomes.ad4805a5aa7d.csv.gz",
+    "sha256": "4148ba9c11a7e27354e07de9386d0e634ce68f39d1b6c97c7592db638fee33d7",
+    "size_bytes": 5881882,
+    "rows": 207489
+  },
+  "rows_per_cell": {
+    "sweagent/qwen35_122b": 44785,
+    "sweagent/minimax_m25": 57268,
+    "openhands/qwen35_122b": 55488,
+    "openhands/minimax_m25": 49948
+  },
+  "ungraded_per_cell": {
+    "sweagent/qwen35_122b": 9815,
+    "sweagent/minimax_m25": 13163,
+    "openhands/qwen35_122b": 12684,
+    "openhands/minimax_m25": 11096
+  },
+  "duplicate_trajectory_ids": 0,
+  "created_at": "2026-09-16T23:18:17+00:00",
+  "tools": {
+    "pyarrow": "25.0.1",
+    "huggingface_hub": "1.31.0"
+  }
+}
