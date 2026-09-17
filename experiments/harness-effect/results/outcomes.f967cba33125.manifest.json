@@ -1,0 +1,674 @@
+{
+  "dataset": "nvidia/Open-SWE-Traces",
+  "revision": "f967cba3312573981a47fd7a7b80029b53909b5f",
+  "revision_last_modified": "2026-09-15T00:46:22+00:00",
+  "columns": [
+    "instance_id",
+    "trajectory_id",
+    "resolved"
+  ],
+  "repository_bytes": 42599621845,
+  "cell_bytes": 13005608039,
+  "projected_column_bytes": 8424391,
+  "bytes_read": {
+    "footers": 4128768,
+    "columns": 12566396,
+    "total": 16695164
+  },
+  "files": [
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00000-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 206095138,
+      "lfs_sha256": "63d372540285d7c83f26ef9416c49399a07fe6dc4812b8b3b85a8eccf3c53598",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140301
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00001-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 212601421,
+      "lfs_sha256": "a262b357702d997d9f5d142b87380e9b085ad2afa470e5c5470fa4299bdd20f1",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140011
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00002-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 204785131,
+      "lfs_sha256": "f4763ab5837605e260c3c203dd25e34076696af30d5784345f55f13744f33a64",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139847
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00003-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 209545896,
+      "lfs_sha256": "f2251d4732714ec6c1a13712dbda5248f218dc41e3e12227168a0165811759cc",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139623
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00004-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 217054652,
+      "lfs_sha256": "cba451e80720dfe0500724acb8e9c64148bfd435490ea9e2aabff5667edcd113",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139997
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00005-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 206477635,
+      "lfs_sha256": "34f0e385d8364519610057d882b6fe3e85d63f0e7e6e446296303a1fd01c3d50",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140334
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00006-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 206828357,
+      "lfs_sha256": "a48970b4604b7f886f2eeda7a99d55d82cc88207f7783f056d6a4aafcb8a8038",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140674
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00007-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 210684908,
+      "lfs_sha256": "11b5ba71da2288582bcd66c68b6f40e0e1ee6b1329a3e0326a938e6529b905c4",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140335
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00008-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 215025913,
+      "lfs_sha256": "c9c9daa62f4332ee57bc2387efd014b2e0542e9226e5253540c701149e74d386",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138383
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00009-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 204633551,
+      "lfs_sha256": "b56e7522810c35aa5b5883185d311212a5fea737f3112c7aea613a18557ec6a0",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139660
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00010-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 206764507,
+      "lfs_sha256": "b0b29aecd2126211c7f7f3cfb76b0939c6449cb24ad397aa9f072d8f87c1f3e5",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140347
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00011-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 210878943,
+      "lfs_sha256": "cdcc03f61cd24cf8e6356427dd19938a5d4c1f5baf9834f2e06f2d643c260ea8",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139761
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00012-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 203407016,
+      "lfs_sha256": "27018590685823c1fbf3b9bd9b0c83e65f6b770efbcffa5ef6f56d8ce4b19f47",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139476
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00013-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 215060336,
+      "lfs_sha256": "1a64e4ff004a533ba2f5912713c307d7a5865541ce08d1af28d262ba807515dc",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139453
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00014-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 218869406,
+      "lfs_sha256": "5711738dafbd7802516f1e541fbd2ac381af910a0e60d9165b3bb65d1b3d13b2",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140115
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00015-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 224150702,
+      "lfs_sha256": "f75c550697e140eeacc97eba524842e9ba53512b3af5d9a80b4363198308edbd",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138759
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00016-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 243261650,
+      "lfs_sha256": "08cd816b4d5da42ea774d3a47d146e94eb483bd2d88ba9f32d49a12a7694d512",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139303
+    },
+    {
+      "path": "data/openhands/minimax_m25/swe-rebench-v2/train-00017-of-00018.parquet",
+      "harness": "openhands",
+      "model": "minimax_m25",
+      "size_bytes": 107734912,
+      "lfs_sha256": "5a0639c94f576ff2b084ebc221f9f85da822cb342c951b0835bc06e708b7981d",
+      "rows": 1103,
+      "row_groups": 1,
+      "column_bytes": 62762
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00000-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 236390358,
+      "lfs_sha256": "121386118814122284b74d35a45b951e052c399003c87d99af0d6748c1deae2d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139040
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00001-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 231245837,
+      "lfs_sha256": "5b6231992a039bcb26e68426234127e5e96234f98c5b476698aa252a561b464b",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139817
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00002-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 227406170,
+      "lfs_sha256": "5ab099585bd05aae978f0ad3f26f5d4e506e1b4500587825e8cf8982b672b3f5",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139005
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00003-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 234640814,
+      "lfs_sha256": "992dd06edda3ca48403f544d1260e6f68a4d0ff8c5f0e9b540021708c48aafd9",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140074
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00004-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 247011075,
+      "lfs_sha256": "67b8db530daa3f9264a5b5c599b67e703611cf5c99de11f1ed34f7ed17ef6d52",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 137914
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00005-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 227177676,
+      "lfs_sha256": "9d4e5381b935d36a0f4f535213e380bd6c25fd54bd278c8e8412ba8635d5f3eb",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139987
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00006-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 232619632,
+      "lfs_sha256": "c03a3c74e0f12a1718072f672aedf8fd1bcdb2f2c54f3e612c90223eade43d0b",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139549
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00007-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 230137683,
+      "lfs_sha256": "3026f9630667466c2ca57a5b9962fa11866dddbfa6d97a902e95972246b6412a",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139699
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00008-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 237726880,
+      "lfs_sha256": "c3e18ee0bb15d9496fb31ad9ac21d40ad4e0057104b72b4de86ad5885e6f63b1",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 142683
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00009-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 237198672,
+      "lfs_sha256": "b8b4f952d23db48ca54f7e0ecf93044636a66a61994181dc66f868bb1504c54e",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138076
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00010-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 227465118,
+      "lfs_sha256": "a0c0010ef8ea7cd4681b9a814891d97b58f4ede2265ad482cac6a8195a133d89",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139640
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00011-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 232669434,
+      "lfs_sha256": "8b12a16b05e44e5096c199528e021ccc07c4d11ca18501f8d8a7a9de8dd69be7",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138809
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00012-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 222301400,
+      "lfs_sha256": "0dfa409945fb642152afca427460f7a2243deb4804e4d016f6846c61dc2ae56f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139975
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00013-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 239681526,
+      "lfs_sha256": "872bf05d5d46e6f2a67965ce3e136bfd58a9dbac7749f75680d51a9debf89805",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138138
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00014-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 240642243,
+      "lfs_sha256": "5964c4f73649945f13cbf335958e10ed153be5827f078e8c4aed864e55f9369c",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139303
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00015-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 247248667,
+      "lfs_sha256": "76a9b8b9d5dc4320fbb64360be47ff7c23e0adfc8c0d7158c2af9c47c60ffc29",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138968
+    },
+    {
+      "path": "data/openhands/qwen35_122b/swe-rebench-v2/train-00016-of-00017.parquet",
+      "harness": "openhands",
+      "model": "qwen35_122b",
+      "size_bytes": 43049725,
+      "lfs_sha256": "d433b542744f6b357dac1daa97b50be43996bcc58c0cdb45dfd45dd5bb9a8b62",
+      "rows": 463,
+      "row_groups": 1,
+      "column_bytes": 27412
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00000-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 208162391,
+      "lfs_sha256": "c4687cbef3f6efe390cd0352cbef627f094477fb4d04ef68f2ac21f3b7c6b26a",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139517
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00001-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 187972671,
+      "lfs_sha256": "8e5152d820da9e76c1f2187fa494f929d6dc4ae0e436309d74a6ea21ad8bd6a9",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139445
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00002-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 193348085,
+      "lfs_sha256": "2191bc8945b7f271ac7e237c7c55738312b191ca636dc9243558a7f92c3649b8",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140556
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00003-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 187410156,
+      "lfs_sha256": "7129f420299891e1e42f317d9edd217bf7a23149f54772aa7ad6a56e84e6a509",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140255
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00004-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 180090348,
+      "lfs_sha256": "cd171a8cf55dd921bf18ee09f769ab508641a1c88fb8813b650c3c6c1e027c0e",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138764
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00005-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 187229102,
+      "lfs_sha256": "32d47906fc0b4c1a670ac6371326766e666c8925e95223ddb609e7d4c973113c",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139646
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00006-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 183054523,
+      "lfs_sha256": "0e836abe2816924df7c6f6d4d59450e3f227855658bb0254932bc76036a75c9e",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139104
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00007-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 175654620,
+      "lfs_sha256": "978bf6b65fd713f75858176cca62cf9314554592f869cef3ff23c549d83375a3",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139252
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00008-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 192904216,
+      "lfs_sha256": "39d877569b77533b1a10147cf42a5930c73388c5312a9ccc22c95daacb70c632",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140007
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00009-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 179721308,
+      "lfs_sha256": "3d8c36f4d8de3d429ed1eebdb0bc45dbcd15730124ef150000aa07d70ebb4b90",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139575
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00010-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 178165407,
+      "lfs_sha256": "ce6b0b450f4f8bb7a5c8dd9821133ed379e10c49fd3fde940ca739d205ea9411",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138988
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00011-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 178992001,
+      "lfs_sha256": "a7f47eee1ed4ee6eff4ec6ec911df9bbbee9e1036a8a406456da9823c371a7ac",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 140616
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00012-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 174004524,
+      "lfs_sha256": "225ed1889d4c6e19177eea55526f072e9a16722fdf14417f6322966285aa7f8f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139191
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00013-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 172581886,
+      "lfs_sha256": "153640b597151b1708c1918f077f87f3a737c9006ff3b2659da23a507cb51d99",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139355
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00014-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 175592754,
+      "lfs_sha256": "005e22a52388c84628f8a98a34f60976a8bed61be53575dba57446213b04c88c",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139680
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00015-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 199151923,
+      "lfs_sha256": "7da516eca6c5f32f7d7d76cd41f6e5e6936bc33dcacda6aaffa2987bd491f61f",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 139439
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00016-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 200628657,
+      "lfs_sha256": "ec9b94bcc185ee144959c24db06fdf91d1153d810fc955bc459b10c5d5837f56",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138833
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00017-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 224360261,
+      "lfs_sha256": "9cfaa1ef7d6735e91088da8815d86e92a4407f5c573ae3e05bb109e2ce446519",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138311
+    },
+    {
+      "path": "data/sweagent/minimax_m25/swe-rebench-v2/train-00018-of-00019.parquet",
+      "harness": "sweagent",
+      "model": "minimax_m25",
+      "size_bytes": 176577178,
+      "lfs_sha256": "d37e1f7fbb9c4db93d65da9e5fb09dd308471de2b2a835baca0dcb747d457996",
+      "rows": 1819,
+      "row_groups": 1,
+      "column_bytes": 100060
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00000-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 234461442,
+      "lfs_sha256": "56958e94dced93728952f86ee955a4090513784e59f4c04a438398c07cf0bf41",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 137847
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00001-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 230946933,
+      "lfs_sha256": "c02dd1bd39d96e1c2958aeadb1b821177c2d6ed91f68fb391fdfd843e99fe509",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138702
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00002-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 241786701,
+      "lfs_sha256": "85d36393dd69306c2d75b05b9740c02118ecbd20a8354ed40e97f75c6bb182d1",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138014
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00003-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 235349716,
+      "lfs_sha256": "9143dbc2d66ac65215ace43839c172917d8677118c179dc0f466d19338d64e8d",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 134579
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00004-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 233470814,
+      "lfs_sha256": "2c34be8461c624fc248c52e354a6ab926a939708c3b447312916ab1b211a9e67",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 137865
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00005-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 235480561,
+      "lfs_sha256": "5769771db79163f4f26e3772681edf31f681e56f980427c5b162701592aeaa45",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 138044
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00006-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 243578790,
+      "lfs_sha256": "3d6ae2db9c68b1ee8f607c234535ea904ae3f4986f932737ef61cd3ae36e73fd",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 136847
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00007-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 243808405,
+      "lfs_sha256": "979f2ae69918c17f66cab0f6adbfa2fffbd8d25f87276df2147b4b66c070d808",
+      "rows": 2500,
+      "row_groups": 1,
+      "column_bytes": 134531
+    },
+    {
+      "path": "data/sweagent/qwen35_122b/swe-rebench-v2/train-00008-of-00009.parquet",
+      "harness": "sweagent",
+      "model": "qwen35_122b",
+      "size_bytes": 32649682,
+      "lfs_sha256": "4fe7805a22d42b9903419b5a0aa9e12a52c34c7f3e21590c7909b1bbecf1c9f9",
+      "rows": 334,
+      "row_groups": 1,
+      "column_bytes": 20138
+    }
+  ],
+  "output": {
+    "name": "outcomes.f967cba33125.csv.gz",
+    "sha256": "e8b1d239a22f5fa85726c672a400e9f03bdb816a632ad26b302fd5f7927b27bd",
+    "size_bytes": 4324658,
+    "rows": 151219
+  },
+  "rows_per_cell": {
+    "sweagent/qwen35_122b": 20334,
+    "sweagent/minimax_m25": 46819,
+    "openhands/qwen35_122b": 40463,
+    "openhands/minimax_m25": 43603
+  },
+  "ungraded_per_cell": {
+    "sweagent/qwen35_122b": 5236,
+    "sweagent/minimax_m25": 10864,
+    "openhands/qwen35_122b": 9506,
+    "openhands/minimax_m25": 9730
+  },
+  "duplicate_trajectory_ids": 0,
+  "created_at": "2026-09-16T23:15:59+00:00",
+  "tools": {
+    "pyarrow": "25.0.1",
+    "huggingface_hub": "1.31.0"
+  }
+}

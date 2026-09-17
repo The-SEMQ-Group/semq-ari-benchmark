@@ -1,0 +1,47 @@
+{
+  "created_at": "2026-09-16T23:21:29+00:00",
+  "dataset": "nvidia/Open-SWE-Traces",
+  "revision": "f967cba3312573981a47fd7a7b80029b53909b5f",
+  "inputs": [
+    {
+      "name": "outcomes.f967cba33125.csv.gz",
+      "sha256": "e8b1d239a22f5fa85726c672a400e9f03bdb816a632ad26b302fd5f7927b27bd",
+      "size_bytes": 4324658
+    },
+    {
+      "name": "outcomes.f967cba33125.manifest.json",
+      "sha256": "ff005b32ccded2212d70bbd298b932249a2f791e0fdaadcb78ddecf9017a069a",
+      "size_bytes": 23236
+    }
+  ],
+  "outputs": [
+    {
+      "name": "harness_effect.json",
+      "sha256": "0502dd6b576cde4d6bbcc8e8a61e4fc7536a6fad7b9376c9c591eba48a7c8ae1",
+      "size_bytes": 35851
+    },
+    {
+      "name": "arie_table.tex",
+      "sha256": "082751d1cbbc0e851c721875a51e15812881c85c4cb8ef469842c6880865777d",
+      "size_bytes": 569
+    }
+  ],
+  "code": {
+    "git_head": "73139c81f6b83651f87565fa0b52f1403388b78e",
+    "files": {
+      "ari/harness.py": "dc1aade5d088999f8a181462158cb929e89a31c5a718a77ba38aa0c7a988f6ca",
+      "ari/metrics.py": "90aec2c2746f2f686b51393f4627aa8451d58912def32304a5fcfb9c18bde875",
+      "experiments/harness-effect/run.py": "c5ca6ae0ac50bcae112a5b316907459ac674ad3c3a6ec8214da1f32627025967"
+    },
+    "numpy": "2.5.3",
+    "python": "3.14.6"
+  },
+  "parameters": {
+    "min_runs_per_cell": 2,
+    "n_resamples": 2000,
+    "seed": 0,
+    "permutations": 50,
+    "null_resamples": 1000,
+    "min_split_cases": 30
+  }
+}
