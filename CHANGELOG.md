@@ -6,6 +6,18 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Noise response refit in coordinate units
+- `experiments/drift-sensitivity/refit_coordinate.py` repeats the drift sweep and
+  records the coordinate change rate, bit Hamming rate and legacy byte rate per
+  input per cell, fits the power law on the coordinate rate with a bootstrap over
+  inputs, and validates the inverse only inside the fitted range. `ari.response_fit`
+  holds the fit, bootstrap and inverse.
+- The historical `(b, κ)` fits are in packed-byte units. RESULTS.md, the results
+  README and the spec say so; `fingerprints-v0.1.csv` gains a `fit_basis` column.
+  No frozen value changed. Coordinate-unit fits supersede byte-unit fits per model
+  as they land in `results/coordinate/`.
+- `all-MiniLM-L6-v2` stays floor-limited in coordinate units: 0.78% of its output
+  coordinates have `|x| < 1e-6` and change symbol under any perturbation.
 ### SciFact codes committed beside the results
 - `experiments/regime-discrimination/results/codes/` holds the packed QUANT
   codes for the reference and the six CPU conditions, with the calibration
