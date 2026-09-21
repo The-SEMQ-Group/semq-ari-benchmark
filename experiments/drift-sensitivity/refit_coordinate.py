@@ -72,7 +72,7 @@ def sweep(X: np.ndarray, sigmas: np.ndarray, seed: int) -> tuple[dict, dict, dic
     name, and the calibration facts (scale, mean norm, floor probe).
     """
     dim = int(X.shape[1])
-    probe = load_probe(X, backend="semq")
+    probe = load_probe(X)
     clean = probe.encode(X)
     mean_norm = float(np.linalg.norm(X, axis=1).mean())
     rng = np.random.default_rng(seed)

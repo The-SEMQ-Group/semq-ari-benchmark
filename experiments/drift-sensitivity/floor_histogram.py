@@ -35,7 +35,7 @@ THRESHOLDS = (1e-12, 1e-11, 1e-10, 1e-9, 1e-8, 1e-7, 1e-6)
 
 def floor_histogram(X: np.ndarray, seed: int) -> dict:
     dim = int(X.shape[1])
-    probe = load_probe(X, backend="semq")
+    probe = load_probe(X)
     clean = unpack_symbols(probe.encode(X), N_BINS, dim)
     mean_norm = float(np.linalg.norm(X, axis=1).mean())
     rng = np.random.default_rng(seed)
