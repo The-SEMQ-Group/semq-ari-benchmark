@@ -6,6 +6,13 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### SciFact codes committed beside the results
+- `experiments/regime-discrimination/results/codes/` holds the packed QUANT
+  codes for the reference and the six CPU conditions, with the calibration
+  scale, bit layout and file hashes in `MANIFEST.json`. `export_codes.py`
+  writes them (SDK required) and `--check` recomputes HER from them with
+  `ari.code_metrics` alone, so the code-level rows can be verified without
+  the SDK. Verified equal to the committed table on every condition.
 ### CI says when the probe was not tested
 - A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
   install the SDK; with it set, the job installs `semq`, runs the suite and

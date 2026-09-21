@@ -1,0 +1,69 @@
+{
+  "operator": "SEMQ QUANT",
+  "n_bins": 8,
+  "bits_per_coordinate": 4,
+  "dim": 384,
+  "calibration_percentile": 0.99,
+  "calibrated_on": "reference",
+  "scale_max": 0.1318197101354599,
+  "layout": "one row per document; coordinates packed contiguously from the least significant bit of byte 0, final byte zero-padded; decode with ari.code_metrics.unpack_symbols",
+  "semq": "1.5.1.dev32+g80e4b2c5a",
+  "files": {
+    "reference": {
+      "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963"
+    },
+    "proc": {
+      "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963"
+    },
+    "threads1": {
+      "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963"
+    },
+    "batch8": {
+      "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "b7c8386872e68d202fc079382c451973a98525a58e2b026cef66fd9760f85394"
+    },
+    "batch128": {
+      "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "c8d0b8e4d6484be0f0f087fe32e3aa9103758c272353e20f8497d90e774d8037"
+    },
+    "bf16": {
+      "sha256": "020e3e9f7c77776c14d0eb4e3c0994701b3f77073c225a90281f195f74b3d510",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "0bbb2b77d19f11f6d52c40c0dce2de307cfbd8741e79490f873478e0a95465c6"
+    },
+    "int8": {
+      "sha256": "60d470d75835cbf2b5b590373505fbf674db10ef4b903b6d7c8f311307dcdb70",
+      "shape": [
+        5183,
+        192
+      ],
+      "source_sha256": "aafb6815b6e41574e07474312015716c8658805e4740e53648ea64482c38ff03"
+    }
+  }
+}
