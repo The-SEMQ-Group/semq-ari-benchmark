@@ -22,8 +22,8 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ### The operator is called QUANT
 - Prose, docstrings and comments say QUANT, the name the SDK has used since
-  1.5. QBIN remains only in `semq_compat.py`, which still accepts a 1.4.1
-  wheel under the old name, and in the record of the rename itself. The
+  1.5. QBIN remains only in a historical note in `semq_compat.py`, which now
+  requires `semq` 1.5.1, and in the record of the rename itself. The
   drift-sensitivity README's reference snippet now calls the harness probe
   instead of an SDK function that never existed under either name. Editorial
   only; no probe parameter, hash or scoring rule changes.

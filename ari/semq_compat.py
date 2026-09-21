@@ -6,21 +6,17 @@
 # The SDK is not covered by the Apache License.
 """One way to build a SEMQ quantizer context across SDK versions.
 
-The harness requires semq 1.5.1 or newer: ``Context.compare_codes``,
-``bits_per_coordinate``, ``quant_regions`` and core-side ``unpack_codes`` were
-added after 1.5.0, and the module refuses an older build below.
+The harness requires semq 1.5.1 or newer. ``Context.compare_codes``,
+``bits_per_coordinate`` and ``quant_regions`` were added after 1.5.0, so their
+presence is evidence of a new enough build, and the module refuses an older
+build below.
 
-The magnitude-binning operator was renamed. Version 1.4.1 exposed it as
-``SEMQ_OP_QBIN`` with ``qbin_n_bins`` and
-``qbin_scale_max``. Later builds expose the same operator as ``SEMQ_OP_QUANT``
-with ``quant_n_bins`` and ``quant_scale_max``.
-
-An experiment written against one name raises ImportError on the other. That
-happened on the first GPU run: the scripts were developed against a local
-build and failed against the published wheel, after the encoding had already
-finished. A reproducibility benchmark that only runs against its author's
-working copy is not reproducible, so the compatibility lives here rather than
-in each script.
+The operator is ``SEMQ_OP_QUANT`` with ``quant_n_bins`` and
+``quant_scale_max``. Version 1.4.1 named it ``SEMQ_OP_QBIN``; the guard above
+refuses builds that old. The name is read here rather than in each script
+because the first GPU run failed on it: the scripts were developed against a
+local build and failed against the published wheel, after the encoding had
+already finished.
 
 ``SEMQ_MAX_DIM`` is read the same way, because a caller that chunks a long
 vector needs the limit and should not hard-code 65536.
@@ -31,7 +27,7 @@ from __future__ import annotations
 import semq
 
 MIN_SDK = "1.5.1"
-_REQUIRED = ("compare_codes", "bits_per_coordinate", "quant_regions", "unpack_codes")
+_REQUIRED = ("compare_codes", "bits_per_coordinate", "quant_regions")
 _missing = [n for n in _REQUIRED if not hasattr(semq.Context, n)]
 if _missing:
     raise ImportError(
@@ -40,17 +36,12 @@ if _missing:
         + f"; the ARI harness needs semq>={MIN_SDK}. Install a newer wheel."
     )
 
-# The operator, under whichever name this SDK uses.
-if hasattr(semq, "SEMQ_OP_QUANT"):
-    QUANT_OP = semq.SEMQ_OP_QUANT
-    _BINS_KW, _SCALE_KW = "quant_n_bins", "quant_scale_max"
-elif hasattr(semq, "SEMQ_OP_QBIN"):
-    QUANT_OP = semq.SEMQ_OP_QBIN
-    _BINS_KW, _SCALE_KW = "qbin_n_bins", "qbin_scale_max"
-else:  # pragma: no cover
+if not hasattr(semq, "SEMQ_OP_QUANT"):  # pragma: no cover
     raise ImportError(
-        "this SEMQ build exposes neither SEMQ_OP_QUANT nor SEMQ_OP_QBIN; "
+        "this SEMQ build does not expose SEMQ_OP_QUANT; "
         f"it has {[n for n in dir(semq) if n.startswith('SEMQ_OP')]}")
+QUANT_OP = semq.SEMQ_OP_QUANT
+_BINS_KW, _SCALE_KW = "quant_n_bins", "quant_scale_max"
 
 MAX_DIM = int(getattr(semq, "SEMQ_MAX_DIM", 65536))
 
