@@ -19,7 +19,7 @@ import math
 
 DEFAULT_DETECTOR = "semq"
 
-# QBIN n_bins=2 packs ~2 bits per embedding dimension (spec/ari-canonical-v0.1.md §1:
+# QUANT n_bins=2 packs ~2 bits per embedding dimension (spec/ari-canonical-v0.1.md §1:
 # "n_bins = 2 (~2 bits per embedding dimension / 4 symbols after calibration)"). This is the
 # bit budget of one SEMQ code, independent of any particular submission.
 SEMQ_BITS_PER_DIM = 2.0

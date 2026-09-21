@@ -4,7 +4,7 @@
 # This file calls the SEMQ SDK, a separate library that is subject to a
 # commercial license owned by The SEMQ Group Inc. and is patent pending.
 # The SDK is not covered by the Apache License.
-"""The ARI canonical probe (SEMQ QBIN n=2, 99th-percentile calibration).
+"""The ARI canonical probe (SEMQ QUANT n=2, 99th-percentile calibration).
 
 At run time this binds to the `semq` SDK. When the SDK is not importable (local
 dry-runs, CI), a deterministic reference **mock** stands in so the whole harness is
@@ -23,7 +23,7 @@ PERCENTILE = 99.0
 
 
 class Probe:
-    """Calibrated QBIN probe. `encode` maps an (n, d) float matrix to an (n, d)
+    """Calibrated QUANT probe. `encode` maps an (n, d) float matrix to an (n, d)
     uint8 code matrix, deterministically."""
 
     backend = "abstract"
@@ -35,7 +35,7 @@ class Probe:
 class _SemqProbe(Probe):
     """The canonical probe via the `semq` SDK (verified against semq==1.2.0).
 
-    Flow: open a QBIN Context with n_bins=2, `calibrate(ref, 0.99)` to fix the scale `s`
+    Flow: open a QUANT Context with n_bins=2, `calibrate(ref, 0.99)` to fix the scale `s`
     (it persists on the context and is returned), then `batch_encode` to bit-packed uint8
     codes. Discrete-attractor (`encode(reconstruct(c)) == c`, deterministic) holds.
     """
@@ -113,7 +113,7 @@ def load_probe(calibration_vectors: np.ndarray, backend: str = "auto") -> Probe:
 
 
 def fixed_scale_codes(vectors: np.ndarray, s: float, dim: int) -> np.ndarray:
-    """Encode with a **fixed** QBIN scale `s` (no re-calibration), so codes are bit-comparable
+    """Encode with a **fixed** QUANT scale `s` (no re-calibration), so codes are bit-comparable
     across separate runs / machines against a baseline calibrated once. This is the shared
     encode path for the capture tools (proc / conc / time / mach). Requires the `semq` SDK."""
     from ari.semq_compat import quant_context

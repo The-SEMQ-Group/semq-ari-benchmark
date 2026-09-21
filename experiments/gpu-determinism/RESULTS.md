@@ -12,7 +12,7 @@ Separately, TF32 breaks equivalence with a fp32/CPU baseline entirely (the audit
 Machine-readable data: [`results/a10g.csv`](results/a10g.csv),
 [`results/isolation_2x2.csv`](results/isolation_2x2.csv),
 [`results/mach_cross_gpu.csv`](results/mach_cross_gpu.csv). Scope: 8 encoders + one 7B, n=512,
-on A10G (Ampere, sm_86) and T4 (Turing, sm_75). Fixed QBIN scale from the registry, so codes
+on A10G (Ampere, sm_86) and T4 (Turing, sm_75). Fixed QUANT scale from the registry, so codes
 are comparable across CPU/GPU.
 
 ## Cross-process reproducibility (`proc`) — attribution: it is TF32, not determinism
@@ -123,7 +123,7 @@ discovery; the novel data is the black-box **API panel** (§ Deployed-Agent Pane
 
 ## Method & caveats
 
-- Probe: SEMQ QBIN n=2, fixed registry scale `s` (codes comparable across CPU/GPU).
+- Probe: SEMQ QUANT n=2, fixed registry scale `s` (codes comparable across CPU/GPU).
 - `proc` measured in-process (fresh subprocess) on the GPU; `mach` by comparing stored GPU code
   matrices against local CPU-fp32 captures. Determinism cell: TF32 off +
   `use_deterministic_algorithms(warn_only=True)` + `CUBLAS_WORKSPACE_CONFIG=:4096:8`.

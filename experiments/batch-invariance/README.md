@@ -50,7 +50,7 @@ confirms and H2 refutes, batch size is neutral on this hardware and the paper sh
 ## Design
 
 Three cells, five batch sizes each. Every capture uses the same 1,000 frozen inputs, the same
-fixed QBIN scale, and one process per capture.
+fixed QUANT scale, and one process per capture.
 
 | cell | dtype | TF32 | deterministic | batch sizes |
 | --- | --- | --- | --- | --- |

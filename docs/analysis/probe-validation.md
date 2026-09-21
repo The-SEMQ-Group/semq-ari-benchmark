@@ -1,7 +1,7 @@
 # Probe choice and validation
 
 A reproducibility probe must distinguish subject changes from changes in its own computation.
-The [canonical specification](../../spec/ari-canonical-v0.1.md) selects SEMQ QBIN for embedding reports.
+The [canonical specification](../../spec/ari-canonical-v0.1.md) selects SEMQ QUANT for embedding reports.
 That selection does not establish that only SEMQ can serve as a probe.
 See the [retraction ledger](../retractions.md).
 

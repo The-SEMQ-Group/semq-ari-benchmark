@@ -3,7 +3,7 @@
 """On-instance driver for the batch-invariance matrix. See README.md for the design.
 
 Runs three cells over five batch sizes, holding the model, the process configuration and the
-QBIN scale fixed. Inside each cell every batch size is compared against batch 32, which is the
+QUANT scale fixed. Inside each cell every batch size is compared against batch 32, which is the
 batch the published panel used.
 
   python run_batch_sweep.py --label h100 --n 1000 --out ~/batch_out
@@ -21,7 +21,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Canonical QBIN scales from spec/fingerprints-v0.1.csv, the same fixed values the
+# Canonical QUANT scales from spec/fingerprints-v0.1.csv, the same fixed values the
 # gpu-determinism matrix uses. A per-capture calibration would move the bin edges with the
 # data and could hide or invent disagreement, so the scale is fixed everywhere.
 S = {

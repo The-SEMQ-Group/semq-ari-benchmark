@@ -105,7 +105,7 @@ pending — a GPU run will double as `mach`.
 
 ## Method
 
-- **Probe:** SEMQ QBIN n=2, 99th-pct calibration ([`spec/ari-canonical-v0.1.md`](../../spec/ari-canonical-v0.1.md)).
+- **Probe:** SEMQ QUANT n=2, 99th-pct calibration ([`spec/ari-canonical-v0.1.md`](../../spec/ari-canonical-v0.1.md)).
 - **Protocol / HER definition / condition set:** [`README.md`](README.md) (design) and
   [`docs/methodology.md`](../../docs/methodology.md) (methodology, ground-truth verification, the Gemini caching probe).
 - **Inputs:** frozen [`data/ari-bench-v0.1.jsonl`](../../data/ari-bench-v0.1.jsonl).

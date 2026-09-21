@@ -6,6 +6,22 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### The leaderboard refresh has no mock mode
+- `refresh_leaderboard.py --mock` is removed, with its fake agent and its
+  numpy stand-in quantizer. The stand-in rounded to 256 uniform levels and
+  shared nothing with the canonical probe, so the rows it produced were
+  comparable with nothing; a stand-in that matched the SDK would be the
+  reimplementation CONTRIBUTING.md forbids. Every code the tool writes now
+  comes from the SDK.
+
+### The operator is called QUANT
+- Prose, docstrings and comments say QUANT, the name the SDK has used since
+  1.5. QBIN remains only in `semq_compat.py`, which still accepts a 1.4.1
+  wheel under the old name, and in the record of the rename itself. The
+  drift-sensitivity README's reference snippet now calls the harness probe
+  instead of an SDK function that never existed under either name. Editorial
+  only; no probe parameter, hash or scoring rule changes.
+
 ### The SDK is the authority on layout and calibration
 - `run_pilot.py` took the packed layout, the symbol unpacking and the
   calibration percentile from the core instead of reimplementing them. The
@@ -208,7 +224,7 @@ Initial public-ready draft.
   the reference sweep): bge-large 1.6%, bge-m3 1.1%, e5-large 7.2% (multilingual/corpus).
 
 ### Spec
-- ARI-Canonical-v0.1 **frozen**: canonical probe (SEMQ QBIN n=2, 99th-pct calibration),
+- ARI-Canonical-v0.1 **frozen**: canonical probe (SEMQ QUANT, then named QBIN, n=2, 99th-pct calibration),
   reference model (bge-large-en-v1.5, s=0.0775 on ARI-Bench), + design rationale.
 - ARI-Bench-v0.1: **frozen** input set — 1,000 real BEIR items (NFCorpus / SciFact / FiQA,
   512-char), hash-pinned.
