@@ -175,6 +175,9 @@ def test_legacy_flat_cell_with_evidence_validates():
 def test_mock_pipeline_time_cell_without_evidence_is_rejected():
     """The mock panel simulates `time` with noise and no gap. Schema-valid, and
     exactly the cell check_evidence exists to refuse by default."""
+    # run_mock_panel encodes with the canonical probe, which needs the SDK
+    # since the development mock was removed.
+    pytest.importorskip("semq")
     rep = run.run_mock_panel()
     assert schema_violations(rep) == []
     out = check_report(rep)
@@ -249,6 +252,9 @@ def test_build_report_ari_is_the_mean_of_the_raw_hers():
 
 
 def test_report_without_time_cell_still_validates():
+    # run_mock_panel encodes with the canonical probe, which needs the SDK
+    # since the development mock was removed.
+    pytest.importorskip("semq")
     rep = run.run_mock_panel()
     del rep["results_per_condition"]["time"]
     del rep["audit_hashes"]["time"]
