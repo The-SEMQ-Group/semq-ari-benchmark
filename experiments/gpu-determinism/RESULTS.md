@@ -1,11 +1,6 @@
 # GPU Determinism — Results (A10G + T4, v0.1-preview)
 
-> **Superseded (2026-09-16 audit).** Two kinds of statement on this page are narrowed.
-> "Invisible to cosine/retrieval" is true of the aggregate quality metric measured later
-> (Recall@10 did not detect the change) and false of ranked result lists and of float
-> comparisons on retained vectors; see the [regime experiment](../regime-discrimination/RESULTS.md).
-> Kernel-selection explanations are consistent with the measurements but were not established by
-> profiling. See the [repository audit](../../docs/REPOSITORY_AUDIT.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+Superseded statements on this page (R6, R11): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
 
 **The self-hosted 1.000 breaks on GPU — but the cause is specifically TF32, not GPU
 nondeterminism in general, and it is *not* the framework default.** On modern PyTorch (2.3,
@@ -63,7 +58,7 @@ Comparing each model's GPU codes against its CPU-fp32 baseline (same fixed scale
 - **H3 confirmed — TF32 is a hidden cliff.** "fp32 on GPU" runs matmul in **TF32** by default
   on Ampere, so it disagrees with a CPU (true-fp32) baseline on **12–46%** of inputs. Turning
   TF32 off recovers ≈ 1.000 for 7 of 8. A model audited at fp32/CPU and served at fp32/GPU is
-  **not** the same system. Whether retrieval metrics detect this was measured later; see the superseded note above.
+  **not** the same system. Whether retrieval metrics detect this was measured later; see the [regime experiment](../regime-discrimination/RESULTS.md).
 - **H2 confirmed.** The precision cliff persists on GPU: bf16 vs fp32 → HER ≈ 0, as on CPU.
 
 ## Cross-GPU (`mach`, A10G Ampere ↔ T4 Turing) — H4

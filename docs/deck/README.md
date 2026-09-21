@@ -14,7 +14,8 @@ python docs/deck/build_deck.py
 ```
 
 The build reads only local files. It writes both `.pptx` files in this directory and prints the slide
-count of each. Regeneration on 2026-09-16 produced 10 and 13 slides.
+count of each. The files are not committed (`.gitignore`); step 8 of [RELEASE.md](../RELEASE.md)
+builds them and attaches them to the GitHub release. Regeneration on 2026-09-16 produced 10 and 13 slides.
 
 ## Superseded statements
 

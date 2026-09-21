@@ -1,14 +1,11 @@
 # Drift Sensitivity Benchmark
 
-> **Superseded (2026-09-16 audit).** The response measured here is the fraction of packed code
-> *bytes* that differ, not a bit or coordinate rate. The fitted power law is an empirical
-> approximation within the fit window, not an exact law, and the quantizer is discrete. See the
-> [repository audit](../../docs/REPOSITORY_AUDIT.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+Superseded statements on this page (R7, R8): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
 
 The reference experiment behind ARI. It characterises how an embedding model's SEMQ code
 responds to a controlled perturbation of magnitude **σ**, and fits the response with a power law
 whose slope was close to one for every tested model. The fit is an approximation within the fit
-window; see the superseded note above.
+window.
 
 - **Protocol:** this document.
 - **Results:** [`RESULTS.md`](RESULTS.md).

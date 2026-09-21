@@ -1,10 +1,9 @@
 # Deployed-Agent Panel
 
-**Status: RUN (v0.1-preview).** Results for 13 agents are in [`RESULTS.md`](RESULTS.md).
-**Superseded (2026-09-16 audit):** the self-hosted `time` realisation in the table below was not
-executed as designed; the scripts repeated immediately or at the end of the session. See
-[`RESULTS.md`](RESULTS.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+**Status: RUN (v0.1-preview).** Results for 13 agents are in [`RESULTS.md`](RESULTS.md);
 methodology + verification in [`docs/methodology.md`](../../docs/methodology.md). This document is the **design/protocol**.
+
+Superseded statements on this page (R3, R11): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
 
 This is the experiment that produces the first real ARI numbers for the public leaderboard.
 The drift-sensitivity benchmark proved the *instrument* works; this measures *deployed agents*

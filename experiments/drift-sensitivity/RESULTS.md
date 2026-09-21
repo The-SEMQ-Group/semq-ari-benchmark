@@ -1,11 +1,6 @@
 # Drift Sensitivity Benchmark — Results
 
-> **Superseded (2026-09-16 audit).** Read this page with three corrections. (1) "Hamming" here is
-> the packed-byte disagreement fraction; the prefactors `a` and `κ` are byte-rate fits, and a
-> coordinate-rate refit is still required. (2) The power law is a fitted approximation with
-> unpropagated uncertainty, not an exact law, and the quantizer is discrete. (3) The withdrawn
-> 300x sensitivity hypothesis (H1) is recorded in the [retraction ledger](../../docs/retractions.md);
-> do not restore it. See the [repository audit](../../docs/REPOSITORY_AUDIT.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+Superseded statements on this page (R1, R7, R8): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
 
 Reference measurements from the 66-cell primary run (BEIR MS MARCO) and the 132-cell
 corpus extension (NFCorpus + SciFact). Machine-readable data in [`results/`](results/).
@@ -128,7 +123,7 @@ corpus:
 > `floor_limited`. The slope dispersion criterion still passed; the κ band widened as more models were added.
 
 Publishing `(s, b, κ)` once per model gives an approximate expected byte disagreement at a given σ,
-`E[r_byte](σ) ≈ κ · √(2·dim/π) · σ^b`, within the fitted range. **Superseded:** this is a fitted
+`E[r_byte](σ) ≈ κ · √(2·dim/π) · σ^b`, within the fitted range. This is a fitted
 approximation in byte units with unpropagated uncertainty. Observed drift above the prediction
 does not by itself attribute the drift to a specific downstream source.
 

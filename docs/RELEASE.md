@@ -2,7 +2,7 @@
 
 This procedure cuts an immutable, audited release of the benchmark repository. It takes one
 engineer about two hours plus the LaTeX build. Run every command from the repository root in a clean
-checkout of the release branch.
+checkout of `main`.
 
 ## Tag name
 
@@ -16,19 +16,25 @@ tag and a `CHANGELOG.md` entry that names the tag it supersedes.
 1. Confirm the branch is merged and CI is green. Run `git status --porcelain` and confirm empty output.
 2. Confirm the paper cites the tag you are about to create in reference [10] of
    `docs/paper/latex/ari.tex`, or cites the previous tag with a note that the release is pending.
-3. Regenerate the paper tables: `python docs/paper/latex/build_tables.py`, then
-   `python docs/paper/latex/build_tables.py --check`. Expected output: `6 paper tables checked`.
+3. When `docs/paper/latex/build_tables.py` is present on the paper branch, regenerate the paper
+   tables: `python docs/paper/latex/build_tables.py`, then `python docs/paper/latex/build_tables.py --check`.
+   Expected output: `6 paper tables checked`. The script is not on `main`; if it is absent, record
+   that the tables were not regenerated.
 4. Regenerate the figures from `docs/paper/latex/`: `python make_figure1.py`, `make_figure2.py`,
    `make_figure3.py`. Each script reads saved JSON only.
 5. Build the PDF twice from `docs/paper/latex/`: `pdflatex -interaction=nonstopmode -halt-on-error ari.tex`,
    twice. Check `grep -o "newlabel{bodyend}{{[0-9]*}" ari.aux` reads 4 or less.
-6. Run the number check. Update [CLAIM_TO_EVIDENCE.md](paper/CLAIM_TO_EVIDENCE.md) so that every
-   numeric claim in the paper has a row with status `match`. Resolve every `mismatch` row by editing
-   the paper or the evidence, never by editing the index alone.
+6. Run the number check by hand: for every row in [CLAIM_TO_EVIDENCE.md](paper/CLAIM_TO_EVIDENCE.md),
+   open the named result file and compare the field with the paper. Every numeric claim in the paper
+   needs a row with status `match`. Resolve every `mismatch` row by editing the paper or the
+   evidence, never by editing the index alone. When `tests/test_paper_evidence.py` is present on
+   the paper branch, run it as well.
 7. Run the retired-claims search described in [RETIRED_CLAIMS.md](RETIRED_CLAIMS.md) over
    `docs/`, `experiments/*/README.md`, `experiments/*/RESULTS.md` and `README.md`. Add or mark any new hit.
-8. Regenerate the decks: `python docs/deck/build_deck.py`. Confirm slide 2 of each deck is the
-   superseded-statements slide.
+8. Build the decks: `python docs/deck/build_deck.py` (needs `python-pptx`). It writes
+   `docs/deck/ari-overview.pptx` and `docs/deck/ari-technical.pptx`; both are ignored by git.
+   Confirm slide 2 of each deck is the superseded-statements slide. Attach both files to the
+   GitHub release in step 15.
 9. Run the test suite: `python -m pytest -q -rs`. Expected: no failures. Record the skipped tests and
    their reasons in the release notes.
 10. Verify the signed reports with the standalone verifier:
@@ -39,28 +45,34 @@ tag and a `CHANGELOG.md` entry that names the tag it supersedes.
     The command fails if the content hash differs from the specification.
 12. Confirm `docs/REPOSITORY_AUDIT.md` is current. If any high-priority finding changed status, add a
     dated line to it before release.
-13. Commit everything from steps 3 to 12. Then write the manifest: `python docs/release_manifest.py`.
-    It records the commit from the previous step, the Python environment, and SHA-256 of every file
-    under `spec/`, `data/`, `experiments/*/results/` and `docs/paper/latex/*.pdf`.
-14. Check the manifest against the tree: `python docs/release_manifest.py --check`. Expected: `OK: 0 difference(s)`.
-15. Commit `docs/release_manifest.json` as its own commit with the message `Release manifest for <tag>`.
-16. Tag that commit: `git tag -a <tag> -m "<tag>: <one-line summary>"`. Sign the tag with the release
-    key (`git tag -s`) when the signer is available.
-17. Push the branch and the tag. Create the GitHub release from the tag. Attach `ari.pdf`,
-    `docs/release_manifest.json` and the wheel from `python -m build`.
-18. Archive the release: upload the tag archive (`git archive <tag>`), the attached files, and the
-    evidence bundle under `docs/paper/evidence/` to the operator's archive bucket. Record the bucket
-    path and the archive's SHA-256 in the release notes.
-19. Update `CITATION.cff` (`version`, `date-released`) and `CHANGELOG.md` in a follow-up commit if
+13. Commit everything from steps 3 to 12 to `main`. This is the release commit. Run
+    `git status --porcelain` again and confirm empty output.
+14. Tag the release commit: `git tag -a <tag> -m "<tag>: <one-line summary>"`. Sign the tag with the
+    release key (`git tag -s`) when the signer is available. Before tagging, write and check the
+    manifest:
+    1. `python docs/release_manifest.py` writes `docs/release_manifest.json`. The file is not
+       committed; `.gitignore` lists it. It records the release commit, `branch`, `dirty`, the Python
+       version, platform, interpreter basename and installed packages, and the SHA-256 of every file
+       under `spec/`, `data/`, `experiments/*/results/` and `docs/paper/latex/*.pdf`.
+    2. Confirm `git.branch` reads `main` and `git.dirty` reads `false`. If not, stop; the checkout is
+       not the release commit.
+    3. `python docs/release_manifest.py --check`. Expected: `OK: 0 difference(s)`.
+15. Push `main` and the tag. Create the GitHub release from the tag. Attach `ari.pdf`,
+    `docs/release_manifest.json`, the two decks from step 8, and the wheel from `python -m build`.
+16. Archive the release: upload the tag archive (`git archive <tag>`) and the attached files to the
+    operator's archive bucket. When the paper branch carries an evidence bundle under
+    `docs/paper/evidence/`, upload it as well. Record the bucket path and the archive's SHA-256 in
+    the release notes.
+17. Update `CITATION.cff` (`version`, `date-released`) and `CHANGELOG.md` in a follow-up commit if
     they were not already updated for this tag.
 
 ## Who signs
 
 | Role | Responsibility |
 | --- | --- |
-| Release engineer | Runs steps 1 to 15 and records the outputs. |
+| Release engineer | Runs steps 1 to 13 and records the outputs. |
 | Measurement owner | Confirms step 6 (numbers) and step 12 (audit status). |
-| Maintainer with the release key | Signs and pushes the tag (steps 16 and 17). |
+| Maintainer with the release key | Writes the manifest, signs and pushes the tag (steps 14 and 15). |
 
 A release is not complete until all three have recorded their approval in the release pull request.
 
@@ -71,20 +83,9 @@ the tests. It does not establish that any capture is correct, that signatures we
 party, or that historical result files satisfy the current specification. Those limits are recorded
 in the [repository audit](REPOSITORY_AUDIT.md).
 
-## Venue requirements, checked 2026-09-16
+## Venue requirements
 
-Source: <http://mlforsystems.org/call_for_papers.html> (ML for Systems workshop at NeurIPS 2026).
-
-| Requirement | Value on the CFP page |
-| --- | --- |
-| Page limit | "submissions of up to 4 pages, not including references or Appendices. This year, this is a strict limit." |
-| Format | "should follow the NeurIPS 2026 format" |
-| File type | "All submissions must be in PDF format" |
-| Anonymization | "Submissions do not have to be anonymized." |
-| Submission site | OpenReview, `NeurIPS.cc/2026/Workshop/MLForSys` |
-| Deadline | "August 29, 2026 by midnight (Anywhere on Earth)"; a second line on the page reads "Saturday August 29ths Monday August 31th, 2026". |
-| Workshop | NeurIPS 2026, December 11 or 12 (TBA), International Convention Center Sydney |
-| Proceedings | "Accepted papers will be optionally linked on the workshop website, but there will be no formal proceedings." Authors may publish the work elsewhere. |
+See [Venue requirements](paper/latex/README.md#venue-requirements) in the submission build notes.
 
 ## Open items at this release
 
@@ -98,6 +99,7 @@ Source: <http://mlforsystems.org/call_for_papers.html> (ML for Systems workshop 
 3. Self-hosted `time` captures after a gap greater than 24 hours, the ARI-E rerun, and the
    coordinate-rate calibration refit remain open. See "Work required before stronger claims" in the
    [repository audit](REPOSITORY_AUDIT.md).
-4. The `v0.1-preview` tag was created before this procedure existed. Its commit does not contain a
-   release manifest. The first manifest describes the tree at that tag plus the corrections in this
-   release pass.
+4. The `v0.1-preview` tag was created before this procedure existed and has no manifest. The first
+   manifest will be written at the next tag. It will record that tag's commit on `main` with
+   `dirty` `false`, the Python environment of the release machine, and the SHA-256 of the files
+   listed in step 14 as they stand at that commit. It will not describe the `v0.1-preview` tree.

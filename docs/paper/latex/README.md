@@ -44,3 +44,20 @@ distribute." The CFP does not require line numbers. Pick one:
 
     \usepackage[final,sglblindworkshop]{neurips_2026}   % workshop footer, no line numbers (current)
     \usepackage[sglblindworkshop]{neurips_2026}         % line numbers, "Submitted to" footer
+
+## Venue requirements
+
+Checked 2026-09-16 against <http://mlforsystems.org/call_for_papers.html> (ML for
+Systems workshop at NeurIPS 2026). The release checklist in
+[docs/RELEASE.md](../../RELEASE.md) points here.
+
+| Requirement | Value on the CFP page |
+| --- | --- |
+| Page limit | "submissions of up to 4 pages, not including references or Appendices. This year, this is a strict limit." |
+| Format | "should follow the NeurIPS 2026 format" |
+| File type | "All submissions must be in PDF format" |
+| Anonymization | "Submissions do not have to be anonymized." |
+| Submission site | OpenReview, `NeurIPS.cc/2026/Workshop/MLForSys` |
+| Deadline | "August 29, 2026 by midnight (Anywhere on Earth)"; a second line on the page reads "Saturday August 29ths Monday August 31th, 2026". |
+| Workshop | NeurIPS 2026, December 11 or 12 (TBA), International Convention Center Sydney |
+| Proceedings | "Accepted papers will be optionally linked on the workshop website, but there will be no formal proceedings." Authors may publish the work elsewhere. |

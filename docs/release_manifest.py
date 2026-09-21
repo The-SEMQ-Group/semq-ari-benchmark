@@ -10,9 +10,11 @@ the paper PDFs. It does not establish that any measurement is correct.
     python docs/release_manifest.py            # write docs/release_manifest.json
     python docs/release_manifest.py --check    # fail if any hashed file changed
 
-The manifest lists the commit that was checked out when it was generated. The
-release procedure commits the manifest and tags that commit, so the tagged
-commit is the child of the commit named inside the manifest.
+The manifest is not committed; ``.gitignore`` lists it. The release procedure
+writes it after the release commit, checks it, tags that commit and attaches
+the file to the GitHub release, so ``git.commit`` names the tagged commit.
+``git.branch`` and ``git.dirty`` are recorded as found; at release they must
+read ``main`` and ``false``.
 """
 from __future__ import annotations
 
@@ -64,7 +66,7 @@ def environment() -> dict:
         "python_version": platform.python_version(),
         "python_implementation": platform.python_implementation(),
         "platform": platform.platform(),
-        "executable": sys.executable,
+        "executable": Path(sys.executable).name,
         "pip_freeze": packages,
     }
 

@@ -26,6 +26,7 @@ def test_manifest_covers_spec_data_results_and_audit():
     assert manifest["file_count"] == len(files)
     assert manifest["environment"]["python_version"]
     assert any(line.startswith("numpy==") for line in manifest["environment"]["pip_freeze"])
+    assert "/" not in manifest["environment"]["executable"]
 
 
 def test_check_passes_on_fresh_manifest_and_fails_on_tamper(tmp_path):
@@ -41,9 +42,3 @@ def test_check_passes_on_fresh_manifest_and_fails_on_tamper(tmp_path):
     assert f"changed: {first}" in problems
     assert "missing: spec/does-not-exist.md" in problems
 
-
-def test_committed_manifest_has_required_keys():
-    manifest = json.loads((ROOT / "docs" / "release_manifest.json").read_text())
-    for key in ("git", "environment", "repository_audit", "files"):
-        assert key in manifest
-    assert len(manifest["git"]["commit"]) == 40

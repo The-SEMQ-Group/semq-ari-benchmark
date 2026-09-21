@@ -1,9 +1,12 @@
-# Claim-to-evidence index
+# Claim-to-evidence index for the paper draft on `ilona/sdk-only-probe-and-paper`
 
-Checked 2026-09-16 against the paper draft `docs/paper/latex/ari.tex` on branch
-`ilona/sdk-only-probe-and-paper` and the result files committed under `experiments/`, `spec/` and
-`data/` at `v0.1-preview` (commit `73139c8`). Derived values were recomputed from the JSON and CSV
-fields named in each row. Paths are relative to the repository root.
+This index checks the paper draft `docs/paper/latex/ari.tex` on branch
+`ilona/sdk-only-probe-and-paper` at commit `b2cb8773bd1c1dbe3171c45abd07e9f23c953212` (2026-09-16),
+not a file tracked on `main` or on the branch that carries this index. Edits made to the draft
+after that commit are not covered. The result files were checked as committed under
+`experiments/`, `spec/` and `data/` at `v0.1-preview` (commit `73139c8`). Derived values were
+recomputed from the JSON and CSV fields named in each row. Paths are relative to the repository
+root.
 
 Status values: `match` (the paper number equals the file value at the printed precision),
 `mismatch` (it does not), `not found` (no committed result file under `experiments/`, `spec/` or
@@ -14,11 +17,11 @@ Markdown results page whose underlying capture is not in the repository.
 
 | Claim in paper | Source file and field | Status |
 | --- | --- | --- |
-| ARI-HER range 0.169 to 1.000 over five APIs | No snapshot under `experiments/`; `docs/analysis/null-relative-effects.md` published ARI column (0.169333 to 1.000000); `experiments/deployed-agent-panel/RESULTS.md` leaderboard | not found (prose only; the report snapshots live in `docs/paper/evidence/embedding_panel/` on the working branch, pinned to leaderboard commit `4f49fe35`) |
+| ARI-HER range 0.169 to 1.000 over five APIs | No snapshot under `experiments/`; `docs/analysis/null-relative-effects.md` published ARI column (0.169333 to 1.000000); `experiments/deployed-agent-panel/RESULTS.md` leaderboard | not found (prose only; the report snapshots live in `docs/paper/evidence/embedding_panel/` in the working tree of the paper branch, not in any tracked tree, pinned to leaderboard commit `4f49fe35`) |
 | Table 1 per-condition HER (gemini 1.000 x4; openai 0.859/0.862/0.851/0.822; mistral 0.734/0.753/0.791/0.554; voyage 0.571/0.615/0.209/0.676; cohere 0.133/0.146/0.130/0.232) | same as above | not found (prose only; every value matches `null-relative-effects.md` and `RESULTS.md`) |
 | `time` at ~76 h; `conc` 64-way burst, 16 for one provider | `experiments/deployed-agent-panel/RESULTS.md` caveats | not found (prose only) |
 | Normalized table `d` and `kappa_byte/4` (3072, 0.637; 3072, 0.413; 1024, 0.371; 1024, 0.622; 1536, 0.664) and `b` (0.990, 0.932, 0.915, 0.979, 0.995) | `spec/fingerprints-v0.1.csv` columns `dim`, `kappa`/4, `b` | match |
-| Normalized table `H-bar` (0.000, 1.363, 1.349, 9.566, 12.200) and `sigma-hat` bounds | panel snapshots (working branch only) | not found |
+| Normalized table `H-bar` (0.000, 1.363, 1.349, 9.566, 12.200) and `sigma-hat` bounds | panel snapshots (`docs/paper/evidence/embedding_panel/`, untracked working tree of the paper branch) | not found |
 | 13 fitted architectures: `b` mean 0.979, sample SD 0.028; `kappa_byte` in [1.484, 3.058] | `spec/fingerprints-v0.1.csv`, rows with a `b` value (13); recomputed mean 0.979, SD 0.027597; min/max `kappa` 1.484/3.058 | match |
 | Per-model `kappa` moves 0.03 to 0.35 across two additional corpora | `experiments/drift-sensitivity/results/kappa_per_dataset.csv`; ranges tabulated in `drift-sensitivity/RESULTS.md` | match |
 | all-mpnet-base-v2 and all-MiniLM-L6-v2 `floor_limited`, about 1% of code bytes | `spec/fingerprints-v0.1.csv` `status`, `notes` | match |
@@ -117,7 +120,7 @@ Markdown results page whose underlying capture is not in the repository.
 
 | Claim in paper | Source file and field | Status |
 | --- | --- | --- |
-| 11.5% of 3,000 trajectories diverge by hop 15 at sigma 1e-3; clean top-10 overlap 0.9879 on a 200-document sample; NFCorpus 3,633 documents; zero divergence at sigma 0 | No file under `experiments/`. `docs/paper/evidence/L3_09_agentic_compounding/analysis.json` on the working branch (hash-verified per `docs/paper/REVIEW.md`) | not found (evidence bundle is not on `origin/main`) |
+| 11.5% of 3,000 trajectories diverge by hop 15 at sigma 1e-3; clean top-10 overlap 0.9879 on a 200-document sample; NFCorpus 3,633 documents; zero divergence at sigma 0 | No file under `experiments/`. `docs/paper/evidence/L3_09_agentic_compounding/analysis.json` is tracked on the paper branch `ilona/sdk-only-probe-and-paper` only; its `MANIFEST.sha256` hashes were verified there. The advisor review that recorded the check was removed from the repository on 2026-09-16 and its findings are summarized in the [audit](../REPOSITORY_AUDIT.md). | not found (evidence bundle is not on `origin/main`) |
 
 ## Outcome layer and reproducibility statement
 
@@ -127,7 +130,7 @@ Markdown results page whose underlying capture is not in the repository.
 | ARI-E numerical contrasts withheld | `experiments/harness-effect/results/harness_effect.json` exists with historical values; the paper reports none | match (nothing to check; page marked historical) |
 | Frozen 1,000-item input set with content hash | `data/ari-bench-v0.1.jsonl`; `python -m ari.run --inputs ... --validate` prints `e9ec8b01c62635de...` | match |
 | Historical release `v0.1-preview` | `git tag --points-at 73139c8` | match |
-| Re-encoded CPU SciFact code matrices with hash manifest | `experiments/regime-discrimination/export_codes.py` and evidence on the working branch only | not found (not on `origin/main`) |
+| Re-encoded CPU SciFact code matrices with hash manifest | `experiments/regime-discrimination/export_codes.py` and the code matrices on the paper branch `ilona/sdk-only-probe-and-paper` only | not found (not on `origin/main`) |
 | Removed draft numbers: 449 and 547 bytes, 6.4 and 12.7 ms, 47% and 46% unbounded shares, 66 of 246,058 | `ari.tex` grep | match (absent from the draft, as the audit requires) |
 
 ## Corrections needed in `ari.tex`
@@ -142,6 +145,8 @@ The draft was not edited. Two statements do not match the committed files at the
    Scope the sentence to the `same` transcript or raise the bound to 0.28.
 
 Statements whose evidence is not on `origin/main` (embedding panel snapshots, retrieval-walk
-bundle, re-encoded SciFact codes) match the working-branch files that `build_tables.py` and
-`test_paper_evidence.py` check, but a reader of the tagged release cannot verify them. Merge the
-evidence bundle before the next tag or say so in the reproducibility statement.
+bundle, re-encoded SciFact codes) match the files in the paper branch's working tree. The
+`build_tables.py` and `test_paper_evidence.py` checks named in the audit exist only in that working
+tree; when present, they check the same files. A reader of the tagged release cannot verify these
+statements. Merge the evidence bundle before the next tag or say so in the reproducibility
+statement.

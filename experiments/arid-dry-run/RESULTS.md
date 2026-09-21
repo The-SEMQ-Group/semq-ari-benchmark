@@ -1,10 +1,6 @@
 # ARI-D dry run — interim results
 
-> **Scope note (2026-09-16 audit).** These are exploratory dry-run measurements, not benchmark
-> rows. Mechanism statements below (fleet heterogeneity, "engineering choice", shared shape with
-> the embedding panel) are inferences; the measurements establish byte-identical repeat rates
-> under the recorded conditions and do not identify backend causes. Raw transcripts are not in
-> this repository, so rates cannot be recomputed here. See the [repository audit](../../docs/REPOSITORY_AUDIT.md).
+Superseded statements on this page (R11): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
 
 **Status: vendor subject complete (2026-08-31), platform subject measured and
 rehosted subject measured with the burst sweep (2026-09-01); platform and
