@@ -3,6 +3,7 @@
 The comparison uses one CPU model, 539 reference steps, and five noise trials.
 Data: [baselines.json](results/baselines.json). Implementation: [baselines.py](baselines.py).
 Gaussian perturbation size is denoted by σ.
+`SEMQ H̄` rows report the legacy packed-byte disagreement fraction, not a bit or coordinate rate.
 
 ## Response to perturbation
 

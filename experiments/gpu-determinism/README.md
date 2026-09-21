@@ -34,7 +34,8 @@ non-determinism that CPU lacks come into play:
 
 **Headline the experiment can support if H1/H3/H5 confirm:** *self-hosted GPU serving is
 bit-reproducible only if you disable TF32, fix precision, and force deterministic algorithms —
-and by default it is not.* An actionable governance finding, invisible to cosine/retrieval.
+and by default it is not.* The [regime experiment](../regime-discrimination/RESULTS.md)
+later measured that aggregate Recall@10 did not detect such changes while ranked result lists did change.
 
 ## Models
 

@@ -1,5 +1,7 @@
 # Harness-effect power simulation
 
+Superseded statements on this page (R4): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
+
 The simulation measures how often the ARI-E interval excludes zero when an effect is present.
 It uses 200 simulated experiments per cell and a baseline pass probability of 0.75.
 The result JSON records the random seed.

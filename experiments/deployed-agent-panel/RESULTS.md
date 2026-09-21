@@ -1,5 +1,7 @@
 # Deployed-Agent Panel — Results (v0.1-preview)
 
+Superseded statements on this page (R3, R5, R6, R11, R13): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
+
 Real ARI measurements for **13 embedding models** — 5 commercial APIs + 8 self-hosted open
 models — on the frozen [ARI-Bench-v0.1](../../data/ari-bench-v0.1.jsonl) (1,000 real BEIR
 items, `content_hash e9ec8b01…`).
@@ -14,8 +16,8 @@ items, `content_hash e9ec8b01…`).
 
 ARI here is the headline index over the **comparable core** `{proc, conc, time}` — **all three
 are now measured for the APIs** (`time` at a **~76h (>24h canonical)** gap; `conc` as a burst-vs-calm
-load contrast). 95% CI by block bootstrap over inputs (the aggregate CI is the mean of the
-present conditions' intervals). `mach`/`prec`/`lib` are reported as **self-hosted diagnostics**
+load contrast). 95% CI by block bootstrap over inputs. The aggregate CI column is the mean of the
+present conditions' interval endpoints; it is not a calibrated interval for ARI. `mach`/`prec`/`lib` are reported as **self-hosted diagnostics**
 (see below), not folded into the headline.
 
 ## The leaderboard
@@ -51,22 +53,22 @@ for CPU cost). Each row is backed by a signed report under
 1. **Reproducibility is a real, provider-specific axis — the paid APIs span ARI 0.15 → 1.00.**
    It is *not* an anti-API bias: one API (Gemini) is perfectly reproducible, so the spread is
    a genuine property of each provider's serving stack.
-2. **Gemini is the only bit-reproducible API — genuinely, not a cache.** A caching probe (novel,
-   un-cacheable inputs) kept Gemini at 1.000 while the OpenAI control drifted; and the `time`
-   condition holds it at **1.000 across a ~76h (3+ day) gap** — ruling out any short-TTL cache.
-   It is deterministic compute. See [`docs/methodology.md`](../../docs/methodology.md).
+2. **Gemini is the only API with complete code agreement in this panel.** A nonce probe (150 novel
+   inputs) kept Gemini at 1.000 while the OpenAI control read 0.807; the `time`
+   condition holds it at **1.000 across a ~76h gap**. These checks reduce the common-string-cache
+   explanation. They do not prove deterministic computation or exclude every caching strategy
+   (see [`docs/methodology.md`](../../docs/methodology.md)).
 3. **The drift is mostly per-call — but Mistral accumulates over days.** For openai/voyage/cohere,
    `time` (~76h) ≈ `proc` (per-request noise, not time-dependent). **Mistral is the exception:**
    its `time` drops to **0.554** (vs `proc` 0.753, and 0.753 at a 19h gap), with H̄ doubling — a
-   genuine temporal drift that only a multi-day gap surfaces (a silent model/infra change over
-   3 days). This is exactly why the canonical `time` gap is >24h: it caught drift that `proc`
+   genuine temporal drift that only a multi-day gap surfaces. The backend cause is unobserved. This is exactly why the canonical `time` gap is >24h: it caught drift that `proc`
    and a 19h gap did not.
 4. **Concurrency is a hidden axis — Voyage drifts ~3× under load.** The `conc` condition (a
    burst of 64 concurrent requests vs a calm pass) leaves openai/mistral/cohere unchanged
    (≈ their per-call rate) and **Gemini bit-perfect (1.000) even under 64-way burst** — but
-   `voyage-4-large` collapses from `proc` 0.615 to `conc` **0.209** (H̄ 3× larger). Under load,
-   Voyage routes concurrent requests to backends that disagree — a real reproducibility
-   vulnerability no other axis surfaced. It drops Voyage's overall ARI to **0.500**.
+   `voyage-4-large` falls from `proc` 0.615 to `conc` **0.209** (H̄ 3× larger). This is one load
+   event; the burst was not repeated, and the backend cause (routing, batching, or another
+   mechanism) is not observable from outside. It lowers Voyage's overall ARI to **0.500**.
 5. **Cohere `embed-v4` (0.169) and Voyage `voyage-4-large` (0.500) score lowest.** `voyage-4-large`
    is the embedder [Anthropic's documentation recommends](https://platform.claude.com/docs/en/docs/build-with-claude/embeddings),
    which makes its drift a practical concern for that stack.
@@ -75,10 +77,11 @@ for CPU cost). Each row is backed by a signed report under
    is config-dependent:** the `prec` diagnostic (serving bf16 instead of fp32) collapses HER
    from 1.000 to ≈ 0 across all eight — a **precision cliff** (see below). The honest claim is
    *self-host **and pin your precision** → bit-reproducible*, not "self-hosted is always safe."
-7. **The drift is invisible to cosine / retrieval.** It is representation-level (the raw
-   embedding differs enough to cross a semantic boundary), which no cosine-based check
-   surfaces — only a SEMQ-class instrument does. It affects bit-level reproducibility and
-   auditability, not necessarily retrieval quality.
+7. **Aggregate retrieval quality did not detect the measured drift.** The
+   [regime experiment](../regime-discrimination/RESULTS.md) later showed that Recall@10 did not
+   detect precision changes while ranked result lists did change, and float comparisons on
+   retained vectors can detect representation change. The drift affects exact-code
+   reproducibility and auditability, not necessarily retrieval quality.
 
 ## Self-hosted diagnostics — `prec` (the precision cliff)
 
@@ -115,9 +118,10 @@ pending — a GPU run will double as `mach`.
 
 ## Caveats (honest)
 
-- **The comparable core is complete for every model** — APIs and self-hosted both carry
-  `proc` + `conc` + `time`. All 8 self-hosted score **1.000 on `conc` and `time`** (bit-reproducible
-  under concurrency and across time). *Caveat:* running 8 concurrent encodes on a **single shared
+- **The comparable core is complete for the five APIs only.** The self-hosted
+  `time` cells were immediate or end-of-session repeats, not captures after a gap greater than
+  24 hours, so they do not satisfy the specification. All 8 self-hosted score **1.000 on `conc`**
+  and on the mislabelled repeat cell. *Caveat:* running 8 concurrent encodes on a **single shared
   model instance** (not thread-safe in PyTorch) produced a rare, reproducible ~0.1% single-input
   flip on bge-large (BLAS reduction-order under thread contention) — a serving-implementation
   artifact, not a reproducibility property: under batched or replica'd serving (the realistic
@@ -129,8 +133,9 @@ pending — a GPU run will double as `mach`.
   Mistral's temporal drift (0.554) that the 19h gap missed.
 - **Input-distribution sensitivity.** The API rates shifted from the earlier synthetic sample
   to real BEIR text (e.g. Voyage 0.40 → 0.62), which is why the frozen real inputs matter.
-- **Gemini 1.000** is deterministic compute, not a cache: the caching probe rules out a
-  common-string cache and the ~76h `time` condition rules out any short-TTL cache.
+- **Gemini 1.000** is repeated agreement under the measured conditions. The nonce probe reduces
+  the common-string-cache explanation and the ~76h `time` condition excludes caches with a
+  shorter TTL and no refresh. Neither proves deterministic computation.
 
 ---
 
@@ -146,14 +151,18 @@ identical in structure to the self-hosted rows, adapted for a 7B model:
   bf16-born weights.
 - **Conditions**: fp32 base → `same` (in-process re-encode), `proc` (fresh
   subprocess with its own CUDA context), `conc` (8 threads, shard batches),
-  `time` (fresh-process re-encode), and the `prec` diagnostic (a fresh bf16
+  `time` (fresh-process re-encode, not a capture after a gap greater than 24 hours, so not a
+  canonical `time` cell), and the `prec` diagnostic (a fresh bf16
   load — never an in-place cast; casting a loaded model crushes fp32-born
   rotary buffers, which the instrument itself caught during this session as
   an 89.5% code change from a 1.2e-03 perturbation in two buffers, and the
   contaminated pass was discarded and remeasured cleanly).
-- **Result**: `same = proc = conc = time = 1.000` exact; `prec` HER 0.0,
+- **Result**: `same = proc = conc = 1.000` exact and the repeat labelled `time` 1.000; `prec` HER 0.0,
   H̄ 24.4 bits — consistent with the other self-hosted rows at 4096
-  dimensions.
+  dimensions. The audit found that the archived script cast one loaded model
+  between precisions, contrary to the fresh-load description above, and resolved its input path
+  incorrectly. The corrected script loads each precision in a separate subprocess and leaves
+  `time` unmeasured. No new GPU capture validates the corrected procedure.
 - **Script**: [`sfr_capture.py`](sfr_capture.py) (self-contained; reads the
   frozen input set, verifies its pin, writes the report via
   `ari.report.build_report`). **Evidence**: the report, its KMS attestation

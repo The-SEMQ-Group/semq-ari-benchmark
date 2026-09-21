@@ -1,5 +1,7 @@
 # Harness-effect results
 
+Superseded statements on this page (R4): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
+
 This experiment compares SWE-agent and OpenHands on two models in the Open-SWE-Traces dataset.
 Data: [harness_effect.json](results/harness_effect.json). Implementation: [run.py](run.py).
 

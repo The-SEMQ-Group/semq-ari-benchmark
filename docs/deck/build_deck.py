@@ -18,6 +18,13 @@ The weak results stay in both decks. An investor running an LLM over this
 material will find the top-2 margin comparison in about a minute, and it is
 better that they find our version of it.
 
+The decks are historical presentation artifacts. The 2026-09-16 repository
+audit superseded several statements they made; each deck now opens with a
+slide listing them, and the affected slides are labelled. The ARI-E numbers
+are still read from harness_effect.json because that file is what the slides
+historically showed; the paper withholds them pending a rerun. See
+docs/RETIRED_CLAIMS.md for the index.
+
     python docs/deck/build_deck.py
 """
 
@@ -179,6 +186,33 @@ def note(slide, text, *, top=Inches(6.6), color=GREY, size=12):
             height=Inches(0.6), size=size, color=color)
 
 
+SUPERSEDED = [
+    ("This deck is a historical presentation artifact, regenerated from the "
+     "experiment JSON on 2026-09-16. It is not maintained scientific evidence. "
+     "Use the paper and docs/REPOSITORY_AUDIT.md for current claims.", INK, True),
+    ("ARI-E slides: the harness-effect numbers come from an earlier estimator and "
+     "a partial trajectory export. The paper withholds them pending a rerun.", RED, False),
+    ("Self-hosted `time` cells were immediate repeats, not captures after a gap "
+     "greater than 24 hours. The self-hosted comparable core is incomplete.", RED, False),
+    ("A nonsignificant Recall@10 difference is not equivalence. Ranked result lists "
+     "did change under the same conditions.", INK, False),
+    ("'Early warning' means a changed code at a step whose token did not change. "
+     "It is not a validated predictor of later failure.", INK, False),
+    ("TF32 and kernel-selection mechanism statements are consistent with the data "
+     "but were not established by profiling.", INK, False),
+    ("Decoding disagreement rates labelled H-bar are packed-byte rates, not bit or "
+     "coordinate rates.", INK, False),
+    ("Index of superseded statements: docs/RETIRED_CLAIMS.md.", GREY, False),
+]
+
+
+def superseded_slide(prs):
+    s = blank(prs)
+    header(s, "Superseded statements", "READ FIRST: 2026-09-16 REPOSITORY AUDIT")
+    bullets(s, SUPERSEDED, size=14)
+    return s
+
+
 # ---------------------------------------------------------------------------
 # Deck 1: semi-technical
 # ---------------------------------------------------------------------------
@@ -189,8 +223,9 @@ def build_overview(f: dict, out: Path):
     title_slide(
         prs, "Measuring whether an AI system does the same thing twice",
         "ARI: three indices for agent reproducibility",
-        "Every number in this deck is read from a signed measurement. "
-        "Verification instructions on the last slide.")
+        "Numbers are read from the experiment JSON in this repository. "
+        "Slide 2 lists statements superseded by the 2026-09-16 audit.")
+    superseded_slide(prs)
 
     s = blank(prs)
     header(s, "The problem: your dashboard cannot see the change", "THE GAP")
@@ -241,9 +276,10 @@ def build_overview(f: dict, out: Path):
         ], top=Inches(3.1), height=Inches(0.6), size=15,
             highlight={2: GREEN})
         note(s, f"The audited system and the served system disagree on "
-                f"{(1-on['semq_her'])*100:.0f}% of documents. Retrieval quality "
-                f"moves by exactly zero. Turning TF32 off restores agreement, "
-                f"which is what attributes the effect to that one switch.",
+                f"{(1-on['semq_her'])*100:.0f}% of documents. No Recall@10 change "
+                f"was detected; a nonsignificant difference is not equivalence. "
+                f"Turning TF32 off restores agreement, which associates the effect "
+                f"with that one switch.",
              top=Inches(5.1), color=INK, size=15)
 
     s = blank(prs)
@@ -263,12 +299,14 @@ def build_overview(f: dict, out: Path):
         ], top=Inches(2.8), height=Inches(0.65), size=15,
             highlight={3: GREEN})
         note(s, "Output comparison is silent across the entire run. The "
-                "instrument reads the change at every step. That is the "
-                "difference between finding out now and finding out from a "
-                "customer.", top=Inches(5.3), color=INK, size=15)
+                "instrument reads a code change at every step while the token "
+                "is unchanged. This is contemporaneous disagreement, not a "
+                "validated predictor of later failure.", top=Inches(5.3),
+             color=INK, size=15)
 
     s = blank(prs)
-    header(s, "ARI-E: was it the model, or the wrapper?", "USE CASE 3")
+    header(s, "ARI-E: was it the model, or the wrapper?",
+           "USE CASE 3. HISTORICAL: WITHHELD FROM THE PAPER PENDING RERUN")
     bullets(s, [
         ("Two agent products run the identical model. One scores higher. "
          "Which one did the work?", INK, True),
@@ -283,12 +321,13 @@ def build_overview(f: dict, out: Path):
             ["The scaffold around the model", f"{avg(sc):+.3f}"],
             ["The model itself", f"{avg(mo):+.3f}"],
         ], top=Inches(3.2), height=Inches(0.7), size=16, highlight={1: GREEN})
-        note(s, "The wrapper mattered more than the model. Benchmark tables "
-                "that name only the model are not comparable.",
-             top=Inches(5.4), color=INK, size=15)
+        note(s, "Historical reading: the wrapper effect exceeded the model effect "
+                "for these pairs. Superseded: earlier estimator, partial export; "
+                "not a current result.", top=Inches(5.4), color=RED, size=15)
 
     s = blank(prs)
-    header(s, "The control is the product", "WHY THIS IS HARD TO COPY")
+    header(s, "The control is the product",
+           "WHY THIS IS HARD TO COPY. HISTORICAL NUMBERS, SEE SLIDE 2")
     bullets(s, [
         ("Agents disagree with themselves 10-13% of the time. Anyone can diff "
          "two systems. Almost nobody subtracts that noise.", INK, True),
@@ -302,9 +341,9 @@ def build_overview(f: dict, out: Path):
             ["Naive difference between the two scaffolds", f"{apparent:.1%}"],
             ["ARI-E, after removing the agent's own noise", f"{c['effect']:.1%}"],
         ], top=Inches(3.0), height=Inches(0.7), size=16, highlight={1: RED, 2: GREEN})
-        note(s, "The naive number is 2.4x too large. Across every comparison we "
-                "ran, the control removed 59-74% of the apparent effect. A "
-                "competitor without it reports noise as signal.",
+        note(s, "In the historical run the control removed 59-74% of the apparent "
+                "effect. The estimator has since been corrected and the numbers "
+                "await a rerun; the method point stands, the values do not.",
              top=Inches(5.2), color=INK, size=15)
 
     s = blank(prs)
@@ -314,7 +353,8 @@ def build_overview(f: dict, out: Path):
         ("Every report is cryptographically signed and bound to the exact data "
          "it came from.", INK, True),
         "Change the report, or the data underneath it, and verification fails.",
-        ("The verifier is 175 lines and does not use our software.", GREEN, True),
+        ("The verifier uses the Python standard library and `cryptography`. "
+         "It does not import the SDK or the harness.", GREEN, True),
         "A standard whose verification requires the vendor's code is not a standard.",
     ])
     note(s, "python verify_report.py harness_effect.json --expect-key <key>   "
@@ -324,17 +364,20 @@ def build_overview(f: dict, out: Path):
     header(s, "Where we actually are", "HONEST STATUS")
     table(s, [
         ["Index", "Status", "Strength of the evidence"],
-        ["ARI-R", "Measured on CPU and GPU", "Strong. The TF32 result is clean"],
+        ["ARI-R", "Measured on CPU and GPU",
+         "TF32 association replicated; attribution needs profiling"],
         ["ARI-D", "Measured on two models",
          "Real, but a cheaper statistic competes"],
-        ["ARI-E", "22,000 real agent runs", "Strong. Largest effect of the three"],
+        ["ARI-E", "Historical analysis, withheld",
+         "Pending rerun with the corrected estimator"],
     ], top=Inches(2.0), height=Inches(0.75), size=15)
     bullets(s, [
         ("Known weakness, stated up front: at the decoding layer a simple "
          "top-2 margin statistic gets 86% of the signal for a fraction of the "
          "storage.", RED, True),
         ("What survives is coverage. It sees changes the cheap statistic is "
-         "structurally blind to. Slide 12 has the evidence.", INK, False),
+         "structurally blind to. The technical deck's tail-coverage slide has "
+         "the evidence.", INK, False),
     ], top=Inches(4.9), size=15)
 
     prs.save(out)
@@ -351,7 +394,9 @@ def build_technical(f: dict, out: Path):
     title_slide(
         prs, "ARI: method, measurements, and what did not survive",
         "Technical appendix. Every figure is generated from the results JSON.",
-        "Reports are Ed25519-signed. Verification is independent of our SDK.")
+        "Reports are Ed25519-signed. Verification is independent of our SDK. "
+        "Slide 2 lists statements superseded by the 2026-09-16 audit.")
+    superseded_slide(prs)
 
     s = blank(prs)
     header(s, "What SEMQ is, and what it is for", "INSTRUMENT")
@@ -359,17 +404,18 @@ def build_technical(f: dict, out: Path):
         ("SEMQ maps a float vector to a symbolic code by comparing against a "
          "calibrated scale.", INK, True),
         "Codes are exact, so agreement is a hash comparison rather than a threshold.",
-        ("Invariance follows from the operator's form, not from a trained "
-         "codebook. CI asserts it on three architectures per commit.", INK, False),
+        ("The operator uses one fixed calibration scale, not a trained codebook. "
+         "Cross-platform invariance still needs verification on each platform.",
+         INK, False),
         ("Retracted: we previously claimed SEMQ is necessary for the index. "
          "It is not. A frozen product quantizer also works.", RED, True),
-        ("What survives is verification cost: our guarantee is checkable in "
-         "advance, theirs must be re-measured for every codebook shipped.",
+        ("What survives is verification cost: one declared rule and one scalar, "
+         "against a codebook of thousands of values that each need checking.",
          INK, False),
     ])
 
     s = blank(prs)
-    header(s, "ARI-R: retrieval quality is blind to a serving change",
+    header(s, "ARI-R: Recall@10 did not detect a serving change",
            "MEASUREMENT")
     picture(s, "01-regime-discrimination.png", top=Inches(1.7), width=Inches(11.3))
     note(s, "BEIR SciFact, 5,183 documents, 300 queries with real relevance "
@@ -394,16 +440,16 @@ def build_technical(f: dict, out: Path):
              f"{on['top10_identical']:.2%}", f"{on['semq_her']:.4f}"],
         ], top=Inches(2.2), height=Inches(0.7), size=13, highlight={2: GREEN})
     bullets(s, [
-        ("The CI on the quality metric is exactly [0.0000, 0.0000]. Not small. Zero.",
-         INK, True),
-        ("The TF32-off row is the control. It rules out 'the GPU did it'.",
-         INK, False),
+        ("The paired interval on delta Recall@10 is [0.0000, 0.0000] at 300 "
+         "queries. A nonsignificant difference is not equivalence.", INK, True),
+        ("The TF32-off row is the control. It associates the effect with TF32 "
+         "rather than with the host change alone.", INK, False),
         ("Narrowed claim: retrieval *quality* is blind. Retrieval *result lists* "
          "are not. int8 changes 100% of them.", RED, False),
     ], top=Inches(4.5), size=15)
 
     s = blank(prs)
-    header(s, "ARI-D: the logits move before the tokens", "MEASUREMENT")
+    header(s, "ARI-D: logit codes change while tokens do not", "MEASUREMENT")
     picture(s, "02-decoding-early-warning.png", top=Inches(1.7), width=Inches(10.4),
             left=Inches(1.4))
     note(s, "Teacher-forced: every condition is scored on the reference token "
@@ -461,7 +507,8 @@ def build_technical(f: dict, out: Path):
     ], size=16)
 
     s = blank(prs)
-    header(s, "ARI-E: measured on 22,000 real agent runs", "MEASUREMENT")
+    header(s, "ARI-E: historical analysis of 22,000 agent runs",
+           "MEASUREMENT. HISTORICAL: WITHHELD FROM THE PAPER PENDING RERUN")
     if f.get("e_contrasts"):
         rows = [["Contrast", "Cases", "Self", "Cross", "Effect", "95% CI"]]
         for c in f["e_contrasts"]:
@@ -479,10 +526,13 @@ def build_technical(f: dict, out: Path):
          INK, False),
         ("Largest threat: 22% of rows were ungraded and dropped. If grading "
          "failure tracks difficulty, the surviving set is easier.", RED, True),
-    ], top=Inches(4.9), size=14)
+        ("Superseded: earlier estimator and partial export. Rerun against a pinned "
+         "dataset revision before quoting.", RED, True),
+    ], top=Inches(4.9), size=13)
 
     s = blank(prs)
-    header(s, "ARI-E: why the earlier plan would have failed", "POWER")
+    header(s, "ARI-E: why the earlier plan would have failed",
+           "POWER. HISTORICAL: SIMULATION PREDATES THE ESTIMATOR CORRECTION")
     table(s, [
         ["Pass-rate gap", "Repeats", "25 cases", "100 cases", "200 cases"],
         ["0.00 (null)", "2", "8%", "6%", "6%"],
@@ -524,12 +574,17 @@ def build_technical(f: dict, out: Path):
         ["'A frozen VQ is not verifiable' (v2)", "Retracted"],
         ["'Serving changes are invisible to retrieval'", "Narrowed to quality metrics"],
         ["'SEMQ is the most sensitive decoding probe'", "Withdrawn; margin is cheaper"],
-    ], top=Inches(2.0), height=Inches(0.6), size=14)
+        ["'Self-hosted time cells satisfy the >24 h gap'", "Superseded; immediate repeats"],
+        ["'Two-encoder run shows clean batch invariance'", "Superseded by seven-encoder table"],
+        ["'Decoding H-bar is a bit or coordinate rate'", "Corrected; packed-byte rate"],
+        ["ARI-E contrasts and power", "Withheld pending rerun"],
+    ], top=Inches(1.9), height=Inches(0.42), size=12)
     bullets(s, [
-        ("Each was retracted because we tested it adversarially and it failed, "
-         "not because someone else caught it.", GREEN, True),
-        ("The claims that remain have survived that process.", INK, False),
-    ], top=Inches(5.5), size=16)
+        ("Most were retracted because we tested them adversarially; the last four "
+         "came from the 2026-09-16 repository audit.", GREEN, True),
+        ("Remaining claims are listed with their evidence in docs/paper/CLAIM_TO_EVIDENCE.md.",
+         INK, False),
+    ], top=Inches(6.2), size=14)
 
     prs.save(out)
     return out

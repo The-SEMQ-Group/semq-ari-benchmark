@@ -70,6 +70,10 @@ See the [condition specification](spec/condition-set.md) and [measurement scope]
 | [experiments/README.md](experiments/README.md) | Experiment index and reproduction requirements. |
 | [docs/findings.md](docs/findings.md) | Results overview and evidence limits. |
 | [docs/retractions.md](docs/retractions.md) | Withdrawn claims and their replacements. |
+| [docs/REPOSITORY_AUDIT.md](docs/REPOSITORY_AUDIT.md) | 2026-09-16 audit: corrections, evidence limits, and remaining work. |
+| [docs/RETIRED_CLAIMS.md](docs/RETIRED_CLAIMS.md) | Where superseded claims appeared in decks and prose, and what was done. |
+| [docs/RELEASE.md](docs/RELEASE.md) | Release checklist, manifest, venue requirements, and open items. |
+| [docs/paper/CLAIM_TO_EVIDENCE.md](docs/paper/CLAIM_TO_EVIDENCE.md) | Each numeric claim in the paper draft and the result file it comes from. |
 | [infra/README.md](infra/README.md) | Remote GPU setup, execution, and result collection. |
 | [docs/paper/latex/README.md](docs/paper/latex/README.md) | Paper source and build procedure. |
 

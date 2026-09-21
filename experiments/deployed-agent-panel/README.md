@@ -3,6 +3,8 @@
 **Status: RUN (v0.1-preview).** Results for 13 agents are in [`RESULTS.md`](RESULTS.md);
 methodology + verification in [`docs/methodology.md`](../../docs/methodology.md). This document is the **design/protocol**.
 
+Superseded statements on this page (R3, R11): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
+
 This is the experiment that produces the first real ARI numbers for the public leaderboard.
 The drift-sensitivity benchmark proved the *instrument* works; this measures *deployed agents*
 with it.
@@ -43,8 +45,8 @@ lower bound on provider drift**, not a controlled measurement: we can only *indu
 different backend probabilistically, so true internal non-determinism is ≥ what we report.
 We pin everything client-side so any observed drift is attributable to the provider —
 identical request bytes, all determinism-affecting params fixed (dimensions, encoding
-format, truncation), **model snapshot pinned** where the provider exposes one (so `time`
-drift is pure infrastructure drift, not model updates), same region endpoint, and one input
+format, truncation), **model snapshot pinned** where the provider exposes one (a pinned snapshot
+reduces, but does not exclude, model-update explanations for `time` drift), same region endpoint, and one input
 per request (no batch-composition confound). Each row is labelled `pinned` or `floating`
 per its snapshot handling.
 

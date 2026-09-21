@@ -1,5 +1,7 @@
 # ARI-D dry run — interim results
 
+Superseded statements on this page (R11): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
+
 **Status: vendor subject complete (2026-08-31), platform subject measured and
 rehosted subject measured with the burst sweep (2026-09-01); platform and
 rehosted `time` pairs measured (2026-09-02). **The dry run's protocol
@@ -40,10 +42,10 @@ seed, over one reused connection, more than half of back-to-back repeat pairs
 are not byte-identical. Nothing moves that floor: not a fresh connection per
 call, not a sustained 64-in-flight burst, not a day passing (all three ≈
 `same` under the CI-overlap rule). The nondeterminism is **per-call**, not
-connection-, load- or time-sensitive — the same shape the representation
-panel found for its APIs, now reproduced at the decoding layer. One `same` batch touched **45 distinct `system_fingerprint`
-values**, which documents the mechanism (a heterogeneous serving fleet behind
-one endpoint) and vindicates recording fingerprints per call.
+connection-, load- or time-sensitive. The ordering agrees with the representation
+panel for the shared providers; this descriptive concordance does not identify a shared mechanism. One `same` batch touched **45 distinct `system_fingerprint`
+values**, which is consistent with a heterogeneous serving fleet behind
+one endpoint (not established from outside) and supports recording fingerprints per call.
 `topk_logprob_overlap` reads 0.961: the distributions agree almost entirely
 until the flip — drift lives below the argmax and surfaces where margins are
 thin, consistent with the research base.
@@ -99,9 +101,8 @@ per-call nondeterminism that nothing external moves. Gemini serves **2,800
 completions without a single divergent byte**, including under a sustained
 64-in-flight burst — and it is the same provider that read bit-exact on
 every axis of the representation panel. One provider doing it at scale, on
-both layers, makes the ~0.5 floor read as **an engineering choice, not
-physics** — which is precisely the kind of comparison this bench exists to
-put a number on. (Both lines await their `time` cells before any headline
+both layers, shows that a ~0.5 floor is not a property of every hosted
+endpoint. The cause of the difference is not observable from outside. (Both lines await their `time` cells before any headline
 is computed.)
 
 ## Calibration verdicts (spec §13, item 3)
@@ -118,7 +119,7 @@ is computed.)
    redesign. Re-check on the rehosted subject before freezing the verdict.
 3. **Set discrimination** — **passes**: the `same` floor spans 0.041
    (open-ended prose) to 0.759 (instruction-following) across buckets, the
-   exact inverse of the top-2 margin distribution (median 2.0 vs 11.6 nats) —
+   exact inverse of the top-2 margin distribution (median 2.0 vs 11.5 nats; corrected from 11.6, see `results/analysis.json`) —
    flips concentrate where margins are thin, and no bucket saturates. The §4
    decision-dense amendment is not needed for v0.1.
 
@@ -160,7 +161,7 @@ two candidate confounders, both now measured away:
    dedicated no-seed arm shows the seed explains essentially nothing
    (0.441 vs 0.470 full, prefix rates within noise).
 
-The platform `time` cell (`time_pair.py --batch-a salesforce_same.jsonl.gz --batch-b salesforce_same_t2.jsonl.gz`) reads at the platform's own floor across a >24 h gap, with all 12 of day one's fingerprints reappearing — per-call noise, stable in time, no silent backend change on either door.
+The platform `time` cell (`time_pair.py --batch-a salesforce_same.jsonl.gz --batch-b salesforce_same_t2.jsonl.gz`) reads at the platform's own floor across a >24 h gap, with all 12 of day one's fingerprints reappearing. Stable fingerprints cannot exclude unreported backend changes.
 
 The residual is the finding: **through the platform door, the same model on
 the same fleet is roughly 2× less byte-stable at the first 64 bytes and 4×

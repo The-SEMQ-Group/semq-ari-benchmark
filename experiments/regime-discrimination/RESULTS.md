@@ -26,7 +26,7 @@ measures that degeneracy rather than the instrument. The mistake is recorded in
 
 ## Results
 
-| condition | axis | cos mean | cos p01 | R@10 | ΔR@10 | ΔR@10 95% CI | significant | top-10 lists identical | SEMQ HER |
+| condition | axis | dot mean | dot p01 | R@10 | ΔR@10 | ΔR@10 95% CI | significant | top-10 lists identical | SEMQ HER |
 | --- | --- | ---: | ---: | ---: | ---: | :--- | :---: | ---: | ---: |
 | reference | `same` | 1.000000 | 1.000000 | 0.7833 | — | — | — | 100.00% | 1.0000 |
 | proc | `proc` | 1.000000 | 1.000000 | 0.7833 | +0.0000 | [+0.0000, +0.0000] | no | 100.00% | 1.0000 |
@@ -37,7 +37,9 @@ measures that degeneracy rather than the instrument. The mistake is recorded in
 | **int8** | `prec` | 0.938093 | 0.904309 | 0.7772 | **−0.0061** | [−0.0278, +0.0156] | **no** | **0.00%** | **0.0000** |
 
 CIs are paired bootstrap over queries, 10,000 resamples. "Significant" means the interval
-excludes zero.
+excludes zero. `dot mean` and `dot p01` are dot products of outputs requested with normalization,
+not recomputed cosine similarities; the JSON field is still named `cosine_mean` (see the
+[repository audit](../../docs/REPOSITORY_AUDIT.md)). A nonsignificant difference is not equivalence.
 
 ## Code matrices
 
@@ -59,8 +61,8 @@ made, not a fresh one.
 ## Reading
 
 **1. Aggregate retrieval quality is blind to both precision changes.** Neither bf16 nor
-int8 produces a Recall@10 change distinguishable from zero at 300 queries. int8 changes the
-embeddings by 6% mean cosine and *the measured recall goes down by 0.6 points*. Well
+int8 produces a Recall@10 change distinguishable from zero at 300 queries. Under int8 the mean
+dot product against the reference falls to 0.938 and *the measured recall goes down by 0.6 points*. Well
 inside the noise band. A team watching a recall dashboard would see nothing. This is
 exactly the reported industry failure mode: the endpoint returns 200, quality metrics look
 normal, and nothing in the logs says the serving precision changed.
@@ -89,9 +91,9 @@ practical:
   matched calibration is exact.
 - Quality metrics, the thing teams actually alert on, are blind either way.
 
-**5. `cos mean` above 1.0 is not a bug, it is a finding.** bf16 shows mean cosine 1.001052
+**5. `dot mean` above 1.0 is a normalisation finding, not a cosine.** bf16 shows a mean dot product of 1.001052
 against unit-normalised references, because the bf16 model's own normalisation is
-imprecise enough that its outputs are no longer unit vectors. Any monitor computing cosine
+imprecise enough that its outputs are no longer unit vectors. A true cosine divides by both norms and is bounded by one. Any monitor computing cosine
 against a stored reference would need to notice a similarity slightly greater than 1 to
 catch this, and most clamp or ignore it.
 

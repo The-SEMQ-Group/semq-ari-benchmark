@@ -1,5 +1,7 @@
 # Drift Sensitivity Benchmark — Results
 
+Superseded statements on this page (R1, R7, R8): see [retired claims](../../docs/RETIRED_CLAIMS.md#experiment-pages).
+
 Reference measurements from the 66-cell primary run (BEIR MS MARCO) and the 132-cell
 corpus extension (NFCorpus + SciFact). Machine-readable data in [`results/`](results/).
 
@@ -31,8 +33,8 @@ others. So the ratio either explodes to infinity (recall slope = 0) or collapses
 | intfloat/e5-mistral-7b-instruct | 0.00 | ∞ |
 | openai/text-embedding-3-large | 0.00 | ∞ |
 
-The robust phenomenon is **categorical**: recall is a threshold detector; SEMQ Hamming is a
-continuous instrument. You cannot express that as a finite slope ratio (see Finding 1).
+The robust phenomenon is **categorical**: recall is a threshold detector; the byte disagreement
+rate gives a graded response (it is still a discrete quantity). A finite slope ratio cannot express that (see Finding 1).
 
 ### Why H2's gate fails only on the prefactor (and that failure is a discovery)
 
@@ -118,12 +120,12 @@ corpus:
 > The published fingerprint registry has since been extended to **13 models** on the frozen
 > ARI-Bench (see [`spec/fingerprints-v0.1.csv`](../../spec/fingerprints-v0.1.csv)): `b = 0.979 ±
 > 0.028`, `κ ∈ [1.48, 3.06]`, with 11 of 13 panel models fully fingerprinted and 2 (mpnet, MiniLM)
-> `floor_limited`. The slope stays universal; the κ band only widened as more models were added.
+> `floor_limited`. The slope dispersion criterion still passed; the κ band widened as more models were added.
 
-Publish `(s, b, κ)` once per model and any team can predict expected drift at any σ —
-`E[Hamming](σ) ≈ κ · √(2·dim/π) · σ` — without re-running the sweep. Observed drift above
-that prediction in a deployment is *attributable* to a downstream noise source (mixed
-precision, batched routing, a library bump), giving ARI a quantitative null hypothesis.
+Publishing `(s, b, κ)` once per model gives an approximate expected byte disagreement at a given σ,
+`E[r_byte](σ) ≈ κ · √(2·dim/π) · σ^b`, within the fitted range. This is a fitted
+approximation in byte units with unpropagated uncertainty. Observed drift above the prediction
+does not by itself attribute the drift to a specific downstream source.
 
 ## Caveats
 
