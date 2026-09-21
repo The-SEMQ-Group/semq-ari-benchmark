@@ -78,7 +78,7 @@ class SentenceTransformerAgent:
         self.agent_id = model_id
         self._model_id = model_id
         self._device = device
-        self.revision = revision  # Hub commit to load; None loads the cache's ref
+        self.revision = revision
         self._model = None  # lazy
 
     def _load(self):

@@ -134,7 +134,7 @@ Prerequisites: the `semq` SDK, `python -m pip install -e ".[selfhosted]"`, a git
    `--report` names the existing report for the same agent, inputs, and precision.
    The command re-encodes at the stored scale, adds the `time` cell with its `time_evidence`, recomputes ARI, and writes the merged report to `--out`.
    Without `--report`, it writes `time_cell.json` next to the baseline.
-   The command exits with status 1 when the revision, precision, or SDK version differs from the baseline, or when the gap is 24 hours or less.
+   The command exits with status 1 and writes nothing when the revision, precision, or SDK version differs from the baseline, or when the gap is 24 hours or less.
 
 3. Check the merged report:
 
@@ -143,7 +143,8 @@ Prerequisites: the `semq` SDK, `python -m pip install -e ".[selfhosted]"`, a git
    ```
 
    The output names each missing or invalid field. Exit status 0 is the success check.
-   `python ari/verify_report.py` runs the same check on a signed report.
+   `python ari/verify_report.py` runs the same check on a signed report when the `time` cell carries `time_evidence`.
+   On a cell without the block it prints a warning and passes; add `--require-time-evidence` to fail instead.
 
 Record with the result: the two command lines, the printed timestamps, the gap in hours, the model revision, and the `deviations` list if the output prints one.
 A baseline written before `meta.json` carried timestamps produces a `deviations` entry. Such a cell is not a clean canonical capture.

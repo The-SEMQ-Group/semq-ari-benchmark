@@ -17,9 +17,13 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   block, with a gap of 24 hours or less, with a `gap_hours` that disagrees with
   its timestamps, with a moving ref (`main`, `unknown`) as a revision, or whose
   block differs from the report's own input hash, probe id or precision. Each
-  violation names the field. The standalone verifier runs it on any report that
-  has a `time` cell; `python -m ari.check_evidence <report>` runs schema
-  validation and the same function.
+  violation names the field. `python -m ari.check_evidence <report>` runs schema
+  validation and the same function; it is the conformance gate, so a `time`
+  cell without the block fails unless `--no-require-time-evidence` is passed.
+  The standalone verifier checks a block that is present and fails on a
+  violation; a cell without the block prints a warning and passes, so reports
+  signed before the block existed still verify without re-signing.
+  `--require-time-evidence` turns that warning into a failure.
 - `ari/tools/capture_time_baseline.py` records the block's baseline half in
   `meta.json`, refuses a comparison whose revision, precision or SDK version
   differs from the baseline, builds the `time` cell with `time_evidence`, and

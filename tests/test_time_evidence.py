@@ -4,9 +4,11 @@
 
 The audit found self-hosted captures that called an immediate repeat `time`.
 A schema cannot stop that: the report is well formed either way. These tests
-pin the check that can: a `time` cell without a complete `time_evidence`
-block, or with a gap of 24 hours or less, is rejected, and the rejection names
-the field. A report with no `time` cell is untouched.
+pin the check that can: a `time` cell with an incomplete `time_evidence` block,
+or with a gap of 24 hours or less, is rejected, and the rejection names the
+field. A cell with no block at all predates the block and was not re-signed:
+`ari.check_evidence` rejects it by default, `ari.verify_report` warns and
+passes. A report with no `time` cell is untouched.
 """
 
 from __future__ import annotations
@@ -22,9 +24,10 @@ import pytest
 
 pytest.importorskip("jsonschema")
 
-from ari import run  # noqa: E402
-from ari.check_evidence import (TIME_EVIDENCE_FIELDS, check_report,  # noqa: E402
-                                check_time_condition, schema_violations)
+from ari import metrics, report, run  # noqa: E402
+from ari.check_evidence import check_report, schema_violations  # noqa: E402
+from ari.verify_report import (TIME_EVIDENCE_FIELDS, canonical_json,  # noqa: E402
+                               check_time_condition, verify)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFIER = REPO_ROOT / "ari" / "verify_report.py"
@@ -140,6 +143,14 @@ def test_moving_refs_are_not_revisions(field, moving):
     assert any("immutable revision" in v for v in out), out
 
 
+@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision"])
+def test_provider_internal_is_an_accepted_revision(field):
+    """A hosted API exposes no commit; the spec's placeholder is a valid pin."""
+    rep = _report()
+    rep["results_per_condition"]["time"]["time_evidence"][field] = "provider-internal"
+    assert check_report(rep) == []
+
+
 def test_block_must_describe_this_report():
     rep = _report()
     ev = rep["results_per_condition"]["time"]["time_evidence"]
@@ -163,12 +174,78 @@ def test_legacy_flat_cell_with_evidence_validates():
 
 def test_mock_pipeline_time_cell_without_evidence_is_rejected():
     """The mock panel simulates `time` with noise and no gap. Schema-valid, and
-    exactly the cell the check exists to refuse."""
+    exactly the cell check_evidence exists to refuse by default."""
     rep = run.run_mock_panel()
     assert schema_violations(rep) == []
-    out = check_time_condition(rep)
+    out = check_report(rep)
     assert len(out) == 1 and out[0].startswith(
         "results_per_condition.time.time_evidence: missing"), out
+    assert check_report(rep, require_time_evidence=False) == []
+
+
+def _sign(tmp_path, rep):
+    """Write `rep` with a manifest and an Ed25519 sidecar that verify_report accepts."""
+    import base64
+    import hashlib
+
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    path = tmp_path / "report.json"
+    path.write_text(json.dumps(rep) + "\n")
+    manifest = canonical_json({"report": {"sha256": hashlib.sha256(path.read_bytes()).hexdigest()},
+                               "inputs": []})
+    (tmp_path / "report.attestation.json").write_bytes(manifest)
+    digest = hashlib.sha256(manifest).hexdigest()
+    key = Ed25519PrivateKey.generate()
+    pub = key.public_key().public_bytes(serialization.Encoding.Raw,
+                                        serialization.PublicFormat.Raw)
+    (tmp_path / "report.attestation.notary").write_text(json.dumps({
+        "magic": "NTRY", "snapshot_sha256": digest,
+        "signer_public_key": base64.b64encode(pub).decode(),
+        "signature": base64.b64encode(key.sign(bytes.fromhex(digest))).decode(),
+        "signer_identity": "test@example.com", "created_at": "2026-09-01T12:00:00Z"}))
+    return path
+
+
+def test_verify_report_warns_but_passes_on_a_legacy_time_cell(tmp_path, capsys):
+    """Reports signed before the block existed were not re-signed
+    (spec/condition-set.md). The verifier says so and still passes."""
+    pytest.importorskip("cryptography")
+    rep = _report()
+    del rep["results_per_condition"]["time"]["time_evidence"]
+    path = _sign(tmp_path, rep)
+    assert verify(path) is True
+    out = capsys.readouterr().out
+    assert "[WARN] time cell carries no capture evidence" in out
+    assert "unverified" in out
+    assert verify(path, require_time_evidence=True) is False
+    assert "time_evidence: missing" in capsys.readouterr().out
+
+
+def test_verify_report_fails_a_present_block_that_violates(tmp_path, capsys):
+    pytest.importorskip("cryptography")
+    assert verify(_sign(tmp_path, _report(gap_hours=23.0))) is False
+    assert "gap_hours" in capsys.readouterr().out
+    assert verify(_sign(tmp_path, _report())) is True
+
+
+def test_build_report_ari_is_the_mean_of_the_raw_hers():
+    """core_ari sees the ConditionMetrics, not the 6 dp HER written per cell."""
+    import numpy as np
+
+    hers = {"proc": 0.8512345678, "conc": 0.7623456789, "time": 0.9034567891}
+    by_cond = {c: metrics.ConditionMetrics(HER=h, Hbar=1.0, HER_ci=(h, h), n=3)
+               for c, h in hers.items()}
+    codes = {c: np.zeros((3, 4), dtype=np.uint8) for c in hers}
+    rep = report.build_report(agent_id="a", input_set="s", environment={},
+                              metrics_by_condition=by_cond, codes_by_condition=codes,
+                              fingerprint={"dim": 32})
+    raw_mean = round(sum(hers.values()) / 3, 6)
+    rounded_mean = round(sum(round(h, 6) for h in hers.values()) / 3, 6)
+    assert raw_mean != rounded_mean, "pick HERs where rounding first changes the sixth digit"
+    assert rep["ARI"] == raw_mean
+    assert round(report.core_ari(rep["results_per_condition"]), 6) == rounded_mean
 
 
 def test_report_without_time_cell_still_validates():
@@ -193,6 +270,18 @@ def test_cli_exit_status(tmp_path):
                           capture_output=True, text=True, cwd=REPO_ROOT, env=env)
     assert fail.returncode == 1
     assert "gap_hours" in fail.stdout
+    legacy_report = _report()
+    del legacy_report["results_per_condition"]["time"]["time_evidence"]
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(json.dumps(legacy_report))
+    rejected = subprocess.run([sys.executable, "-m", "ari.check_evidence", str(legacy)],
+                              capture_output=True, text=True, cwd=REPO_ROOT, env=env)
+    assert rejected.returncode == 1 and "time_evidence: missing" in rejected.stdout
+    warned = subprocess.run([sys.executable, "-m", "ari.check_evidence",
+                             "--no-require-time-evidence", str(legacy)],
+                            capture_output=True, text=True, cwd=REPO_ROOT, env=env)
+    assert warned.returncode == 0, warned.stdout + warned.stderr
+    assert "[WARN] time cell carries no capture evidence" in warned.stdout
 
 
 def test_verifier_check_is_standard_library_only():

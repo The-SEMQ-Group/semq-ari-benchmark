@@ -61,10 +61,20 @@ def semq_condition_entry(m: ConditionMetrics, dim: int) -> dict:
     }}}
 
 
-def core_ari(results_per_condition: dict) -> float:
-    """Mean semq HER over the present comparable-core conditions."""
-    present = [her(results_per_condition[c]) for c in CORE_CONDITIONS
-               if c in results_per_condition]
+def _her(value) -> float | None:
+    return value.HER if isinstance(value, ConditionMetrics) else her(value)
+
+
+def core_ari(by_condition: dict) -> float:
+    """Mean semq HER over the present comparable-core conditions.
+
+    Values are ConditionMetrics, whose HER is unrounded, or condition results in
+    the report shape, whose HER is rounded to 6 dp. build_report passes the
+    former; a tool that only has a written report (capture_time_baseline.py
+    merging a `time` cell) passes the latter, and its ARI can differ from the
+    original in the sixth digit.
+    """
+    present = [_her(by_condition[c]) for c in CORE_CONDITIONS if c in by_condition]
     if not present or any(h is None for h in present):
         raise ValueError("no averaged conditions present — cannot compute ARI")
     return float(np.mean(present))
@@ -112,7 +122,7 @@ def build_report(
         "agent_class": agent_class,
         "environment": environment,
         "results_per_condition": results,
-        "ARI": round(core_ari(results), 6),
+        "ARI": round(core_ari(metrics_by_condition), 6),
         "audit_hashes": audit,
     }
     if input_content_hash is not None:

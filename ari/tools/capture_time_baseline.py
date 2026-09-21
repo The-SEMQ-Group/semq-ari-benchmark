@@ -4,35 +4,11 @@
 # This file calls the SEMQ SDK, a separate library that is subject to a
 # commercial license owned by The SEMQ Group Inc. and is patent pending.
 # The SDK is not covered by the Apache License.
-"""The `time` condition in two phases: capture SEMQ codes now, compare after more than
-24 hours (spec/condition-set.md).
+"""Capture the `time` condition baseline now; compare after more than 24 hours.
 
-  # now: encode the frozen inputs, save the baseline codes, scale and capture record
-  python ari/tools/capture_time_baseline.py --mode capture --agent st \\
-      --model sentence-transformers/all-MiniLM-L6-v2 --inputs data/ari-bench-v0.1.jsonl
-  # more than 24 h later, same machine and environment: re-encode at the stored scale
-  python ari/tools/capture_time_baseline.py --mode compare --agent st \\
-      --model sentence-transformers/all-MiniLM-L6-v2 --inputs data/ari-bench-v0.1.jsonl \\
-      --report leaderboard/submissions/<agent>.json --out <merged report>
+  python ari/tools/capture_time_baseline.py --mode capture|compare --agent <api|st> ...
 
-`--agent` is an API name from ari.agents.DEFAULT_API_MODELS or `st` for a local
-sentence-transformers model on CPU with BLAS threads pinned.
-
-The baseline directory (default ~/ari_time_baseline/<slug>/, or --baseline-dir) holds
-codes.npy and meta.json. meta.json records what $defs/timeEvidence in
-spec/report-schema.json needs from the baseline side: the encode start and end (UTC), the
-frozen scale, the input hash, the model and tokenizer revisions, precision, hardware, SDK
-version and harness commit. Compare mode re-encodes, builds the `time` cell with its
-`time_evidence`, runs ari.verify_report.check_time_condition on the result, and, with
---report, merges the cell into an existing report and recomputes ARI.
-
-Baselines written before meta.json carried timestamps hold a single `unix_ts` taken after
-the encode. Compare mode uses it as the baseline end, sets the start equal to it, and
-records that in `deviations`, so the gap is measured from the latest instant the baseline
-could have finished. A cell with deviations is not a clean canonical capture.
-
-Precision is read back from the loaded model and recorded. This tool never changes it:
-the `prec` condition is a separate capture in its own process.
+Procedure, arguments and the success check: ari/README.md, "Capture the time condition".
 """
 from __future__ import annotations
 
@@ -228,28 +204,30 @@ def main(argv=None) -> int:
 
     if args.report:
         rep = json.loads(args.report.read_text())
-        merged = merge_time_cell(rep, cell, digest)
-        report.write_report(args.out, merged)
-        checked, where = merged, args.out
+        payload = checked = merge_time_cell(rep, cell, digest)
+        where = args.out
     else:
-        out = d / "time_cell.json"
-        out.write_text(json.dumps({"results_per_condition": {"time": cell},
-                                   "audit_hashes": {"time": digest}}, indent=2) + "\n")
+        payload = {"results_per_condition": {"time": cell}, "audit_hashes": {"time": digest}}
         checked = {"results_per_condition": {"time": cell},
                    "input_content_hash": inputs.content_hash,
                    "probe_calibration": cell["time_evidence"]["probe_calibration"],
                    "environment": {"precision": current["precision"]}}
-        where = out
+        where = d / "time_cell.json"
 
     ev = cell["time_evidence"]
     print(f"{slug}: time HER = {m.HER:.4f}  95% CI {m.HER_ci}  H̄={m.Hbar:.2f}  "
-          f"(gap {ev['gap_hours']} h, n={len(inputs)})  digest={digest[:12]} -> {where}")
+          f"(gap {ev['gap_hours']} h, n={len(inputs)})  digest={digest[:12]}")
     for dev in ev.get("deviations", []):
         print(f"  deviation: {dev}")
     violations = check_time_condition(checked)
     for v in violations:
         print(f"  [FAIL] {v}")
-    return 1 if violations else 0
+    if violations:
+        print(f"nothing written: {len(violations)} violation(s)")
+        return 1
+    report.write_report(where, payload)
+    print(f"wrote {where}")
+    return 0
 
 
 if __name__ == "__main__":

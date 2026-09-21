@@ -64,6 +64,16 @@ def _parse_utc(value):
     return None
 
 
+def time_cell_without_evidence(report: dict) -> bool:
+    """True when the `time` result is an object that carries no `time_evidence` key.
+
+    Reports signed before the block existed look like this. They were not
+    re-signed, so the verifier warns about them instead of failing.
+    """
+    cell = (report.get("results_per_condition") or {}).get("time")
+    return isinstance(cell, dict) and "time_evidence" not in cell
+
+
 def check_time_condition(report: dict) -> list[str]:
     """Violations in a report's `time` result, each naming the field at fault.
 
@@ -165,8 +175,12 @@ def check(results, name, passed, detail=""):
     return passed
 
 
+def warn(name, detail=""):
+    print(f"  [WARN] {name}" + (f"  {detail}" if detail else ""))
+
+
 def verify(report_path: Path, search_dir: Path | None = None,
-           expect_key: str | None = None) -> bool:
+           expect_key: str | None = None, require_time_evidence: bool = False) -> bool:
     base = report_path.parent
     search_dir = search_dir or base
     stem = report_path.stem
@@ -252,19 +266,25 @@ def verify(report_path: Path, search_dir: Path | None = None,
     except Exception as e:  # noqa: BLE001 - report the reason, do not hide it
         check(results, "Ed25519 signature verifies", False, f"{type(e).__name__}: {e}")
 
-    # 7. A `time` result must carry the evidence for its gap. Reports that are
-    #    not ARI reports (a harness-effect summary, say) have no such cell and
-    #    skip this. The check is stdlib-only and duplicated nowhere else:
+    # 7. A `time` result that carries `time_evidence` must satisfy it. Reports
+    #    that are not ARI reports (a harness-effect summary, say) have no such
+    #    cell and skip this. A cell without the block predates it and was not
+    #    re-signed (spec/condition-set.md), so it warns unless the caller asks
+    #    for the block. The check is stdlib-only and duplicated nowhere else:
     #    ari/check_evidence.py imports it from here.
     try:
         report = json.loads(report_path.read_text())
     except ValueError:
         report = None
     if isinstance(report, dict) and "time" in (report.get("results_per_condition") or {}):
-        violations = check_time_condition(report)
-        check(results, "time result carries its evidence", not violations,
-              "; ".join(violations) if violations else
-              f"gap {report['results_per_condition']['time']['time_evidence']['gap_hours']} h")
+        if time_cell_without_evidence(report) and not require_time_evidence:
+            warn("time cell carries no capture evidence; conformance to the "
+                 ">24 h rule is unverified")
+        else:
+            violations = check_time_condition(report)
+            check(results, "time result carries its evidence", not violations,
+                  "; ".join(violations) if violations else
+                  f"gap {report['results_per_condition']['time']['time_evidence']['gap_hours']} h")
 
     # 8. Timestamp, if the signer asked for one.
     if sidecar.get("tsa_token"):
@@ -297,8 +317,13 @@ def main() -> int:
     ap.add_argument("--expect-key", default=None,
                     help="base64 Ed25519 public key you already trust; "
                          "without it, any key that signs consistently passes")
+    ap.add_argument("--require-time-evidence", action="store_true",
+                    help="fail a time result that carries no time_evidence block "
+                         "(default: warn, since reports signed before the block "
+                         "existed were not re-signed)")
     args = ap.parse_args()
-    return 0 if verify(args.report, args.inputs_dir, args.expect_key) else 1
+    return 0 if verify(args.report, args.inputs_dir, args.expect_key,
+                       args.require_time_evidence) else 1
 
 
 if __name__ == "__main__":
