@@ -6,6 +6,14 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### SciFact codes committed beside the results
+- `experiments/regime-discrimination/results/codes/` holds the packed QUANT
+  codes for the reference and the six CPU conditions, with the calibration
+  scale, bit layout and file hashes in `MANIFEST.json`. `export_codes.py`
+  writes them (SDK required) and `--check` recomputes HER from them with
+  `ari.code_metrics` alone, so the code-level rows can be verified without
+  the SDK. Verified equal to the committed table on every condition.
+
 ### The mock probe is gone
 - `ari/probe.py` binds to the SDK only. The development stand-in quantizer is
   removed: its magnitude edge and byte layout differed from the canonical
@@ -15,12 +23,14 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   the SDK. The `--probe-backend` flag is gone from `ari.run`, `run_report`,
   `selfhosted_pilot` and `proc_pilot`, and `proc_pilot` no longer falls back
   to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
+  
 ### CI says when the probe was not tested
 - A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
   install the SDK; with it set, the job installs `semq`, runs the suite and
   fails if any test still skips for want of it. The public `pytest` job
   prints how many SDK-gated modules skipped. A green check no longer looks
   the same whether or not the probe ran (SEM-52).
+  
 ### The leaderboard refresh has no mock mode
 - `refresh_leaderboard.py --mock` is removed, with its fake agent and its
   numpy stand-in quantizer. The stand-in rounded to 256 uniform levels and
