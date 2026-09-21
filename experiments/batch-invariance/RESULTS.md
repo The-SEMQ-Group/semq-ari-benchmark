@@ -29,8 +29,9 @@ changes nothing here.
 ## Same-batch control
 
 Every cell captures batch 32 twice, in separate processes, and compares the two. **All 21
-cells read 1.0000.** Capture-to-capture variation at a fixed batch is zero on this hardware,
-so every reading below 1.0000 in the tables above and below is a batch effect and not noise.
+cells read 1.0000.** No capture-to-capture variation at a fixed batch was observed in these 21
+controls, which supports reading lower values as batch-associated differences. A finite repeat
+control does not exclude all capture variation.
 
 The whole table also reproduces the earlier seven-encoder run value for value, on a different
 instance of the same type.
@@ -76,8 +77,8 @@ but not universally.
 Batch sensitivity is real, and it is concentrated at batch 1. Every model except arctic reads
 1.0000 from batch 8 upward in cells A and B, and the two-encoder boundary sweep shows the
 effect gone by batch 4. A batch of one is a matrix-vector product, so cuBLAS selects a
-different kernel for that shape and the partial sums combine in a different order. Batch size
-selects a kernel rather than acting as a source of variation itself.
+different kernel for that shape and the partial sums combine in a different order. The results are
+consistent with per-shape kernel selection; no kernel trace was recorded, so attribution needs profiling.
 
 The deterministic flag is inert. Cells A and B agree bit for bit on all seven models, which
 repeats the GPU determinism result where the same setting also did not help.
@@ -100,7 +101,9 @@ and this run does not identify it.
 ## Scope
 
 Seven encoders, one GPU architecture, one process per capture. Each cell carries a same-batch
-control, and the table reproduced value for value across two instances. Cells are
+control, and the table reproduced value for value across two instances. An earlier two-encoder run
+read 1.0000 in cells A and B and was reported as clean batch invariance; both encoders are among
+the three invariant ones, and this seven-encoder table supersedes that report (Linear SEM-29). Cells are
 never compared across rows, since they differ in more than batch size. The `mach` comparison
 against the earlier A10G captures is still open, but the code matrices from this run are
 retained in S3, so it does not need a repeat.

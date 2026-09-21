@@ -1,9 +1,14 @@
 # Drift Sensitivity Benchmark
 
+> **Superseded (2026-09-16 audit).** The response measured here is the fraction of packed code
+> *bytes* that differ, not a bit or coordinate rate. The fitted power law is an empirical
+> approximation within the fit window, not an exact law, and the quantizer is discrete. See the
+> [repository audit](../../docs/REPOSITORY_AUDIT.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+
 The reference experiment behind ARI. It characterises how an embedding model's SEMQ code
-responds to a controlled perturbation of magnitude **σ**, and shows that the response is a
-clean, universal power law — the property that makes SEMQ usable as a reproducibility
-instrument.
+responds to a controlled perturbation of magnitude **σ**, and fits the response with a power law
+whose slope was close to one for every tested model. The fit is an approximation within the fit
+window; see the superseded note above.
 
 - **Protocol:** this document.
 - **Results:** [`RESULTS.md`](RESULTS.md).
@@ -17,7 +22,7 @@ For each `(model, σ)` pair, on a fixed corpus:
    [`../../spec/ari-canonical-v0.1.md`](../../spec/ari-canonical-v0.1.md)).
 2. Add isotropic Gaussian noise of magnitude σ to every embedding.
 3. Re-encode the noisy embeddings to SEMQ codes.
-4. Record the **mean Hamming distance** between clean and noisy codes.
+4. Record the **mean packed-byte disagreement** between clean and noisy codes (named `hamming` in the data files).
 5. Compute **Recall@10** of the noisy retrieval against the clean ranking (the baseline
    instrument, for contrast).
 
@@ -66,7 +71,7 @@ def drift_sensitivity(model_id, passages, seed=0):
     for sigma in SIGMAS:
         noisy = X + rng.normal(0.0, sigma * mean_norm, size=X.shape)
         codes = probe.encode(noisy)
-        hamming = (codes != clean).mean()                         # fraction of bits flipped
+        hamming = (codes != clean).mean()                         # fraction of packed bytes that differ
         rows.append((sigma, hamming))
 
     # fit Hamming = a * sigma^b on the linear-regime window
@@ -79,8 +84,8 @@ def drift_sensitivity(model_id, passages, seed=0):
 ```
 
 The Recall@10 contrast (step 5) re-ranks the noisy corpus against the clean top-K and
-reports the intersection — see `RESULTS.md` for why it is a *threshold detector* and SEMQ
-Hamming is a *continuous instrument*.
+reports the intersection — see `RESULTS.md` for why it is a *threshold detector* while the
+byte disagreement rate gives a graded response. Both are discrete quantities.
 
 ### Reproducibility requirements
 

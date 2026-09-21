@@ -11,7 +11,8 @@ These measurements are distinct from the hosted-output ARI-D specification.
 
 ## Results
 
-Early warning is the fraction of all steps with an unchanged token and changed code. Margin is the top-2 reference-logit gap.
+Early warning is the fraction of all steps with an unchanged token and changed code. It is contemporaneous disagreement, not a validated predictor of later failure. Margin is the top-2 reference-logit gap.
+`SEMQ H̄` in this table is the legacy packed-byte disagreement fraction (`semq_hbar`), not a bit count or coordinate rate; see the [repository audit](../../docs/REPOSITORY_AUDIT.md).
 
 | condition | axis | token agree | SEMQ HER | SEMQ H̄ | early warning | median margin, flipped | median margin, survived | free exact | 1st divergence |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |

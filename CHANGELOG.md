@@ -6,6 +6,16 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Release pass (SEM-82)
+- `docs/release_manifest.py` writes and checks `docs/release_manifest.json`: source
+  revision, Python environment, and SHA-256 of `spec/`, `data/`, `experiments/*/results/`
+  and the paper PDFs. `docs/RELEASE.md` is the release checklist and records the venue
+  requirements checked on 2026-09-16.
+- `docs/RETIRED_CLAIMS.md` indexes statements superseded by the 2026-09-16 repository
+  audit and the correction or `Superseded` note applied at each location in the decks,
+  experiment pages and secondary prose. `docs/paper/CLAIM_TO_EVIDENCE.md` maps each
+  numeric claim in the paper draft to its result file.
+- Deck source opens each deck with a superseded-statements slide; decks regenerated.
 ### SciFact codes committed beside the results
 - `experiments/regime-discrimination/results/codes/` holds the packed QUANT
   codes for the reference and the six CPU conditions, with the calibration

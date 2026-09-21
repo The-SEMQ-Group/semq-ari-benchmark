@@ -1,5 +1,11 @@
 # Harness-effect results
 
+> **Historical result; superseded (2026-09-16 audit).** The numbers below were produced by an
+> earlier estimator, and the sampled trajectory export in `results/` cannot reconstruct the full
+> analysis. The paper withholds these contrasts and intervals pending a rerun against a pinned
+> dataset revision with the current estimator in `ari/harness.py`. Do not quote them as current
+> results. See the [repository audit](../../docs/REPOSITORY_AUDIT.md) and the [retired-claims index](../../docs/RETIRED_CLAIMS.md).
+
 This experiment compares SWE-agent and OpenHands on two models in the Open-SWE-Traces dataset.
 Data: [harness_effect.json](results/harness_effect.json). Implementation: [run.py](run.py).
 

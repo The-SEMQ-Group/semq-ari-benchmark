@@ -11,7 +11,7 @@ Per-cell drift response — 66 rows (6 models × 11 σ) on BEIR MS MARCO.
 | `model_id` | Hugging Face / provider model id |
 | `dataset_id` | evaluation corpus |
 | `sigma` | Gaussian perturbation magnitude |
-| `hamming_mean` | mean fraction of SEMQ code bits flipped (clean vs noisy) |
+| `hamming_mean` | mean fraction of packed SEMQ code bytes that differ (clean vs noisy). This is a byte rate, not a bit or coordinate rate; see the [repository audit](../../../docs/REPOSITORY_AUDIT.md) |
 | `hamming_ci_low` / `hamming_ci_high` | 95% CI on the Hamming mean |
 | `recall_at_10_mean` | Recall@10 of noisy retrieval vs clean top-10 |
 | `recall_at_10_ci_low` / `recall_at_10_ci_high` | 95% bootstrap CI (1,000 resamples) |
