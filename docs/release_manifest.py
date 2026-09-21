@@ -94,6 +94,11 @@ def build_manifest() -> dict:
 
 
 def check(manifest_path: Path) -> list[str]:
+    if not manifest_path.is_file():
+        # The manifest is written at release time, not committed, so absence is
+        # the repository's normal state rather than an error in the tree.
+        return [f"no manifest at {manifest_path}; write one first with "
+                f"`python docs/release_manifest.py --out {manifest_path}`"]
     recorded = json.loads(manifest_path.read_text())["files"]
     current = hashed_files()
     problems = [f"changed: {p}" for p in recorded if p in current and current[p] != recorded[p]]
