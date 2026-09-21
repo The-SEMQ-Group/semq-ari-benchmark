@@ -6,6 +6,13 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Paper revision
+- The paper leads with the measurement protocol, adds Figures 2 and 3 (hosted
+  decoding panel, batch invariance) with the scripts that draw them, and
+  states in its reproducibility section that computing a code requires the
+  SDK, which is commercially licensed, and what can be regenerated without it.
+  Figure 1 reads the trajectory curves from the archived L3_09 bundle, which
+  is fetched from the research archive and hash-checked, not committed.
 ### SciFact codes committed beside the results
 - `experiments/regime-discrimination/results/codes/` holds the packed QUANT
   codes for the reference and the six CPU conditions, with the calibration
