@@ -206,13 +206,25 @@ def test_a_kms_signed_sidecar_verifies(tmp_path, fake):
                            expect_key=signer.public_key_b64())
 
 
-def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake):
+def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake, monkeypatch):
     """Custody changes; the signed bytes do not."""
     pytest.importorskip("semq")
     import sys
+    from datetime import datetime, timezone
 
     sys.path.insert(0, str(REPO_ROOT))
+    import ari.attest as attest_mod
     from ari.attest import attest
+
+    # The manifest records created_at to the second. Two signings that
+    # straddle a second boundary would differ for that reason alone, which
+    # is not what this test is about; pin the clock.
+    class _FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 9, 21, 12, 0, 0, tzinfo=tz or timezone.utc)
+
+    monkeypatch.setattr(attest_mod, "datetime", _FrozenDatetime)
 
     data = REPO_ROOT / "data" / "ari-bench-v0.1.jsonl"
 
