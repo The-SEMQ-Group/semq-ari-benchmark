@@ -25,6 +25,7 @@ Beside the four contrasts this writes two checks:
 
 Usage, from the repository root:
 
+    python experiments/harness-effect/fetch_outcomes.py --revision <commit>
     python experiments/harness-effect/run.py [--outcomes results/outcomes.<rev>.csv.gz]
 """
 
@@ -74,6 +75,11 @@ def sha256_file(path: Path) -> str:
 def load_outcomes(csv_path: Path, manifest_path: Path):
     """Outcome rows for each (harness, model) cell, checked against the manifest."""
     manifest = json.loads(manifest_path.read_text())
+    if not csv_path.is_file():
+        raise SystemExit(
+            f"{csv_path.name} is not in the tree; it is fetched, not committed. Run:\n"
+            f"  python experiments/harness-effect/fetch_outcomes.py "
+            f"--revision {manifest['revision']}")
     digest = sha256_file(csv_path)
     if digest != manifest["output"]["sha256"]:
         raise SystemExit(f"{csv_path.name} does not match its manifest: "

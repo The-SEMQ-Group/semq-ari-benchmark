@@ -136,7 +136,7 @@ The table rows are generated to [arie_table.tex](../experiments/harness-effect/r
 | Files | `data/{sweagent,openhands}/{qwen35_122b,minimax_m25}/swe-rebench-v2/*.parquet`, 63 files |
 | Columns read | `instance_id`, `trajectory_id`, `resolved` |
 | Rows | 151,219, of which 35,336 are ungraded |
-| Retained outcome table | [outcomes.f967cba33125.csv.gz](../experiments/harness-effect/results/outcomes.f967cba33125.csv.gz) with its [manifest](../experiments/harness-effect/results/outcomes.f967cba33125.manifest.json) |
+| Outcome table | `outcomes.f967cba33125.csv.gz`, written by `fetch_outcomes.py` and verified against its committed [manifest](../experiments/harness-effect/results/outcomes.f967cba33125.manifest.json) |
 | License | CC BY 4.0 |
 
 The mapping to this specification is: `instance_id` is the case, `trajectory_id` is the run, `resolved = 1` is a pass, `resolved = 0` is a fail, `resolved = -1` is ungraded.

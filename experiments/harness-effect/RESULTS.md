@@ -12,7 +12,8 @@ Implementation: [fetch_outcomes.py](fetch_outcomes.py) and [run.py](run.py).
 
 The dataset, the revision `f967cba3312573981a47fd7a7b80029b53909b5f`, the files, the columns, and the outcome table are in [ARI-E-Bench v0.1, section 5](../../spec/ari-e-bench-v0.1.md#5-frozen-dataset-reference).
 At that revision the four cells hold 63 Parquet files (13.0 GB). The fetch read 16.7 MB of footers and column chunks.
-Outcome table: [outcomes.f967cba33125.csv.gz](results/outcomes.f967cba33125.csv.gz), 151,219 rows, SHA-256 in its [manifest](results/outcomes.f967cba33125.manifest.json).
+The outcome table is not committed. `python experiments/harness-effect/fetch_outcomes.py --revision f967cba3312573981a47fd7a7b80029b53909b5f` writes
+`results/outcomes.f967cba33125.csv.gz`, 151,219 rows, 4,324,658 bytes, SHA-256 `e8b1d239a22f5fa8...`. The full digest and the per-file digests are in its [manifest](results/outcomes.f967cba33125.manifest.json), which `run.py` checks before it scores.
 Eligibility follows [section 1.3](../../spec/ari-e-bench-v0.1.md#13-eligibility). The dataset has at most three rollouts per cell.
 
 | cell | rows | ungraded | graded |
@@ -100,8 +101,9 @@ The simulated false-positive rate at zero gap is in the [power simulation](../ha
 
 The archived output of 2026-08-07 was computed at revision `ad4805a5aa7de70d99cab0bb8f99b15304c76de0` (2026-08-03), the revision current on that date.
 The same three columns were read at that revision (84 files, 18.3 GB in the cells, 22.6 MB read). The current estimator was run on them.
-The outcome table is not retained. Its [manifest](results/outcomes.ad4805a5aa7d.manifest.json) is, and `python experiments/harness-effect/fetch_outcomes.py --revision ad4805a5aa7de70d99cab0bb8f99b15304c76de0` regenerates the table to that digest.
-Result: [harness_effect.ad4805a5aa7d.json](results/harness_effect.ad4805a5aa7d.json). The eligible case counts equal the archived counts exactly.
+Neither the table nor the result of that run is committed. `python experiments/harness-effect/fetch_outcomes.py --revision ad4805a5aa7de70d99cab0bb8f99b15304c76de0`
+writes a table of 207,489 rows, 5,881,882 bytes, SHA-256 `4148ba9c11a7e273...`, from 84 files and 22.6 MB of reads. `run.py --outcomes` on that table
+reproduces the rerun column below. The eligible case counts equal the archived counts exactly.
 
 | contrast | archived self | rerun self | archived cross | rerun cross | archived effect | rerun effect | archived CI | rerun CI |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | :--- | :--- |
@@ -140,8 +142,10 @@ The paper table must cite one revision. The rows for the pinned revision are in 
 
 ## Superseded output of 2026-08-07
 
-The files are in [results/superseded-2026-08-07/](results/superseded-2026-08-07/). The signed attestation there still verifies against its own inputs.
-The numbers are kept for the record. They do not describe the current estimator or the pinned revision.
+The files are not in the working tree. They are in git history at tag `v0.1-preview`, under `experiments/harness-effect/results/` and
+`experiments/harness-power/results/`; `git show v0.1-preview:experiments/harness-effect/results/harness_effect.json` reads one.
+The signed attestation there still verifies against its own inputs. The numbers below are kept for the record.
+They do not describe the current estimator or the pinned revision.
 
 | contrast | cases | self-consistency | cross agreement | ARI-E effect | 95% CI |
 | --- | ---: | ---: | ---: | ---: | :--- |

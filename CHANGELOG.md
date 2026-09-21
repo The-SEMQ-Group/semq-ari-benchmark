@@ -14,9 +14,10 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 - `experiments/harness-effect/fetch_outcomes.py` reads only the three outcome
   columns from the Parquet files at a pinned revision and writes a manifest.
   `run.py` reads that table offline, checks its digest, and adds a permutation
-  null, repeat-shape coverage and a split-half check. The 2026-08-07 output
-  moved to `results/superseded-2026-08-07/`; the paper rows are regenerated to
-  `results/arie_table.tex`.
+  null, repeat-shape coverage and a split-half check. The paper rows are
+  regenerated to `results/arie_table.tex`. The outcome table is fetched rather
+  than committed, and the 2026-08-07 output stays in git history at tag
+  `v0.1-preview` rather than in the tree.
 - `experiments/harness-power/power.py` covers unequal repeats (2/3, 2/5) and
   records the estimator file digest.
 ### SciFact codes committed beside the results

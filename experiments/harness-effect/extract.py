@@ -3,8 +3,10 @@
 """Pull ARI-E trajectories out of nvidia/Open-SWE-Traces.
 
 Retained for the superseded analysis of 2026-08-07 only. It reads the dataset
-layout used before 2026-08-21; the current estimator reads the outcome table
-written by fetch_outcomes.py.
+layout that upstream replaced on 2026-08-21, so it cannot run against the
+current dataset. The current estimator reads the outcome table written by
+fetch_outcomes.py. Its output, trajectories.jsonl, is in git history at tag
+v0.1-preview under experiments/harness-effect/results/; pass one with --input.
 
 That dataset is a crossed design and it is the reason this experiment can run
 at all. Two agent scaffolds, SWE-agent and OpenHands, were each run with two
@@ -73,7 +75,7 @@ def main() -> None:
     ap.add_argument("--max-rows", type=int, default=12000,
                     help="rows per harness/model cell, 0 for all")
     ap.add_argument("--out", type=Path,
-                    default=RESULTS / "superseded-2026-08-07" / "trajectories.jsonl")
+                    required=True)
     args = ap.parse_args()
 
     from datasets import load_dataset

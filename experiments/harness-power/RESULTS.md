@@ -1,7 +1,7 @@
 # Harness-effect power simulation
 
 **Status: rerun on 2026-09-16 with the current estimator in [ari/harness.py](../../ari/harness.py).**
-The result file records the SHA-256 of that estimator file. The output of 2026-08-07 is kept in [results/superseded-2026-08-07/](results/superseded-2026-08-07/) with its attestation.
+The result file records the SHA-256 of that estimator file. The output of 2026-08-07 and its attestation are in git history at tag `v0.1-preview`, under `experiments/harness-power/results/`.
 
 The simulation measures how often the ARI-E interval excludes zero when an effect is present.
 It uses 200 simulated experiments per cell, a baseline pass probability of 0.75, 400 bootstrap resamples, and seed 0.
