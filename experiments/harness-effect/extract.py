@@ -2,6 +2,10 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 """Pull ARI-E trajectories out of nvidia/Open-SWE-Traces.
 
+Retained for the superseded analysis of 2026-08-07 only. It reads the dataset
+layout used before 2026-08-21; the current estimator reads the outcome table
+written by fetch_outcomes.py.
+
 That dataset is a crossed design and it is the reason this experiment can run
 at all. Two agent scaffolds, SWE-agent and OpenHands, were each run with two
 models, Minimax-M2.5 and Qwen3.5-122B, over about 20,000 SWE-bench-style
@@ -68,7 +72,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-rows", type=int, default=12000,
                     help="rows per harness/model cell, 0 for all")
-    ap.add_argument("--out", type=Path, default=RESULTS / "trajectories.jsonl")
+    ap.add_argument("--out", type=Path,
+                    default=RESULTS / "superseded-2026-08-07" / "trajectories.jsonl")
     args = ap.parse_args()
 
     from datasets import load_dataset

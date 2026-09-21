@@ -344,8 +344,7 @@
         "min": -0.007556378818617511,
         "max": 0.0065861044956043585,
         "intervals_excluding_zero": 1
-      },
-      "report": "ARI-E \u2014 harness reproducibility\n\nSelf-consistency (the control: does one harness repeat itself?)\n  openhands        outcome 0.865 [0.855, 0.873]   trajectory 1.000   n=3779\n  sweagent         outcome 0.879 [0.870, 0.888]   trajectory 1.000   n=3779\n\nCross-harness agreement\n  openhands vs sweagent    outcome 0.774 [0.764, 0.784]   trajectory 1.000   diverges at step 0.0\n\nHarness effect = mean self-consistency - cross agreement\n  openhands vs sweagent    +0.098  [+0.088, +0.107]  detected\n\n  0 means the harnesses are interchangeable on these cases.\n  Large means the scaffold decided the answer, not the model."
+      }
     },
     {
       "title": "scaffold effect, model=minimax_m25",
@@ -657,8 +656,7 @@
         "min": -0.004949463373971036,
         "max": 0.0034675187848054335,
         "intervals_excluding_zero": 4
-      },
-      "report": "ARI-E \u2014 harness reproducibility\n\nSelf-consistency (the control: does one harness repeat itself?)\n  openhands        outcome 0.907 [0.902, 0.912]   trajectory 1.000   n=9597\n  sweagent         outcome 0.898 [0.892, 0.903]   trajectory 1.000   n=9597\n\nCross-harness agreement\n  openhands vs sweagent    outcome 0.850 [0.845, 0.856]   trajectory 1.000   diverges at step 0.0\n\nHarness effect = mean self-consistency - cross agreement\n  openhands vs sweagent    +0.052  [+0.047, +0.057]  detected\n\n  0 means the harnesses are interchangeable on these cases.\n  Large means the scaffold decided the answer, not the model."
+      }
     },
     {
       "title": "model effect, scaffold=sweagent",
@@ -970,8 +968,7 @@
         "min": -0.006356281987782733,
         "max": 0.004485168675361838,
         "intervals_excluding_zero": 1
-      },
-      "report": "ARI-E \u2014 harness reproducibility\n\nSelf-consistency (the control: does one harness repeat itself?)\n  minimax_m25      outcome 0.888 [0.880, 0.896]   trajectory 1.000   n=4038\n  qwen35_122b      outcome 0.885 [0.876, 0.894]   trajectory 1.000   n=4038\n\nCross-harness agreement\n  minimax_m25 vs qwen35_122b outcome 0.847 [0.839, 0.856]   trajectory 1.000   diverges at step 0.0\n\nHarness effect = mean self-consistency - cross agreement\n  minimax_m25 vs qwen35_122b +0.039  [+0.032, +0.045]  detected\n\n  0 means the harnesses are interchangeable on these cases.\n  Large means the scaffold decided the answer, not the model."
+      }
     },
     {
       "title": "model effect, scaffold=openhands",
@@ -1283,8 +1280,7 @@
         "min": -0.004273504273504277,
         "max": 0.003149254337843874,
         "intervals_excluding_zero": 4
-      },
-      "report": "ARI-E \u2014 harness reproducibility\n\nSelf-consistency (the control: does one harness repeat itself?)\n  minimax_m25      outcome 0.906 [0.900, 0.911]   trajectory 1.000   n=8203\n  qwen35_122b      outcome 0.874 [0.868, 0.880]   trajectory 1.000   n=8203\n\nCross-harness agreement\n  minimax_m25 vs qwen35_122b outcome 0.823 [0.817, 0.830]   trajectory 1.000   diverges at step 0.0\n\nHarness effect = mean self-consistency - cross agreement\n  minimax_m25 vs qwen35_122b +0.067  [+0.061, +0.072]  detected\n\n  0 means the harnesses are interchangeable on these cases.\n  Large means the scaffold decided the answer, not the model."
+      }
     }
   ],
   "split_half": [

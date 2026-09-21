@@ -45,10 +45,10 @@ The full grid is in `power.json`.
 
 ## Interpretation
 
-At 25 cases and two repeats, the design detected a 0.20 gap in 6.5 percent of trials, which is the false-positive rate.
+At 25 cases and two repeats, the design detected a 0.20 gap in 6.5 percent of trials. That is at the false-positive level, 8.0 percent in that cell at zero gap.
 At 200 cases and five repeats, power reached 0.95 for that gap.
 For a 0.10 gap, the maximum measured power was 0.18. A 0.05 gap is not detectable in this grid.
-Adding a third repeat on one side (2/3) raises power over 2/2 at every case count; a fifth repeat on one side (2/5) helps less than a third repeat on both sides (3/3).
+At a 0.20 gap, a third repeat on one side (2/3) raises power over 2/2 at every case count. At 200 cases, a fifth repeat on one side (2/5) helps less than a third repeat on both sides (3/3).
 These results do not support small-effect claims from a small case set.
 
 The [Open-SWE-Traces analysis](../harness-effect/RESULTS.md) uses 3,779 to 12,195 cases with two or three repeats per side, outside this grid.

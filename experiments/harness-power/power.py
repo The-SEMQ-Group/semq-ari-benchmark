@@ -1,16 +1,10 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
-#
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
 """How many cases and repeats does ARI-E need before it can find anything?
 
-The ARI-E metric is built and tested, but no agent run has fed it yet. Before
-spending a day of compute on one, it is worth knowing what such a run could
-detect. A first smoke report on 25 cases put the interval on cross-harness
-agreement at [0.44, 0.80], which is wide enough that the design might not be
-able to answer its own question.
+The ARI-E estimator in ari/harness.py is applied to the Open-SWE-Traces
+contrasts in experiments/harness-effect. This simulation says what case and
+repeat counts a run needs before its interval can exclude zero at a given gap.
 
 This simulates runs with a known harness effect and asks how often the metric
 recovers it. Nothing here is a result about any real harness. It is a property

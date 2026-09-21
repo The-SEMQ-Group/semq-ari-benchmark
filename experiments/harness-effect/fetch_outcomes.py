@@ -37,8 +37,6 @@ HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 sys.path.insert(0, str(HERE.parents[1]))
 
-from ari.hub import is_pinned  # noqa: E402
-
 DATASET = "nvidia/Open-SWE-Traces"
 COLUMNS = ("instance_id", "trajectory_id", "resolved")
 HARNESSES = ("sweagent", "openhands")
@@ -91,7 +89,7 @@ def main() -> None:
     ap.add_argument("--out-dir", type=Path, default=RESULTS)
     args = ap.parse_args()
 
-    if not is_pinned(args.revision) or not re.fullmatch(r"[0-9a-f]{40}", args.revision):
+    if not re.fullmatch(r"[0-9a-f]{40}", args.revision):
         sys.exit("--revision must be a 40-character commit hash")
 
     import pyarrow

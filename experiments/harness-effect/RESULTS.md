@@ -10,17 +10,10 @@ Implementation: [fetch_outcomes.py](fetch_outcomes.py) and [run.py](run.py).
 
 ## Input
 
-| Field | Value |
-| --- | --- |
-| Dataset | [nvidia/Open-SWE-Traces](https://huggingface.co/datasets/nvidia/Open-SWE-Traces) |
-| Revision | `f967cba3312573981a47fd7a7b80029b53909b5f` (2026-09-15) |
-| Cells | `data/{sweagent,openhands}/{qwen35_122b,minimax_m25}/swe-rebench-v2/`, 63 Parquet files, 13.0 GB |
-| Columns read | `instance_id`, `trajectory_id`, `resolved` |
-| Bytes read | 16.7 MB (footers and three column chunks; no file was downloaded whole) |
-| Outcome table | [outcomes.f967cba33125.csv.gz](results/outcomes.f967cba33125.csv.gz), 151,219 rows, SHA-256 in its [manifest](results/outcomes.f967cba33125.manifest.json) |
-
-The analysis uses `resolved == 1` as a pass and `resolved == 0` as a fail. Rows with `resolved == -1` are ungraded and dropped.
-A case is eligible for a contrast when both sides have at least two graded rollouts. The dataset has at most three rollouts per cell.
+The dataset, the revision `f967cba3312573981a47fd7a7b80029b53909b5f`, the files, the columns, and the outcome table are in [ARI-E-Bench v0.1, section 5](../../spec/ari-e-bench-v0.1.md#5-frozen-dataset-reference).
+At that revision the four cells hold 63 Parquet files (13.0 GB). The fetch read 16.7 MB of footers and column chunks.
+Outcome table: [outcomes.f967cba33125.csv.gz](results/outcomes.f967cba33125.csv.gz), 151,219 rows, SHA-256 in its [manifest](results/outcomes.f967cba33125.manifest.json).
+Eligibility follows [section 1.3](../../spec/ari-e-bench-v0.1.md#13-eligibility). The dataset has at most three rollouts per cell.
 
 | cell | rows | ungraded | graded |
 | --- | ---: | ---: | ---: |
@@ -84,8 +77,8 @@ The equal-repeat effects lie inside the full-set intervals. Unequal counts do no
 
 ## Calibration checks
 
-Permutation null. For each contrast, the condition labels of the rollouts of each case were shuffled 50 times, keeping the per-side counts, and the effect was recomputed with 1,000 resamples.
-Under exchangeability the expected effect is zero, and about 5 percent of the null intervals should exclude zero.
+Permutation null, as in [section 7](../../spec/ari-e-bench-v0.1.md#7-calibration-checks): 50 permutations per contrast, each recomputed with 1,000 resamples.
+About 5 percent of the null intervals should exclude zero.
 
 | contrast | cases | null mean | null SD | null min | null max | intervals excluding zero |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -94,8 +87,8 @@ Under exchangeability the expected effect is zero, and about 5 percent of the nu
 | model, scaffold = SWE-agent | 4,038 | -0.0003 | 0.0021 | -0.0064 | +0.0045 | 1 of 50 |
 | model, scaffold = OpenHands | 8,203 | -0.0005 | 0.0018 | -0.0043 | +0.0031 | 4 of 50 |
 
-The null means lie within 0.0005 of zero. In total 10 of 200 null intervals exclude zero, which is 5.0 percent.
-The null standard deviations match the bootstrap half-widths divided by 1.96 to within 0.001.
+The null means lie within 0.0006 of zero. In total 10 of 200 null intervals exclude zero, which is 5.0 percent.
+The null standard deviations match the null intervals' half-widths divided by 1.96 to within 0.001.
 Every measured effect is more than 12 null standard deviations from zero.
 On the archived revision the same check gives 10 of 200 exclusions and null means within 0.0003 of zero.
 
@@ -106,7 +99,8 @@ The simulated false-positive rate at zero gap is in the [power simulation](../ha
 ## Same data, current estimator
 
 The archived output of 2026-08-07 was computed at revision `ad4805a5aa7de70d99cab0bb8f99b15304c76de0` (2026-08-03), the revision current on that date.
-The same three columns were read at that revision (84 files, 18.3 GB in the cells, 22.6 MB read) into [outcomes.ad4805a5aa7d.csv.gz](results/outcomes.ad4805a5aa7d.csv.gz), and the current estimator was run on them.
+The same three columns were read at that revision (84 files, 18.3 GB in the cells, 22.6 MB read). The current estimator was run on them.
+The outcome table is not retained. Its [manifest](results/outcomes.ad4805a5aa7d.manifest.json) is, and `python experiments/harness-effect/fetch_outcomes.py --revision ad4805a5aa7de70d99cab0bb8f99b15304c76de0` regenerates the table to that digest.
 Result: [harness_effect.ad4805a5aa7d.json](results/harness_effect.ad4805a5aa7d.json). The eligible case counts equal the archived counts exactly.
 
 | contrast | archived self | rerun self | archived cross | rerun cross | archived effect | rerun effect | archived CI | rerun CI |
@@ -130,7 +124,7 @@ At the pinned revision the mean scaffold effect is +0.075 and the mean model eff
 The scaffold effect for Qwen3.5-122B (+0.098) is larger than for Minimax-M2.5 (+0.052). The effect depends on the model-scaffold pair.
 The adjustment removed 57 to 74 percent of the unadjusted disagreement.
 
-The effect is an agreement gap on the eligible cases. Under independent Bernoulli outcomes its population value is the mean squared pass-probability difference, $(p_A - p_B)^2$.
+The effect is an agreement gap on the eligible cases. Its population value under independent Bernoulli outcomes is in [section 6.1](../../spec/ari-e-bench-v0.1.md#61-population-value).
 It does not identify a cause and does not say which condition is better.
 
 About 23 percent of rows were ungraded and excluded. If grading failure depends on task difficulty, the eligible set is easier than the full set.
@@ -138,29 +132,10 @@ The upstream removal of trajectories with git-hacking behavior was a selection o
 The dataset was not collected as a controlled experiment. Independence between rollouts is not established.
 Tool names differ between harnesses, so this report compares outcomes and not action sequences.
 
-## Claim-to-evidence table for the paper appendix
+## Archived numbers
 
-The paper appendix (`app:arie`, `tab:arie`) carries the archived numbers. Each is compared with the rerun on the same data (estimator change only) and with the pinned revision (estimator and data).
-
-| paper value | archived | same data, current estimator | pinned revision | status |
-| --- | --- | --- | --- | --- |
-| Qwen3.5-122B scaffold: cases | 10,788 | 10,788 | 3,779 | reproduced on the archived revision; changed at the pin |
-| Qwen3.5-122B scaffold: self / cross | 0.874 / 0.785 | 0.873 / 0.785 | 0.872 / 0.774 | changed by 0.001 (estimator); changed at the pin |
-| Qwen3.5-122B scaffold: effect, CI | +0.089 [+0.083, +0.094] | +0.088 [+0.083, +0.093] | +0.098 [+0.088, +0.107] | changed |
-| Minimax-M2.5 scaffold: cases | 12,195 | 12,195 | 9,597 | reproduced on the archived revision; changed at the pin |
-| Minimax-M2.5 scaffold: self / cross | 0.899 / 0.849 | 0.897 / 0.848 | 0.902 / 0.850 | changed by 0.002 or less |
-| Minimax-M2.5 scaffold: effect, CI | +0.050 [+0.044, +0.052] | +0.049 [+0.045, +0.053] | +0.052 [+0.047, +0.057] | changed |
-| SWE-agent model: cases | 10,674 | 10,674 | 4,038 | reproduced on the archived revision; changed at the pin |
-| SWE-agent model: self / cross | 0.880 / 0.839 | 0.879 / 0.838 | 0.886 / 0.847 | changed by 0.001 (estimator); changed at the pin |
-| SWE-agent model: effect, CI | +0.041 [+0.039, +0.046] | +0.042 [+0.038, +0.046] | +0.039 [+0.032, +0.045] | changed |
-| OpenHands model: cases | 11,933 | 11,933 | 8,203 | reproduced on the archived revision; changed at the pin |
-| OpenHands model: self / cross | 0.892 / 0.833 | 0.892 / 0.833 | 0.890 / 0.823 | reproduced (estimator); changed at the pin |
-| OpenHands model: effect, CI | +0.059 [+0.054, +0.062] | +0.058 [+0.054, +0.063] | +0.067 [+0.061, +0.072] | changed |
-| "about 18,000 instances, up to three rollouts each" | prose | 18,211 to 20,791 instances per cell, 22,320 in the union, three rollouts at most | 10,511 to 19,522 per cell, 22,038 in the union, three rollouts at most | supported for the archived revision; the SWE-agent Qwen3.5-122B cell has 10,511 at the pin |
-| "About 22% of rows were ungraded" | prose | 22.5% (46,758 of 207,489) | 23.4% (35,336 of 151,219) | reproduced on the archived revision; 23.4% at the pin |
-| every interval excludes zero | yes | yes | yes | reproduced |
-
-No archived number is unreproducible. The archived effects and agreements are recovered to within 0.002 on the archived revision.
+The paper appendix (`app:arie`, `tab:arie`) carries the archived numbers. Their comparison with the rerun on the same data and with the pinned revision is in `docs/paper/CLAIM_TO_EVIDENCE.md`.
+Every archived number reproduces. The archived effects and agreements are recovered to within 0.002 on the archived revision.
 The paper table must cite one revision. The rows for the pinned revision are in [arie_table.tex](results/arie_table.tex); the rows for the archived revision are in [arie_table.ad4805a5aa7d.tex](results/arie_table.ad4805a5aa7d.tex).
 
 ## Superseded output of 2026-08-07
@@ -182,14 +157,5 @@ The bound `trajectories.jsonl` was a 4,000-row-per-cell streaming sample with on
 
 ## Reproduce
 
-From the repository root, with `numpy`, `pyarrow`, and `huggingface_hub` installed:
-
-```bash
-python experiments/harness-effect/fetch_outcomes.py --revision f967cba3312573981a47fd7a7b80029b53909b5f
-python experiments/harness-effect/run.py
-```
-
-The first command reads about 17 MB from the Hub and writes the outcome table and its manifest under `experiments/harness-effect/results/`.
-The second command checks the table against the manifest and writes `harness_effect.json`, `harness_effect.manifest.json`, and `arie_table.tex`.
-The run takes a few minutes on one CPU. Compare the SHA-256 values in the manifests before comparing numbers.
-`extract.py` pulls tool sequences with the dataset layout used before 2026-08-21; the metric does not need it.
+Follow [section 8](../../spec/ari-e-bench-v0.1.md#8-reproduce). Compare the SHA-256 values in the manifests before comparing numbers.
+`extract.py` reads the dataset layout used before 2026-08-21. It is retained for the superseded analysis only.

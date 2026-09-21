@@ -35,6 +35,7 @@ import csv
 import gzip
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -48,7 +49,7 @@ RESULTS = HERE / "results"
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
-from ari.harness import Trajectory, format_report, harness_report  # noqa: E402
+from ari.harness import Trajectory, harness_report  # noqa: E402
 
 DATASET = "nvidia/Open-SWE-Traces"
 # The dataset revision the retained outcome table was read from. See
@@ -176,7 +177,6 @@ def contrast(rows_a, rows_b, name_a: str, name_b: str, title: str,
     label = f"{min(name_a, name_b)} vs {max(name_a, name_b)}"
     out = {"title": title, "n_cases": len(cases), **summarize(rep, label)}
 
-    # Repeat coverage: how many graded rollouts each side has per case.
     ca, cb = by_case(ga), by_case(gb)
     shape = Counter(f"{len(ca[c])}/{len(cb[c])}" for c in cases)
     out["repeat_shapes"] = dict(sorted(shape.items()))
@@ -195,7 +195,6 @@ def contrast(rows_a, rows_b, name_a: str, name_b: str, title: str,
     }
     out["permutation_null"] = permutation_null(ga, gb, name_a, name_b, cases,
                                                N_PERMUTATIONS, rng)
-    out["report"] = format_report(rep)
     return out
 
 
@@ -362,8 +361,6 @@ def sign_report(report: Path, revision: str) -> None:
     dataset reference binds the revision the outcome table was read from, not
     whatever the Hub serves as ``main`` at signing time.
     """
-    import os
-
     key_path = os.environ.get("ARI_SIGNING_KEY")
     if not key_path:
         print("\nnot signed: set ARI_SIGNING_KEY to a PEM Ed25519 private key")
