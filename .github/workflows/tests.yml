@@ -29,35 +29,88 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
-      # semq is not on public PyPI yet -- it lives in CodeArtifact. Until a CI
-      # role with CodeArtifact read exists, this is skipped and the attestation
-      # tests skip with it (their pytest.importorskip("semq") handles that). Set
-      # the CODEARTIFACT_ROLE_ARN repository variable to an OIDC role that can
-      # read the domain, plus CODEARTIFACT_DOMAIN, CODEARTIFACT_REPO and
-      # AWS_REGION, and semq installs so the attestation round-trip runs
-      # instead of skipping. The workflow file itself names none of them.
-      - name: Configure AWS for CodeArtifact
+      # This job is the public environment: no SDK. The sdk-tests job below
+      # installs the SDK and runs the gated modules; keeping the two apart
+      # means a failure in either says which environment broke.
+      # -rs prints the reason for every skip, so a run without semq says so
+      # plainly (the attestation tests report as skipped) rather than looking
+      # fully green while silently covering less.
+      # `shell: bash` runs with -o pipefail; the default shell does not, and
+      # `| tee` would otherwise hide a failing pytest.
+      - name: Run tests
+        shell: bash
+        run: pytest -v -rs | tee pytest.log
+
+      # A green check must not look the same whether or not the probe was
+      # tested. Count the modules that skipped for want of semq and put the
+      # number where a reader sees it; the sdk-tests job below turns it red.
+      - name: Report SDK-gated tests that did not run
+        if: always()
+        run: |
+          n=$(grep -c "could not import 'semq'" pytest.log || true)
+          echo "semq-gated skips: $n" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$n" != "0" ]; then
+            echo "::warning::$n test modules skipped because semq is not installed; see the sdk-tests job"
+          fi
+
+      # The mock agent needs no provider credentials, but every code comes
+      # from the SDK. Run this only in the SDK-enabled job configuration.
+      - name: Validate the documented mock pipeline
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        run: python -m ari.run --out /tmp/ari-report.json --validate
+
+      - name: Build the package
+        run: python -m build
+
+  # Fails, visibly and by name, until CI can install the SDK. Every module that
+  # pins the probe, the packed layout or the calibration path is gated on semq;
+  # without this job a change to any of them lands green with none of them run.
+  sdk-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse to pass without the SDK
+        if: vars.CODEARTIFACT_ROLE_ARN == ''
+        run: |
+          n=$(grep -rl 'importorskip("semq")' tests experiments --include='*.py' | wc -l | tr -d ' ')
+          echo "::error::CODEARTIFACT_ROLE_ARN is not set, so $n semq-gated test modules cannot run in CI. Set the repository variable (SEM-52)."
+          exit 1
+
+      - uses: actions/setup-python@v5
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        with:
+          python-version: "3.12"
+
+      - name: Install the package, the test dependencies and the SDK
         if: vars.CODEARTIFACT_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.CODEARTIFACT_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
+          mask-aws-account-id: true
 
-      - name: Install semq from CodeArtifact
+      # The harness calls Context.compare_codes, bits_per_coordinate and
+      # quant_regions, and relies on the core's unpack_codes; the SDK gained
+      # those after 1.5.0. Requiring the version the code needs turns "the
+      # published wheel is too old" into one named error instead of a wall
+      # of test failures.
+      - name: Install semq and run the gated tests
         if: vars.CODEARTIFACT_ROLE_ARN != ''
+        shell: bash
         run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
           aws codeartifact login --tool pip --domain "${{ vars.CODEARTIFACT_DOMAIN }}" \
-            --repository "${{ vars.CODEARTIFACT_REPO }}" --region "${{ vars.AWS_REGION }}"
-          python -m pip install semq
-
-      # -rs prints the reason for every skip, so a run without semq says so
-      # plainly (the attestation tests report as skipped) rather than looking
-      # fully green while silently covering less.
-      - name: Run tests
-        run: pytest -v -rs
-
-      - name: Validate the documented mock pipeline
-        run: python -m ari.run --out /tmp/ari-report.json --validate
-
-      - name: Build the package
-        run: python -m build
+            --repository "${{ vars.CODEARTIFACT_REPO }}" --region "${{ vars.AWS_REGION }}" > /dev/null
+          if ! python -m pip install "semq>=1.5.1" 2> pip.err; then
+            echo "::error::the harness needs semq>=1.5.1 (Context.compare_codes, quant_regions, core unpack_codes); CodeArtifact has no such release. Publish it, then rerun."
+            grep -m1 -E "from versions|No matching" pip.err || true
+            exit 1
+          fi
+          python -c "import semq; print('semq', semq.__version__)"
+          pytest -v -rs | tee pytest.log
+          if grep -q "could not import 'semq'" pytest.log; then
+            echo "::error::semq is installed but some tests still skipped for want of it"
+            exit 1
+          fi
