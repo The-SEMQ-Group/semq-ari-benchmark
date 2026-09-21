@@ -9,11 +9,11 @@ Run commands from the repository root.
 | Module | Purpose |
 | --- | --- |
 | `agents.py` | Mock, embedding API, and local model adapters. |
-| `probe.py` | Canonical SEMQ probe and development mock. |
+| `probe.py` | Canonical SEMQ probe. |
 | `inputs.py` | Input loading and content hashes. |
 | `metrics.py` | Equality, Hamming distance, and bootstrap intervals. |
 | `report.py` | Report assembly and condition digests. |
-| `run.py` | Mock pipeline and local schema validation. |
+| `run.py` | Mock-agent pipeline and local schema validation. |
 | `harness.py` | Trajectory agreement and harness-effect measurement. |
 | `attest.py`, `kms_signer.py` | Artifact attestation and signature creation. |
 | `verify_report.py` | Signature and attestation verification. |
@@ -28,6 +28,7 @@ Report generation does not sign a report automatically.
 python -m ari.run --out /tmp/ari-report.json --validate
 ```
 
+The command needs the SEMQ SDK (see below); it fails with an error without it.
 The command writes JSON and validates it against `spec/report-schema.json`.
 A validation error returns a nonzero exit status.
 This is a development check. Submit real reports through the separate leaderboard repository.
@@ -35,6 +36,8 @@ This is a development check. Submit real reports through the separate leaderboar
 ## Install the canonical probe
 
 The public development dependencies do not include `semq`.
+The SDK is subject to a commercial license owned by The SEMQ Group Inc., is patent pending, and is not open source.
+Contact The SEMQ Group for access.
 The repository's CI installs it from a private AWS CodeArtifact repository when an authorized role is configured.
 The domain, repository, region and account are operator-only and are not committed;
 they live in `infra/operator.env` (see `infra/operator.env.example`).
@@ -50,7 +53,7 @@ python -m pip show semq
 
 The login command changes the local pip index configuration.
 Record the installed SDK version with each capture. Use an approved wheel if you cannot access the repository.
-Without SDK access, use the mock pipeline. Do not label mock reports as canonical measurements.
+Without the SDK, no code can be computed. Tests that need codes skip, and the capture tools stop with an error.
 The capture backend requires the QUANT interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
 
 ## Capture a real model
@@ -65,7 +68,7 @@ Set the provider credential in your environment. For OpenAI, the variable is `OP
 Then run:
 
 ```bash
-python ari/tools/run_report.py --agent openai --inputs data/ari-bench-v0.1.jsonl --probe-backend semq
+python ari/tools/run_report.py --agent openai --inputs data/ari-bench-v0.1.jsonl
 ```
 
 This command makes billed API calls. It measures `same` and `proc`, then writes JSON under `leaderboard/submissions/`.
@@ -76,7 +79,7 @@ For a local embedding model:
 
 ```bash
 python -m pip install -e ".[selfhosted]"
-python ari/tools/run_report.py --agent bge --model BAAI/bge-large-en-v1.5 --inputs data/ari-bench-v0.1.jsonl --probe-backend semq
+python ari/tools/run_report.py --agent bge --model BAAI/bge-large-en-v1.5 --inputs data/ari-bench-v0.1.jsonl
 ```
 
 This command downloads model weights and starts a second process for `proc`.

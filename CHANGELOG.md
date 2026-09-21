@@ -6,6 +6,15 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### The mock probe is gone
+- `ari/probe.py` binds to the SDK only. The development stand-in quantizer is
+  removed: its magnitude edge and byte layout differed from the canonical
+  probe, so its HER and byte rates were comparable with nothing, and a
+  stand-in that matched the SDK would be the reimplementation CONTRIBUTING.md
+  forbids. `load_probe(X)` takes no backend and raises a clear error without
+  the SDK. The `--probe-backend` flag is gone from `ari.run`, `run_report`,
+  `selfhosted_pilot` and `proc_pilot`, and `proc_pilot` no longer falls back
+  to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
 ### CI says when the probe was not tested
 - A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
   install the SDK; with it set, the job installs `semq`, runs the suite and

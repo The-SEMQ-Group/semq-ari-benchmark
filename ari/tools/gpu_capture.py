@@ -75,7 +75,7 @@ def _codes(vecs, scale_s, dim):
     and return the fitted scale; otherwise encode with the FIXED scale so codes are comparable
     across machines."""
     if scale_s is None:
-        probe = load_probe(vecs, backend="semq")
+        probe = load_probe(vecs)
         return probe.encode(vecs), float(probe.s)
     return fixed_scale_codes(vecs, scale_s, dim), scale_s
 
