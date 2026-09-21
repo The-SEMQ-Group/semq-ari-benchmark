@@ -52,8 +52,9 @@ python -m pip show semq
 ```
 
 The login command changes the local pip index configuration.
-Record the installed SDK version with each capture. Use an approved wheel if you cannot access the repository.
-Without the SDK, no code can be computed. Tests that need codes skip, and the capture tools stop with an error.
+
+The harness needs `semq` 1.5.1 or newer; an older build fails at import with the missing names. Record the installed SDK version with each capture. Use an approved wheel if you cannot access the repository.
+
 The capture backend requires the QUANT interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
 
 ## Capture a real model
