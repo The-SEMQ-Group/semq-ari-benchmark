@@ -46,6 +46,14 @@ The parameters summarize the measured response. They are not unconditional guara
 | `b` | linear-regime power-law slope | 0.979 ± 0.028 (≈ 1) | universal across 13 models |
 | `κ` | angular-concentration multiplier | [1.48, 3.06] | [`../experiments/drift-sensitivity/`](../experiments/drift-sensitivity/) |
 
+Units of `b` and `κ`. The registry values of `b` and `κ` were fitted to the fraction of packed code bytes that differ between clean and perturbed codes.
+The registry column `fit_basis` records this as `byte_change_rate`.
+At `n_bins = 2` one byte holds four coordinates, so the byte rate is about four times the coordinate change rate while changes are sparse.
+A `κ` in coordinate units is therefore about `κ / 4` for the same model; the exact ratio is measured per model, not assumed.
+The response model with registry values is `E[byte rate] ≈ κ · sqrt(2·dim/π) · σ^b`.
+Coordinate-unit refits, with bootstrap intervals, are recorded per model in [`../experiments/drift-sensitivity/results/coordinate/`](../experiments/drift-sensitivity/results/coordinate/).
+The registry values are frozen within v0.1 and are not rewritten by a refit.
+
 ## Measured fingerprints
 
 The table records the historical 13-model sensitivity registry. This is distinct from the expanded deployed-model panel.
@@ -68,11 +76,15 @@ The table records the historical 13-model sensitivity registry. This is distinct
 
 The machine-readable registry is [fingerprints-v0.1.csv](fingerprints-v0.1.csv).
 A missing calibration value is not a measured zero.
+The `b` and `κ` columns are in packed-byte units; see [Fingerprint terms](#fingerprint-terms).
 
 ## Calibration limits
 
 The historical sweep found a perturbation floor for `all-mpnet-base-v2` and `all-MiniLM-L6-v2`.
 Approximately one percent of code bytes changed under small synthetic perturbations, extending to σ = 1e-10.
+The coordinate-unit refit of `all-MiniLM-L6-v2` measures the same floor as 0.27 percent of coordinates at σ = 1e-10.
+Two of the 384 output coordinates of every vector have `|x| < 1e-8` (all below 1.5e-32). Each changes symbol with probability one half under any perturbation, which gives the 0.27 percent.
+The measurement is in [`floor_histogram.py`](../experiments/drift-sensitivity/floor_histogram.py) and its output file.
 Their response slopes could not support a reliable κ fit, so the registry labels them `floor_limited`.
 This was model-specific: the 768-dimensional nomic model did not show the same floor.
 The two affected models still had measured ARI 1.000 in the original panel.

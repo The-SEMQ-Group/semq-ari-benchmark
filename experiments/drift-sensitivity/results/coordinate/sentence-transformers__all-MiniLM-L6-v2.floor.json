@@ -1,0 +1,61 @@
+{
+  "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "inputs": {
+    "name": "ARI-Bench-v0.1",
+    "n": 1000,
+    "content_hash": "e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d"
+  },
+  "noise_seed": 0,
+  "floor_sigma": 1e-10,
+  "noise_std": 1e-10,
+  "n_coordinates": 384000,
+  "coordinate_change_rate": 0.0026796875,
+  "sign_change_rate": 0.0026796875,
+  "flipped_equals_sign_changed": true,
+  "exact_zero_fraction": 0.0,
+  "below_threshold": {
+    "1e-12": {
+      "fraction": 0.005208333333333333,
+      "flipped_fraction_within": 0.5145
+    },
+    "1e-11": {
+      "fraction": 0.005208333333333333,
+      "flipped_fraction_within": 0.5145
+    },
+    "1e-10": {
+      "fraction": 0.005208333333333333,
+      "flipped_fraction_within": 0.5145
+    },
+    "1e-09": {
+      "fraction": 0.005208333333333333,
+      "flipped_fraction_within": 0.5145
+    },
+    "1e-08": {
+      "fraction": 0.005208333333333333,
+      "flipped_fraction_within": 0.5145
+    },
+    "1e-07": {
+      "fraction": 0.0078203125,
+      "flipped_fraction_within": 0.34265734265734266
+    },
+    "1e-06": {
+      "fraction": 0.00784375,
+      "flipped_fraction_within": 0.34163346613545814
+    }
+  },
+  "flipped_abs_x": {
+    "min": 1.491355992991273e-36,
+    "median": 2.5899988455904014e-33,
+    "p99": 7.630489770876899e-33,
+    "max": 1.44102471261442e-32
+  },
+  "unflipped_abs_x_min": 7.178346668457864e-36,
+  "per_input_below_1e-8": {
+    "min": 2,
+    "max": 2
+  },
+  "per_input_flipped": {
+    "min": 0,
+    "max": 2
+  }
+}
