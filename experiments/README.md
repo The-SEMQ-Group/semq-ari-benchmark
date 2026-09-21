@@ -19,7 +19,7 @@ Experiment scripts can overwrite their result files. Use a separate checkout to 
 | ARI-D references | Output from published weights at fixed precision. | [Procedure](arid-fp32-refs/README.md). |
 | Harness effect | Within-harness and cross-harness agreement. | [Results](harness-effect/RESULTS.md). |
 | Harness power | Case counts and repeated runs for harness comparisons. | [Simulation](harness-power/RESULTS.md). |
-| Matched-budget detectors | Detection, storage and verification of the code against simpler detectors at equal storage. | [Protocol v2](matched-budget-detectors/PROTOCOL.md), [artifact inventory and readiness](matched-budget-detectors/INVENTORY.md). No confirmatory episodes exist; the committed pilot is development data. |
+| Matched-budget detectors | Detection, storage and verification of the code against simpler detectors at equal storage. | [Runbook](matched-budget-detectors/README.md), [protocol v2](matched-budget-detectors/PROTOCOL.md), [artifact inventory and readiness](matched-budget-detectors/INVENTORY.md). No confirmatory episodes exist; the committed pilot is development data. |
 
 ## Dependencies
 
