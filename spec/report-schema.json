@@ -452,6 +452,9 @@
               "type": "integer",
               "minimum": 1,
               "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md \u00a76). Recorded so a capped row is not read as if it ran at 64."
+            },
+            "time_evidence": {
+              "$ref": "#/$defs/timeEvidence"
             }
           },
           "additionalProperties": false
@@ -481,11 +484,120 @@
               "type": "integer",
               "minimum": 1,
               "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md \u00a76). Recorded so a capped row is not read as if it ran at 64."
+            },
+            "time_evidence": {
+              "$ref": "#/$defs/timeEvidence"
             }
           },
           "additionalProperties": false
         }
       ]
+    },
+    "timeEvidence": {
+      "type": "object",
+      "description": "Evidence that a 'time' result was measured after the gap spec/condition-set.md requires. Both captures are timestamped in UTC; gap_hours is comparison_started_at minus baseline_finished_at, the shortest interval between the two encodes, and must exceed 24. The settings that the time condition holds fixed are recorded on the cell so a reader can check them against the baseline manifest without another file. Optional in the schema so reports signed before 2026-09-16 still validate; ari/check_evidence.py and ari/verify_report.py reject a 'time' result that lacks it.",
+      "required": [
+        "baseline_started_at",
+        "baseline_finished_at",
+        "comparison_started_at",
+        "comparison_finished_at",
+        "gap_hours",
+        "probe_calibration",
+        "calibration_scale",
+        "input_content_hash",
+        "model_revision",
+        "tokenizer_revision",
+        "precision",
+        "hardware",
+        "sdk_version",
+        "source_commit"
+      ],
+      "properties": {
+        "baseline_started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the baseline encode began."
+        },
+        "baseline_finished_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the baseline encode ended."
+        },
+        "comparison_started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the comparison encode began."
+        },
+        "comparison_finished_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the comparison encode ended."
+        },
+        "gap_hours": {
+          "type": "number",
+          "exclusiveMinimum": 24,
+          "description": "(comparison_started_at - baseline_finished_at) in hours."
+        },
+        "probe_calibration": {
+          "type": "string",
+          "description": "Canonical probe id both captures used; must equal the report's probe_calibration."
+        },
+        "calibration_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The QBIN scale s frozen at the baseline and reused, not recalibrated, for the comparison."
+        },
+        "input_content_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Content hash of the inputs both captures encoded; must equal the report's input_content_hash."
+        },
+        "model_revision": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Immutable model revision loaded by both captures (a Hub commit for a self-hosted model; the pinned snapshot id or 'provider-internal' for an API). Moving refs such as 'main' or 'unknown' are rejected by the evidence check."
+        },
+        "tokenizer_revision": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Immutable tokenizer revision; equals model_revision when the tokenizer ships in the model repository."
+        },
+        "precision": {
+          "type": "string",
+          "enum": [
+            "fp32",
+            "fp16",
+            "bf16",
+            "mixed",
+            "provider-internal"
+          ],
+          "description": "Numeric precision of both captures; must equal environment.precision."
+        },
+        "hardware": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Hardware both captures ran on."
+        },
+        "sdk_version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "semq package version that encoded both captures."
+        },
+        "source_commit": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Git commit of the harness code that ran both captures."
+        },
+        "deviations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Differences from the intended procedure, one per entry (spec/condition-set.md asks for them). A baseline that recorded one timestamp instead of a start and end, or that did not record a setting the block now requires, is stated here. A cell with deviations is not a clean canonical capture."
+        }
+      },
+      "additionalProperties": false
     },
     "genericDetectorResult": {
       "type": "object",

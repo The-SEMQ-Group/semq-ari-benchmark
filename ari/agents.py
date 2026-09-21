@@ -74,19 +74,27 @@ class SentenceTransformerAgent:
     """Self-hosted model via sentence-transformers. Real encode; condition realisation is
     external (run on the target instance/precision/library and collect the code bundle)."""
 
-    def __init__(self, model_id: str, device: str | None = None):
+    def __init__(self, model_id: str, device: str | None = None, revision: str | None = None):
         self.agent_id = model_id
         self._model_id = model_id
         self._device = device
+        self.revision = revision
         self._model = None  # lazy
 
     def _load(self):
         if self._model is None:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self._model_id, device=self._device, trust_remote_code=True)
+            self._model = SentenceTransformer(self._model_id, device=self._device,
+                                              trust_remote_code=True, revision=self.revision)
             self.dim = self._model.get_sentence_embedding_dimension()
         return self._model
+
+    def precision(self) -> str:
+        """The loaded parameters' dtype in the report schema's vocabulary."""
+        dtype = str(next(self._load().parameters()).dtype)
+        return {"torch.float32": "fp32", "torch.float16": "fp16",
+                "torch.bfloat16": "bf16"}.get(dtype, "mixed")
 
     def encode(self, texts: list[str]) -> np.ndarray:
         model = self._load()

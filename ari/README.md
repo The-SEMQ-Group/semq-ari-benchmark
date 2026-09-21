@@ -16,7 +16,8 @@ Run commands from the repository root.
 | `run.py` | Mock-agent pipeline and local schema validation. |
 | `harness.py` | Trajectory agreement and harness-effect measurement. |
 | `attest.py`, `kms_signer.py` | Artifact attestation and signature creation. |
-| `verify_report.py` | Signature and attestation verification. |
+| `verify_report.py` | Signature and attestation verification, and the time-evidence check. |
+| `check_evidence.py` | Schema validation plus the time-evidence check for an unsigned report. |
 
 Capture and aggregation are separate stages.
 Capture each condition in its required environment. Compare the resulting codes against a common baseline with a fixed calibration.
@@ -103,3 +104,48 @@ Read each tool's `--help` before execution.
 Preserve the input order, baseline calibration, model revision, environment, and audit digests.
 Check the output conditions before comparing reports.
 See [CONTRIBUTING.md](../CONTRIBUTING.md#submit-a-report) for submission steps.
+
+## Capture the time condition
+
+The `time` condition compares two encodes separated by more than 24 hours ([condition set](../spec/condition-set.md#time-evidence)).
+An immediate repeat is not a `time` measurement.
+Prerequisites: the `semq` SDK, `python -m pip install -e ".[selfhosted]"`, a git checkout of this repository, and one machine that stays unchanged between the two commands.
+
+1. Capture the baseline:
+
+   ```bash
+   python ari/tools/capture_time_baseline.py --mode capture --agent st \
+       --model sentence-transformers/all-MiniLM-L6-v2 --inputs data/ari-bench-v0.1.jsonl
+   ```
+
+   The command writes `codes.npy` and `meta.json` under `~/ari_time_baseline/st_sentence-transformers_all-MiniLM-L6-v2/`.
+   `meta.json` records the encode start and end in UTC, the frozen scale, the input hash, the model revision, the precision, the hardware, the SDK version, and the harness commit.
+   Keep this directory. Do not change the SDK, the model cache, or the checkout before step 2.
+
+2. After more than 24 hours, compare on the same machine:
+
+   ```bash
+   python ari/tools/capture_time_baseline.py --mode compare --agent st \
+       --model sentence-transformers/all-MiniLM-L6-v2 --inputs data/ari-bench-v0.1.jsonl \
+       --report leaderboard/submissions/sentence-transformers_all-MiniLM-L6-v2.json \
+       --out leaderboard/submissions/sentence-transformers_all-MiniLM-L6-v2.with-time.json
+   ```
+
+   `--report` names the existing report for the same agent, inputs, and precision.
+   The command re-encodes at the stored scale, adds the `time` cell with its `time_evidence`, recomputes ARI, and writes the merged report to `--out`.
+   Without `--report`, it writes `time_cell.json` next to the baseline.
+   The command exits with status 1 and writes nothing when the revision, precision, or SDK version differs from the baseline, or when the gap is 24 hours or less.
+
+3. Check the merged report:
+
+   ```bash
+   python -m ari.check_evidence leaderboard/submissions/sentence-transformers_all-MiniLM-L6-v2.with-time.json
+   ```
+
+   The output names each missing or invalid field. Exit status 0 is the success check.
+   `python ari/verify_report.py` runs the same check on a signed report when the `time` cell carries `time_evidence`.
+   On a cell without the block it prints a warning and passes; add `--require-time-evidence` to fail instead.
+
+Record with the result: the two command lines, the printed timestamps, the gap in hours, the model revision, and the `deviations` list if the output prints one.
+A baseline written before `meta.json` carried timestamps produces a `deviations` entry. Such a cell is not a clean canonical capture.
+For an API agent, replace `--agent st --model ...` with the API name, for example `--agent gemini`.
