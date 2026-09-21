@@ -30,6 +30,8 @@ infra/.last-instance
 infra/operator.env
 experiments/harness-effect/results/attestation-repo/
 experiments/*/results/attestation-repo/
+# Archived L3_09 bundle; its environment.json and replay.md carry the account id (docs/paper/evidence/README.md).
+docs/paper/evidence/L3_09_agentic_compounding/
 
 # Local and generated documentation/build artifacts
 *.log

@@ -1,0 +1,63 @@
+{
+  "repository": "https://github.com/The-SEMQ-Group/ari-leaderboard",
+  "revision": "4f49fe35d8f12fc26cde34d0cec4b6c00214798d",
+  "purpose": "Paper evidence snapshot; report summaries, not raw vectors or independently verified captures. Original signatures remain in the source repository.",
+  "files": {
+    "BAAI_bge-large-en-v1.5.json": {
+      "source_path": "submissions/BAAI_bge-large-en-v1.5.json",
+      "sha256": "3b19f5b47a9d48d3b2a0f26cc50fa1aafe883146f2d345c6f2b225131db7f0ed"
+    },
+    "BAAI_bge-m3.json": {
+      "source_path": "submissions/BAAI_bge-m3.json",
+      "sha256": "f17b4f6f7f4461654bd73e06fafad1e902f4a470866825e4a402d987826fb0dc"
+    },
+    "Salesforce_SFR-Embedding-2_R.json": {
+      "source_path": "submissions/Salesforce_SFR-Embedding-2_R.json",
+      "sha256": "cd0929a82176aaad610316e11e38f2ec6b2575baa07216db4b2d09cb2f90da1c"
+    },
+    "Snowflake_snowflake-arctic-embed-l.json": {
+      "source_path": "submissions/Snowflake_snowflake-arctic-embed-l.json",
+      "sha256": "4ff4f2237b0d14ccb8f11e7603ac46ff63d52d7f9a1a8bbf51bd6cec26d7262c"
+    },
+    "cohere_embed-v4.0.json": {
+      "source_path": "submissions/cohere_embed-v4.0.json",
+      "sha256": "b351bee7c495ca387cb2b489960a9b1d694e8690aebe138598ebdcff92141a5b"
+    },
+    "gemini_gemini-embedding-001.json": {
+      "source_path": "submissions/gemini_gemini-embedding-001.json",
+      "sha256": "e75a7db429b5141d1cfd95c8791b73ed6e224f2e2e90a8877cee0976a0538357"
+    },
+    "intfloat_multilingual-e5-large.json": {
+      "source_path": "submissions/intfloat_multilingual-e5-large.json",
+      "sha256": "fccb55ec2fe0f25dccd2c74e9afe72f536679f731d71e372e032b15325e1e8c2"
+    },
+    "mistral_mistral-embed.json": {
+      "source_path": "submissions/mistral_mistral-embed.json",
+      "sha256": "5a6cb187b7eba66ce8ff9791bc009805ce32e4af22ce38cdf4a24a3e2e4dda1b"
+    },
+    "mixedbread-ai_mxbai-embed-large-v1.json": {
+      "source_path": "submissions/mixedbread-ai_mxbai-embed-large-v1.json",
+      "sha256": "f202bca124efca898c38105e860f0149f86cd348a49f57d9345016e240ef5f46"
+    },
+    "nomic-ai_nomic-embed-text-v1.5.json": {
+      "source_path": "submissions/nomic-ai_nomic-embed-text-v1.5.json",
+      "sha256": "4ef4baab137f226b39c35692ae6b6334bcd29229138c09c72a0a693ef976b409"
+    },
+    "openai_text-embedding-3-large.json": {
+      "source_path": "submissions/openai_text-embedding-3-large.json",
+      "sha256": "33cf04df51f55b63411ecc7f0f64bc4b0e60909afde39ee402091a433c922cd0"
+    },
+    "sentence-transformers_all-MiniLM-L6-v2.json": {
+      "source_path": "submissions/sentence-transformers_all-MiniLM-L6-v2.json",
+      "sha256": "1c3945a567a0f6cdfc02327b4434483b69564db60d2b0972054c0f718c098f97"
+    },
+    "sentence-transformers_all-mpnet-base-v2.json": {
+      "source_path": "submissions/sentence-transformers_all-mpnet-base-v2.json",
+      "sha256": "04f8964fd0e98e2bd4c3708a39d9c2035ed0e044e529c0d16f36fc8f127816c5"
+    },
+    "voyage_voyage-4-large.json": {
+      "source_path": "submissions/voyage_voyage-4-large.json",
+      "sha256": "8f1e7877a9240efc23762627c053fa1d13420fbab505cc2de629cfa61c613834"
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "agent_id": "openai/text-embedding-3-large",
+  "ari_version": "0.1",
+  "probe_calibration": "ARI-Canonical-v0.1",
+  "input_set": "ARI-Bench-v0.1",
+  "input_content_hash": "e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d",
+  "measured_at": "2026-07-06",
+  "agent_class": "api",
+  "environment": {
+    "blas": "provider-internal",
+    "threads": 0,
+    "hardware": "provider-internal",
+    "precision": "provider-internal",
+    "library_versions": {
+      "probe_backend": "semq",
+      "snapshot": "pinned"
+    }
+  },
+  "results_per_condition": {
+    "same": {
+      "detectors": {
+        "semq": {
+          "HER": 0.859,
+          "Hbar": 1.231,
+          "HER_ci": [
+            0.836975,
+            0.881
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 768,
+          "unit": "code"
+        }
+      }
+    },
+    "proc": {
+      "detectors": {
+        "semq": {
+          "HER": 0.862,
+          "Hbar": 1.249,
+          "HER_ci": [
+            0.84,
+            0.883
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 768,
+          "unit": "code"
+        }
+      }
+    },
+    "time": {
+      "detectors": {
+        "semq": {
+          "HER": 0.822,
+          "Hbar": 1.591,
+          "HER_ci": [
+            0.797,
+            0.844
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 768,
+          "unit": "code"
+        }
+      }
+    },
+    "conc": {
+      "detectors": {
+        "semq": {
+          "HER": 0.851,
+          "Hbar": 1.249,
+          "HER_ci": [
+            0.829975,
+            0.872
+          ],
+          "criterion_type": "exact",
+          "bytes_of_reference_state": 768,
+          "unit": "code"
+        }
+      }
+    }
+  },
+  "ARI": 0.845,
+  "audit_hashes": {
+    "same": "42ee0fdb96e2b66c65ea6183872aeee462ea39e2253e4efc7100347aa189e2c8",
+    "proc": "280b8dce53584d4be54d7ea5382327fc43a9e1232f2450602873eab8cd10413f",
+    "time": "f8caaabf47240252163df3a99a2cc304ed4b0ba4eeb0f445928af7ff26bd0f19",
+    "conc": "262e82ddcb502eef79a4e6124529f9db7c785ba87e7db3abc9e15f9664a49bf8"
+  },
+  "encoder_fingerprint": {
+    "dim": 3072,
+    "s": 0.051514
+  }
+}

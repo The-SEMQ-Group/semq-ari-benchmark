@@ -1,0 +1,1337 @@
+{
+  "schema": 1,
+  "written": "2026-09-17; S3 verification and uploads 2026-09-17; commit-pinned entries and status reconciliation 2026-09-21",
+  "paper_source": {
+    "path": "docs/paper/latex/ari.tex",
+    "git": "73139c81f6b83651f87565fa0b52f1403388b78e",
+    "draft": "Labels, table numbers and captions follow the 2026-09-16 working draft on branch ilona/sdk-only-probe-and-paper (abstract: 'Under synthetic perturbations with clean top-10 overlap of 0.988, 11.5% of 15-hop retrieval trajectories diverge'). The tracked ari.tex on main is an earlier revision."
+  },
+  "conventions": {
+    "hashes": "Result files, attestation sidecars and archived raw artifacts carry 'sha256' of the file bytes in the working tree at the recorded path. Specification files, generator scripts, generated tables and figures, and ari.tex carry 'git' instead: the commit on main that last changed the file, or null when the file is not on main. docs/paper/check_evidence_manifest.py hashes only entries with 'sha256'; it counts the others as recorded by commit. Entries with 'tracked': false are on the operator's branch or working tree and not on main; the checker verifies them only when present.",
+    "buckets": "S3 locations name buckets by infra/operator.env variable: RESEARCH_RESULTS_BUCKET, BASELINES_BUCKET, BATCH_RESULTS_BUCKET. No bucket name or account id is written in this file.",
+    "s3_upload_needed": "true marks a row whose raw vectors, codes, transcripts or trajectories are not in the repository. Rows with local copies list a planned_s3 prefix."
+  },
+  "s3_upload_list": [
+    {
+      "what": "SciFact CPU embedding cache (7 files, 48 MB, gitignored)",
+      "local": "experiments/regime-discrimination/results/cache/",
+      "manifest": "MANIFEST.sha256 staged beside the objects",
+      "depends": [
+        "fig:overview",
+        "tab:scifact"
+      ],
+      "status": "uploaded 2026-09-17",
+      "s3_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/cache/",
+      "objects": 7,
+      "bytes": 50810299,
+      "verified": "cache/bf16.npz downloaded 2026-09-17, sha256 matches MANIFEST.sha256"
+    },
+    {
+      "what": "SciFact CPU packed codes (8 files, 6.1 MB, untracked)",
+      "local": "experiments/regime-discrimination/results/codes/",
+      "manifest": "same MANIFEST.sha256",
+      "depends": [
+        "fig:overview",
+        "tab:scifact"
+      ],
+      "status": "uploaded 2026-09-17",
+      "s3_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/codes/",
+      "objects": 8,
+      "bytes": 6422628,
+      "verified": "codes/int8.npz and codes/reference.npz downloaded 2026-09-17; sha256 matches; HER recomputed from the downloaded codes alone is 0.0000 for int8, equal to regime_matrix.json"
+    },
+    {
+      "what": "TinyLlama CPU pilot logits cache (6 files, 311 MB, gitignored)",
+      "local": "experiments/decoding-reproducibility/results/cache/",
+      "manifest": "MANIFEST.sha256 staged beside the objects",
+      "depends": [
+        "app:deccontrol text (74.21%, 9 of 12)"
+      ],
+      "status": "uploaded 2026-09-17",
+      "s3_prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/cache/",
+      "objects": 6,
+      "bytes": 325926111,
+      "verified": "cache/bf16.npz downloaded 2026-09-17, sha256 matches MANIFEST.sha256"
+    },
+    {
+      "what": "Hosted decoding transcripts",
+      "local": null,
+      "depends": [
+        "fig:arid",
+        "tab:arid"
+      ],
+      "action": "done",
+      "status": "present, verified 2026-09-17",
+      "s3_prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
+      "objects": 16,
+      "bytes": 214998719,
+      "verified": "salesforce_same.jsonl.gz and together_same_prefix3.jsonl.gz downloaded; sha256 equal to results/manifest.json runs[5] and runs[8]"
+    },
+    {
+      "what": "H100 batch-invariance code matrices",
+      "local": null,
+      "depends": [
+        "fig:batch"
+      ],
+      "action": "verify one object's checksum against a capture meta.json before citing",
+      "status": "present, listed 2026-09-17",
+      "s3_prefix": "s3://$BATCH_RESULTS_BUCKET/batch-invariance/results/",
+      "objects": 553,
+      "bytes": 57329855,
+      "layout": "all-encoders/ 211 objects (the run behind fig:batch, one meta.json per capture), with-control/ 254, boundary/ 85, plus summary.json and logs"
+    },
+    {
+      "what": "SFR-Embedding-2_R raw vectors",
+      "local": null,
+      "depends": [
+        "text:selfhosted-panel"
+      ],
+      "action": "download and verify meta.json revision before citing",
+      "status": "present, listed 2026-09-17",
+      "s3_prefix": "s3://$BASELINES_BUCKET/capture-sessions/sfr-2r/",
+      "objects": 6,
+      "bytes": 84781245,
+      "layout": "sfr-out.tar.gz (83.9 MB, per sfr_capture.py holds report.json, meta.json and per-condition float matrices), ari-bundle.tar.gz, sfr_capture.py, resume_sfr.py, two semq-1.4.1 wheels"
+    },
+    {
+      "what": "A10G/T4 GPU code tarballs; SciFact GPU-row vectors; L40S decoding logits",
+      "local": null,
+      "expected_prefix": null,
+      "depends": [
+        "text:gpu-hosts",
+        "fig:overview",
+        "tab:scifact",
+        "tab:decoding",
+        "tab:decfull"
+      ],
+      "action": "locate; no key recorded anywhere in the repository"
+    },
+    {
+      "what": "API panel raw vectors; replication pilot vectors; fingerprint calibration trials; walk trajectories",
+      "local": null,
+      "expected_prefix": null,
+      "depends": [
+        "tab:panel",
+        "tab:normalized",
+        "tab:replication",
+        "fig:overview"
+      ],
+      "action": "none possible; not retained"
+    }
+  ],
+  "items": [
+    {
+      "label": "tab:panel",
+      "kind": "table",
+      "number": "Table 1",
+      "title": "API panel",
+      "section": "sec:panels",
+      "caption": "Exact-code agreement across five commercial embedding APIs on the frozen inputs, n=1,000.",
+      "experiment_dir": "experiments/deployed-agent-panel",
+      "result_files": [
+        {
+          "path": "docs/paper/evidence/embedding_panel/MANIFEST.json",
+          "sha256": "485ef82f98ca7f75a21d4f7aef509f25c6b44f936e1662d544ddc3db6ace4e0e"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/gemini_gemini-embedding-001.json",
+          "sha256": "e75a7db429b5141d1cfd95c8791b73ed6e224f2e2e90a8877cee0976a0538357"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/openai_text-embedding-3-large.json",
+          "sha256": "33cf04df51f55b63411ecc7f0f64bc4b0e60909afde39ee402091a433c922cd0"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/mistral_mistral-embed.json",
+          "sha256": "5a6cb187b7eba66ce8ff9791bc009805ce32e4af22ce38cdf4a24a3e2e4dda1b"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/voyage_voyage-4-large.json",
+          "sha256": "8f1e7877a9240efc23762627c053fa1d13420fbab505cc2de629cfa61c613834"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/cohere_embed-v4.0.json",
+          "sha256": "b351bee7c495ca387cb2b489960a9b1d694e8690aebe138598ebdcff92141a5b"
+        }
+      ],
+      "sidecars_in_repo": [],
+      "sidecars_external": {
+        "repository": "https://github.com/The-SEMQ-Group/ari-leaderboard",
+        "revision": "4f49fe35d8f12fc26cde34d0cec4b6c00214798d",
+        "paths": "submissions/<model>.json, submissions/<model>.attestation.json, submissions/<model>.attestation.notary"
+      },
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/build_tables.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
+        "output": {
+          "path": "docs/paper/latex/tables/panel.tex",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": {
+        "script": "ari/run.py via the canonical probe (SDK required)",
+        "note": "The capture commands are not recorded in the snapshots."
+      },
+      "environment_record": "Each snapshot's 'environment' field: blas, hardware and precision read 'provider-internal'; 'measured_at' is 2026-07-06. No host record exists for a hosted API.",
+      "raw_artifacts": {
+        "status": "not retained",
+        "detail": "Raw API vectors behind the five rows are not in this repository and no archive location is recorded (docs/paper/evidence/README.md: 'Raw vectors and signature sidecars are not copied here'). Only report summaries with per-condition audit hashes exist."
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Nothing local to upload; the raw vectors are not known to exist."
+    },
+    {
+      "label": "fig:arid",
+      "kind": "figure",
+      "number": "Figure 2",
+      "title": "hosted decoding",
+      "section": "sec:panels",
+      "caption": "Hosted decoding is a second black-box layer (five endpoints; gpt-4o-mini through vendor API and platform gateway).",
+      "experiment_dir": "experiments/arid-dry-run",
+      "result_files": [
+        {
+          "path": "experiments/arid-dry-run/results/analysis.json",
+          "sha256": "959e39bd13f446880ec3f3cf2717dd52b6a3d34c238a70186271bc6f3f4c3bd3"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/time_pair.json",
+          "sha256": "b38f1269174a3e71bf24f6ff0ffc999c5fdae5e54b5b3f97153ca7d1ec8b525f"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/time_pair_together.json",
+          "sha256": "486eaff0780efbab773d7d5cf7b50e57cd9a622d7ab37685484dd6b6a02ea085"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/time_pair_salesforce.json",
+          "sha256": "8f2548b7d4588e3eafb93102f208c172ef509f688864bc99b81dbee123c6d4d9"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/door_compare.json",
+          "sha256": "132b15be5f905090471b5a66b3c2ded42288734c7e3e3729be0797510805c8ee"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/manifest.json",
+          "sha256": "fd94f463131984bb443733b3df324ecd86499bdb1229192433616670edd8d12b"
+        }
+      ],
+      "input_selection": "Left panel: analysis.json conditions with scope 'full', selected by transcript name (gemini_same, gemini_proc, gemini_conc_b64, mistral_same, mistral_proc, mistral_conc_b16, openai_same, openai_proc, openai_conc_b64, together_same, together_proc, together_conc_b64, salesforce_same, salesforce_proc) plus time_pair.json, time_pair_together.json, time_pair_salesforce.json. Right panel: door_compare.json keys direct_seed, direct_noseed, platform.",
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/make_figure2.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "cd docs/paper/latex && python make_figure2.py",
+        "output": {
+          "path": "docs/paper/latex/figure2.pdf",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": {
+        "scripts": [
+          "experiments/arid-dry-run/run_dry.py",
+          "experiments/arid-dry-run/analyze_dry.py",
+          "experiments/arid-dry-run/door_compare.py",
+          "experiments/arid-dry-run/time_pair.py"
+        ],
+        "commands": "See experiments/arid-dry-run/README.md 'Run'; analysis: python analyze_dry.py; python door_compare.py; python time_pair.py"
+      },
+      "environment_record": "manifest.json records per run: endpoint URL, model, params (temperature, top_p, max_tokens, seed), prompt_content_hash, calls, reconnects, wall_s. No client host record.",
+      "raw_artifacts": {
+        "status": "not in repository; archived in the baselines bucket, verified 2026-09-17",
+        "detail": "Transcripts results/transcripts/*.jsonl.gz are digest-bound by manifest.json (sha256 per transcript) but absent from the checkout and from the operator's working tree.",
+        "s3": {
+          "bucket_var": "BASELINES_BUCKET",
+          "prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
+          "object_count": 16,
+          "verified": "verified 2026-09-17: two transcripts downloaded; sha256 equal to results/manifest.json runs[5] and runs[8]."
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Transcripts confirmed under the baselines prefix (16 objects); nothing local to upload."
+    },
+    {
+      "label": "fig:overview",
+      "kind": "figure",
+      "number": "Figure 1",
+      "title": "SciFact gap and retrieval walk",
+      "section": "sec:blind",
+      "caption": "Left: SciFact HER and Delta Recall@10 for controls, TF32 off, TF32 on, bf16, int8. Right: retrieval-walk trajectory divergence by hop for four sigma values.",
+      "experiment_dir": [
+        "experiments/regime-discrimination",
+        "docs/paper/evidence/L3_09_agentic_compounding"
+      ],
+      "result_files": [
+        {
+          "path": "experiments/regime-discrimination/results/regime_matrix.json",
+          "sha256": "80e68c75b9dd4cffcf2f33e36bd03b307ffb784da0b5badedad78b1b1a413d9c"
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/MANIFEST.sha256",
+          "sha256": "6fc74c570f86b73485ffe7b6fbe64adf5c6dc4c8f6c1d1daf12f8d93b2d8bc29",
+          "tracked": false
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/analysis.json",
+          "sha256": "62844562cd4bd30da1a55dddfe1bfa09b0cd175b188d5c9edab24f09073c3e21",
+          "tracked": false
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/config.yaml",
+          "sha256": "2648d9c104b932eb6c10ca22696afab46879bd6e9fcc334bc88a04c8c3cfe209",
+          "tracked": false
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/environment.json",
+          "sha256": "2a84939093dd016dd5ea14ed52304980e3a41e2dd3ecca53571d2182e30a8213",
+          "tracked": false
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/replay.md",
+          "sha256": "25ccbaf598381c00073969250cc9489cb92f97eb7d1e0598807236bfafdb501c",
+          "tracked": false
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/report.md",
+          "sha256": "e9c1548bb55eb3f0a0a4600ab082ba99bf614d4292c444f611dd55a73d0ea5fb",
+          "tracked": false
+        },
+        {
+          "path": "docs/paper/evidence/L3_09_agentic_compounding/results.jsonl",
+          "sha256": "14be3ea7a6baaadfe752da4a234dd543af8193b27e3f59251f160b163bd4364a",
+          "tracked": false
+        }
+      ],
+      "input_selection": "Left: regime_matrix.json rows proc, gpu_tf32_off, gpu_tf32_on, bf16, int8 (fields semq_her, recall_delta, recall_delta_ci95). Right: analysis.json divergence['0.0'|'0.0001'|'0.001'|'0.003'] and summary.n_hops, after MANIFEST.sha256 verification.",
+      "sidecars_in_repo": [
+        {
+          "path": "experiments/regime-discrimination/results/regime_matrix.attestation.json",
+          "sha256": "8f175dc62fb870b6517b601ed1326c98d512e38d951555bf0a47971504c1467b"
+        },
+        {
+          "path": "experiments/regime-discrimination/results/regime_matrix.attestation.notary",
+          "sha256": "f4221fae65550e5620b6e126c8c3d2ca4a7039d1faaa78034da232b97f988a90"
+        }
+      ],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/make_figure1.py",
+          "git": "73139c81f6b83651f87565fa0b52f1403388b78e"
+        },
+        "command": "cd docs/paper/latex && python make_figure1.py",
+        "output": {
+          "path": "docs/paper/latex/figure1.pdf",
+          "git": "73139c81f6b83651f87565fa0b52f1403388b78e",
+          "tracked": false,
+          "note": "The tracked figure1.pdf is the main version; the 2026-09-16 draft regenerates it."
+        }
+      },
+      "generator_note": "The tracked make_figure1.py is the main version; the 2026-09-16 draft modifies it. The commit above is the tracked file's.",
+      "capture": {
+        "left": {
+          "script": "experiments/regime-discrimination/run_matrix.py",
+          "command": "python experiments/regime-discrimination/run_matrix.py (SDK required; GPU rows on g5.xlarge)",
+          "codes_export": "python experiments/regime-discrimination/export_codes.py; --check recomputes HER without the SDK"
+        },
+        "right": {
+          "source": "semq-research/experiments/L3_09_agentic_compounding/experiment.py",
+          "command": "docker run ... run L3_09_agentic_compounding (docs/paper/evidence/L3_09_agentic_compounding/replay.md)"
+        }
+      },
+      "environment_record": {
+        "left": "regime_matrix.json 'hosts': cpu 'macOS arm64: fp32 reference and CPU conditions', gpu 'g5.xlarge A10G, us-east-2: GPU conditions'. The attestation sidecar records only the signing host (macOS-26.5.1-arm64, CPython 3.11.12). No torch or SDK version is stored in regime_matrix.json; codes/MANIFEST.json records semq 1.5.1.dev32+g80e4b2c5a for the re-encoded codes.",
+        "right": "docs/paper/evidence/L3_09_agentic_compounding/environment.json (container image tag 20260707-112517 and digest, c7i.2xlarge, Debian 12, CPython 3.11.15, numpy 2.4.6, torch 2.12.1+cpu, semq 1.3.0rc1, semq-research 0.1.0, PYTHONHASHSEED=42; 'git': null)."
+      },
+      "raw_artifacts": {
+        "left": {
+          "status": "CPU conditions archived 2026-09-17; GPU conditions not retained",
+          "cpu_conditions": {
+            "vectors": {
+              "files": [
+                {
+                  "path": "experiments/regime-discrimination/results/cache/reference.npz",
+                  "sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/cache/proc.npz",
+                  "sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/cache/threads1.npz",
+                  "sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/cache/batch8.npz",
+                  "sha256": "b7c8386872e68d202fc079382c451973a98525a58e2b026cef66fd9760f85394",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/cache/batch128.npz",
+                  "sha256": "c8d0b8e4d6484be0f0f087fe32e3aa9103758c272353e20f8497d90e774d8037",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/cache/bf16.npz",
+                  "sha256": "0bbb2b77d19f11f6d52c40c0dce2de307cfbd8741e79490f873478e0a95465c6",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/cache/int8.npz",
+                  "sha256": "aafb6815b6e41574e07474312015716c8658805e4740e53648ea64482c38ff03",
+                  "tracked": false,
+                  "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+                }
+              ],
+              "size_bytes_total": 50810289
+            },
+            "codes": {
+              "files": [
+                {
+                  "path": "experiments/regime-discrimination/results/codes/MANIFEST.json",
+                  "sha256": "f8f86112ae51f6614d5247a8e08afac0c43ed02844e35165226374dbdc8f34cb",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/reference.npz",
+                  "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/proc.npz",
+                  "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/threads1.npz",
+                  "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/batch8.npz",
+                  "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/batch128.npz",
+                  "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/bf16.npz",
+                  "sha256": "020e3e9f7c77776c14d0eb4e3c0994701b3f77073c225a90281f195f74b3d510",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                },
+                {
+                  "path": "experiments/regime-discrimination/results/codes/int8.npz",
+                  "sha256": "60d470d75835cbf2b5b590373505fbf674db10ef4b903b6d7c8f311307dcdb70",
+                  "tracked": false,
+                  "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+                }
+              ],
+              "size_bytes_total": 6421581
+            },
+            "planned_s3": {
+              "bucket_var": "RESEARCH_RESULTS_BUCKET",
+              "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/",
+              "layout": "cache/*.npz, codes/*.npz, codes/MANIFEST.json, MANIFEST.sha256",
+              "state": "uploaded 2026-09-17; one cache file and two code files downloaded, sha256 matches MANIFEST.sha256; HER recomputed from the archived int8 codes equals regime_matrix.json."
+            }
+          },
+          "gpu_conditions": {
+            "rows": [
+              "gpu_tf32_off",
+              "gpu_tf32_on",
+              "fp16",
+              "gpu_bf16"
+            ],
+            "status": "not retained in repository; location not recorded",
+            "detail": "regime_matrix.json 'hosts' names g5.xlarge A10G, us-east-2 for the GPU rows. No vectors, codes, or S3 key for these captures are recorded in the repository."
+          }
+        },
+        "right": {
+          "status": "aggregates archived; trajectories never written",
+          "bundle_s3": {
+            "bucket_var": "RESEARCH_RESULTS_BUCKET",
+            "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/L3_09_agentic_compounding/2026-07-07_113131_20260707-112517/",
+            "object_count": 7,
+            "verified": "2026-09-16: remote MANIFEST.sha256 downloaded and byte-identical to the in-repo copy; all six listed files verify with shasum -a 256 -c."
+          },
+          "embedding_cache_s3": {
+            "bucket_var": "RESEARCH_RESULTS_BUCKET",
+            "prefix": "s3://$RESEARCH_RESULTS_BUCKET/embeddings/bge_large_en_v15/beir_nfcorpus/",
+            "object_count": 4,
+            "objects": {
+              "corpus.npy": 14880896,
+              "corpus.meta.json": 446,
+              "queries.npy": 1323136,
+              "queries.meta.json": 446
+            },
+            "verified": "2026-09-16: corpus.meta.json downloaded; it records shape [3633, 1024], dtype float32, created_at_utc 2026-06-11T17:06:02+00:00, encoder_image_revision 20260611-141157."
+          },
+          "detail": "results.jsonl holds four rows {'sigmas': s}. Per-(seed, run) trajectories and the 200-document step sample are not written by experiment.py and cannot be uploaded."
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "CPU vectors and codes uploaded 2026-09-17. GPU-row vectors and walk trajectories cannot be uploaded from here."
+    },
+    {
+      "label": "tab:decoding",
+      "kind": "table",
+      "number": "Table 2",
+      "title": "decoding range",
+      "section": "sec:compound",
+      "caption": "ARI-D-internal, range over Llama-3.1-8B, Qwen2.5-7B and Mistral-7B-v0.3 (one L40S).",
+      "experiment_dir": "experiments/decoding-reproducibility",
+      "result_files": [
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_llama31_8b_gpu.json",
+          "sha256": "f5b8fb2b1671d188e8ce6e85a35d02080d40d47f71dc9e117d7a7521ee9422d9"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_qwen25_7b_gpu.json",
+          "sha256": "41349a2dcdc2696e7c2d85e482a7a7db9e33655f1625ebcbc1176ac00c49b3a9"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_mistral7b_v03_gpu.json",
+          "sha256": "bc8321db5b43b33a724ee7ba1e71f905ac8489350e828b5d3e9590a1b4cc1335"
+        }
+      ],
+      "sidecars_in_repo": [
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_llama31_8b_gpu.attestation.json",
+          "sha256": "58802f459affa75f852289eb0b99a9099c0a3b58b195775efadd0db307f022c7"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_llama31_8b_gpu.attestation.notary",
+          "sha256": "2192e09453d17c37455034342d316dc8a68599ee62ac7c793a6036929f72b03d"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_qwen25_7b_gpu.attestation.json",
+          "sha256": "eafd4970f3e2e4d31e9c5a908e86164564abcde9dde18d1bdfdbbaab271be950"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_qwen25_7b_gpu.attestation.notary",
+          "sha256": "6692a94f1744147baec4384e38846dec365f35bc66989de62266e4833536a5b9"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_mistral7b_v03_gpu.attestation.json",
+          "sha256": "4c5faa5e7f52f565fb47ce2fcc914f1053bf0b78574440032c88c25a25dd73d0"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_mistral7b_v03_gpu.attestation.notary",
+          "sha256": "4b0af5fa5f7afe238494ae18a94cc9f1d8d53b3127223fdb3f8385cceeef5c3b"
+        }
+      ],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/build_tables.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
+        "output": {
+          "path": "docs/paper/latex/tables/decoding.tex",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": {
+        "script": "experiments/decoding-reproducibility/run_matrix.py",
+        "command": "ARI_D_DEVICE=cuda python experiments/decoding-reproducibility/run_matrix.py (RESULTS.md documents the CPU form ARI_D_DEVICE=cpu; SDK required)"
+      },
+      "environment_record": "Each JSON records model, device 'cuda', n_new_tokens 48, quant_bins 8, and the 48 prompts. RESULTS-production-models.md names one L40S. No torch, CUDA, driver, or SDK version is recorded. Attestation sidecars record only the signing host (macOS-26.5.1-arm64).",
+      "raw_artifacts": {
+        "status": "not retained in repository; location not recorded",
+        "detail": "Logit vectors and packed codes for the three L40S runs are not in the repository. No S3 key, tarball, or cache directory for them is recorded in RESULTS-production-models.md or the JSON.",
+        "cpu_pilot_related": {
+          "files": [
+            {
+              "path": "experiments/decoding-reproducibility/results/decoding_matrix.json",
+              "sha256": "1a359daeade72b73e587bd9b3928911c0f3b75bfa341ffb110d050764d8e2982"
+            },
+            {
+              "path": "experiments/decoding-reproducibility/results/decoding_matrix.attestation.json",
+              "sha256": "0667d7e2b99aad2786d1ed418935433f78b83ef229956439c756cea76459abf6"
+            },
+            {
+              "path": "experiments/decoding-reproducibility/results/decoding_matrix.attestation.notary",
+              "sha256": "43bdd6e3b3f74860fcd76724513faceb08d7428588ed01171cd7fe3e45b4325a"
+            }
+          ],
+          "cache": {
+            "files": [
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/reference.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/proc.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/threads1.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/batched.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/bf16.npz",
+                "sha256": "3560bea6872aebd888926b227f800b7f25dc8cd3b01f07ccb44b5e1f03417817",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/int8.npz",
+                "sha256": "fb7d2d1995e08d78e23e2d7464f5db6d47a6972bd6558c5b43f362ba78bd3669",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              }
+            ],
+            "size_bytes_total": 325925111
+          },
+          "used_by_paper": "app:deccontrol text: TinyLlama-1.1B CPU run, int8 token agreement 74.21% and bf16 9 of 12 generations identical (decoding_matrix.json rows int8, bf16).",
+          "planned_s3": {
+            "bucket_var": "RESEARCH_RESULTS_BUCKET",
+            "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/",
+            "layout": "cache/*.npz, MANIFEST.sha256",
+            "state": "uploaded 2026-09-17; cache/bf16.npz downloaded, sha256 matches MANIFEST.sha256."
+          }
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "GPU logits/codes: nothing local. CPU pilot cache: uploaded 2026-09-17 to the prefix above."
+    },
+    {
+      "label": "tab:conditions",
+      "kind": "table",
+      "number": "Table 3",
+      "title": "condition set",
+      "section": "app:conditions",
+      "caption": "ARI execution conditions, grouped by reproducibility tier.",
+      "experiment_dir": null,
+      "result_files": [
+        {
+          "path": "spec/ari-canonical-v0.1.md",
+          "git": "5d697bc5a1499245aa63dbe01ba50d04e2a578ce"
+        }
+      ],
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": null,
+        "command": null,
+        "note": "Typed inline in ari.tex from the specification; no measurement."
+      },
+      "environment_record": null,
+      "raw_artifacts": {
+        "status": "not applicable"
+      },
+      "s3_upload_needed": false
+    },
+    {
+      "label": "tab:arid",
+      "kind": "table",
+      "number": "Table 4",
+      "title": "hosted rates",
+      "section": "app:arid",
+      "caption": "Byte-identical repeat rates on five hosted text-generation endpoints.",
+      "experiment_dir": "experiments/arid-dry-run",
+      "result_files": [
+        {
+          "path": "experiments/arid-dry-run/results/analysis.json",
+          "sha256": "959e39bd13f446880ec3f3cf2717dd52b6a3d34c238a70186271bc6f3f4c3bd3"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/time_pair.json",
+          "sha256": "b38f1269174a3e71bf24f6ff0ffc999c5fdae5e54b5b3f97153ca7d1ec8b525f"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/time_pair_together.json",
+          "sha256": "486eaff0780efbab773d7d5cf7b50e57cd9a622d7ab37685484dd6b6a02ea085"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/time_pair_salesforce.json",
+          "sha256": "8f2548b7d4588e3eafb93102f208c172ef509f688864bc99b81dbee123c6d4d9"
+        },
+        {
+          "path": "experiments/arid-dry-run/results/door_compare.json",
+          "sha256": "132b15be5f905090471b5a66b3c2ded42288734c7e3e3729be0797510805c8ee"
+        }
+      ],
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/build_tables.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
+        "output": {
+          "path": "docs/paper/latex/tables/arid.tex",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": "Same as fig:arid.",
+      "environment_record": "Same as fig:arid.",
+      "raw_artifacts": {
+        "status": "not in repository; archived in the baselines bucket, verified 2026-09-17",
+        "detail": "Transcripts results/transcripts/*.jsonl.gz are digest-bound by manifest.json (sha256 per transcript) but absent from the checkout and from the operator's working tree.",
+        "s3": {
+          "bucket_var": "BASELINES_BUCKET",
+          "prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
+          "object_count": 16,
+          "verified": "verified 2026-09-17: two transcripts downloaded; sha256 equal to results/manifest.json runs[5] and runs[8]."
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Same as fig:arid."
+    },
+    {
+      "label": "fig:batch",
+      "kind": "figure",
+      "number": "Figure 3",
+      "title": "batch invariance",
+      "section": "app:batch",
+      "caption": "HER against a batch-32 reference on H100, at fp32 (TF32 off; TF32 on), with same-batch control column.",
+      "experiment_dir": "experiments/batch-invariance",
+      "result_files": [
+        {
+          "path": "experiments/batch-invariance/results/summary_with_control.json",
+          "sha256": "34d74711a81a221263657b3dbe14d2ac5400fac1306e7e8034dc6a6d96f0e8eb"
+        }
+      ],
+      "related_files": [
+        {
+          "path": "experiments/batch-invariance/results/summary_boundary.json",
+          "sha256": "0b4fccf32595458ae730bb218ccb36d2cdcc7992a43c1939a17c6e80cf8bb29f"
+        },
+        {
+          "path": "experiments/batch-invariance/results/summary_all_encoders.json",
+          "sha256": "4c71cd45ccfb018e9c52bec9f34e8ce74dc207b891686a2ea150e8f2fbfd94d2"
+        },
+        {
+          "path": "experiments/batch-invariance/results/summary.json",
+          "sha256": "b5788d4162df76f69d2acd39e08935d28376aa819fa5856f3c00143ed40f5b9b"
+        },
+        {
+          "path": "experiments/batch-invariance/results/nonassociativity.json",
+          "sha256": "906f617402cca34bdae0e43df00994e2bc0f6d3391c9f21d6e312f05728ecf7c"
+        }
+      ],
+      "input_selection": "cells '<model>__cellA' and '<model>__cellC' for seven models; control_HER and comparisons[].HER at batches 1, 8, 128, 512.",
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/make_figure3.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "cd docs/paper/latex && python make_figure3.py",
+        "output": {
+          "path": "docs/paper/latex/figure3.pdf",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": {
+        "script": "experiments/batch-invariance/run_batch_sweep.py",
+        "command": "python run_batch_sweep.py --label h100 --n 1000 --out ~/batch_out [--publish-s3 <prefix>] (on p5.48xlarge; SDK required)",
+        "nonassociativity": "python nonassociativity.py --out results/nonassociativity.json"
+      },
+      "environment_record": "RESULTS.md prose only: 'Run 2026-09-08 on p5.48xlarge (8x H100 80GB, Hopper), torch 2.5.1+cu121, semq 1.5.0'. summary_with_control.json has no environment block (keys: label, n, reference_batch, batches, cells).",
+      "raw_artifacts": {
+        "status": "not in repository; in the batch-results bucket, listed 2026-09-17, not checksum-verified",
+        "detail": "RESULTS.md: 'the code matrices from this run are retained in S3'. The prefix and object count are not written in the repository. The coordinator reports 211 code-matrix objects from the p5 run in the batch-results bucket.",
+        "s3": {
+          "bucket_var": "BATCH_RESULTS_BUCKET",
+          "prefix": "s3://$BATCH_RESULTS_BUCKET/batch-invariance/results/",
+          "object_count": "553 (all-encoders/ 211, with-control/ 254, boundary/ 85, plus summary.json and logs)",
+          "verified": "listed 2026-09-17; no object checksum compared yet."
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Prefix and object count recorded 2026-09-17; verify one object's checksum against a capture meta.json before citing."
+    },
+    {
+      "label": "tab:scifact",
+      "kind": "table",
+      "number": "Table 5",
+      "title": "full SciFact",
+      "section": "app:scifact",
+      "caption": "Retrieval quality and representation agreement under execution and precision changes (SciFact, all-MiniLM-L6-v2).",
+      "experiment_dir": "experiments/regime-discrimination",
+      "result_files": [
+        {
+          "path": "experiments/regime-discrimination/results/regime_matrix.json",
+          "sha256": "80e68c75b9dd4cffcf2f33e36bd03b307ffb784da0b5badedad78b1b1a413d9c"
+        }
+      ],
+      "input_selection": "rows proc (grouped with threads1, batch8, batch128 after equality check), gpu_tf32_off, gpu_tf32_on, fp16, bf16, gpu_bf16, int8; fields recall_delta, recall_delta_ci95, cosine_mean, top10_identical, semq_her.",
+      "sidecars_in_repo": [
+        {
+          "path": "experiments/regime-discrimination/results/regime_matrix.attestation.json",
+          "sha256": "8f175dc62fb870b6517b601ed1326c98d512e38d951555bf0a47971504c1467b"
+        },
+        {
+          "path": "experiments/regime-discrimination/results/regime_matrix.attestation.notary",
+          "sha256": "f4221fae65550e5620b6e126c8c3d2ca4a7039d1faaa78034da232b97f988a90"
+        }
+      ],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/build_tables.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
+        "output": {
+          "path": "docs/paper/latex/tables/scifact.tex",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": {
+        "script": "experiments/regime-discrimination/run_matrix.py",
+        "command": "python experiments/regime-discrimination/run_matrix.py (SDK required)"
+      },
+      "environment_record": "Same as fig:overview left.",
+      "raw_artifacts": {
+        "status": "CPU conditions archived 2026-09-17; GPU conditions not retained",
+        "cpu_conditions": {
+          "vectors": {
+            "files": [
+              {
+                "path": "experiments/regime-discrimination/results/cache/reference.npz",
+                "sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/cache/proc.npz",
+                "sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/cache/threads1.npz",
+                "sha256": "cea665df76ab5f6b69625a952763755412f2c7074e0894b2df831f4821b38963",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/cache/batch8.npz",
+                "sha256": "b7c8386872e68d202fc079382c451973a98525a58e2b026cef66fd9760f85394",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/cache/batch128.npz",
+                "sha256": "c8d0b8e4d6484be0f0f087fe32e3aa9103758c272353e20f8497d90e774d8037",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/cache/bf16.npz",
+                "sha256": "0bbb2b77d19f11f6d52c40c0dce2de307cfbd8741e79490f873478e0a95465c6",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/cache/int8.npz",
+                "sha256": "aafb6815b6e41574e07474312015716c8658805e4740e53648ea64482c38ff03",
+                "tracked": false,
+                "note": "gitignored (.gitignore line 'experiments/regime-discrimination/results/cache/'); present in the operator's checkout; sha256 equals codes/MANIFEST.json source_sha256"
+              }
+            ],
+            "size_bytes_total": 50810289
+          },
+          "codes": {
+            "files": [
+              {
+                "path": "experiments/regime-discrimination/results/codes/MANIFEST.json",
+                "sha256": "f8f86112ae51f6614d5247a8e08afac0c43ed02844e35165226374dbdc8f34cb",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/reference.npz",
+                "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/proc.npz",
+                "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/threads1.npz",
+                "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/batch8.npz",
+                "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/batch128.npz",
+                "sha256": "59b888649795e44eb37d04f1755b15429a4b39a8f62310dae4e1c2d49e3bc2b3",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/bf16.npz",
+                "sha256": "020e3e9f7c77776c14d0eb4e3c0994701b3f77073c225a90281f195f74b3d510",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              },
+              {
+                "path": "experiments/regime-discrimination/results/codes/int8.npz",
+                "sha256": "60d470d75835cbf2b5b590373505fbf674db10ef4b903b6d7c8f311307dcdb70",
+                "tracked": false,
+                "note": "Written by export_codes.py on 2026-09-16; untracked in the operator's checkout"
+              }
+            ],
+            "size_bytes_total": 6421581
+          },
+          "planned_s3": {
+            "bucket_var": "RESEARCH_RESULTS_BUCKET",
+            "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/",
+            "layout": "cache/*.npz, codes/*.npz, codes/MANIFEST.json, MANIFEST.sha256",
+            "state": "uploaded 2026-09-17; one cache file and two code files downloaded, sha256 matches MANIFEST.sha256; HER recomputed from the archived int8 codes equals regime_matrix.json."
+          }
+        },
+        "gpu_conditions": {
+          "rows": [
+            "gpu_tf32_off",
+            "gpu_tf32_on",
+            "fp16",
+            "gpu_bf16"
+          ],
+          "status": "not retained in repository; location not recorded",
+          "detail": "regime_matrix.json 'hosts' names g5.xlarge A10G, us-east-2 for the GPU rows. No vectors, codes, or S3 key for these captures are recorded in the repository."
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Same as fig:overview left."
+    },
+    {
+      "label": "tab:normalized",
+      "kind": "table",
+      "number": "Table 6",
+      "title": "normalized panel",
+      "section": "app:panel",
+      "caption": "The API panel under dimension- and sensitivity-normalized sigma-hat.",
+      "experiment_dir": [
+        "experiments/deployed-agent-panel",
+        "experiments/drift-sensitivity"
+      ],
+      "result_files": [
+        {
+          "path": "docs/paper/evidence/embedding_panel/MANIFEST.json",
+          "sha256": "485ef82f98ca7f75a21d4f7aef509f25c6b44f936e1662d544ddc3db6ace4e0e"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/gemini_gemini-embedding-001.json",
+          "sha256": "e75a7db429b5141d1cfd95c8791b73ed6e224f2e2e90a8877cee0976a0538357"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/openai_text-embedding-3-large.json",
+          "sha256": "33cf04df51f55b63411ecc7f0f64bc4b0e60909afde39ee402091a433c922cd0"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/mistral_mistral-embed.json",
+          "sha256": "5a6cb187b7eba66ce8ff9791bc009805ce32e4af22ce38cdf4a24a3e2e4dda1b"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/voyage_voyage-4-large.json",
+          "sha256": "8f1e7877a9240efc23762627c053fa1d13420fbab505cc2de629cfa61c613834"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/cohere_embed-v4.0.json",
+          "sha256": "b351bee7c495ca387cb2b489960a9b1d694e8690aebe138598ebdcff92141a5b"
+        },
+        {
+          "path": "spec/fingerprints-v0.1.csv",
+          "git": "73139c81f6b83651f87565fa0b52f1403388b78e"
+        }
+      ],
+      "related_files": [
+        {
+          "path": "experiments/drift-sensitivity/results/encoder_fingerprints.csv",
+          "sha256": "c22ba2aed379aec94c642e7c10150d3260c7e880436661bd3f384e24cf108584"
+        },
+        {
+          "path": "experiments/drift-sensitivity/results/kappa_per_dataset.csv",
+          "sha256": "2b358568b1fd0cb693a959ac9881f4d8c30b8086f0d1241719b964aba2c3ad49"
+        },
+        {
+          "path": "experiments/drift-sensitivity/results/sensitivity_curves.csv",
+          "sha256": "e535ef9e3bc37049708bf860270762a99af753974b3809cd64c268d1ac0babac"
+        }
+      ],
+      "input_selection": "Per model: Hbar from results_per_condition[proc|conc|time].detectors.semq; dim, b, kappa from spec/fingerprints-v0.1.csv.",
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/build_tables.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
+        "output": {
+          "path": "docs/paper/latex/tables/normalized.tex",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "environment_record": "Same as tab:panel for the snapshots. The fingerprint registry records no capture environment.",
+      "raw_artifacts": {
+        "status": "not retained",
+        "detail": "Raw API vectors: as tab:panel. Coordinate-level calibration trials behind the fingerprint fits are absent; experiments/drift-sensitivity/results/*.csv are fitted summaries (REPOSITORY_AUDIT.md: 'Raw coordinate-level calibration trials and fit uncertainty are absent')."
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Nothing local to upload."
+    },
+    {
+      "label": "tab:replication",
+      "kind": "table",
+      "number": "Table 7",
+      "title": "pilot replication",
+      "section": "app:selfhosted",
+      "caption": "Three independent realizations of proc and same on text-embedding-3-large, n=1,000 (pilot).",
+      "experiment_dir": "experiments/deployed-agent-panel",
+      "result_files": [
+        {
+          "path": "experiments/deployed-agent-panel/artifacts/openai_proc_pilot_n1000.json",
+          "sha256": "c2ecdf98c4fd00f2e85fa0a87c6aaf4e4c3e60414fc36c4600768de134cecf50"
+        }
+      ],
+      "input_selection": "conditions.proc.per_resample_HER [0.851, 0.856, 0.846], conditions.same.per_resample_HER [0.849, 0.837, 0.87]; the sd and CI half-width columns are derived by hand.",
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": null,
+        "command": null,
+        "note": "Typed inline in ari.tex; not generated by build_tables.py."
+      },
+      "environment_record": "None. The artifact records n_inputs 1000, resamples 3, probe_backend semq, agent text-embedding-3-large.",
+      "raw_artifacts": {
+        "status": "not retained",
+        "detail": "No vectors or per-input codes for the pilot exist in the repository and no archive location is recorded."
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Nothing local to upload."
+    },
+    {
+      "label": "tab:decfull",
+      "kind": "table",
+      "number": "Table 8",
+      "title": "per-model decoding",
+      "section": "app:deccontrol",
+      "caption": "Per-model decoding-layer results behind Table 2.",
+      "experiment_dir": "experiments/decoding-reproducibility",
+      "result_files": [
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_llama31_8b_gpu.json",
+          "sha256": "f5b8fb2b1671d188e8ce6e85a35d02080d40d47f71dc9e117d7a7521ee9422d9"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_qwen25_7b_gpu.json",
+          "sha256": "41349a2dcdc2696e7c2d85e482a7a7db9e33655f1625ebcbc1176ac00c49b3a9"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_mistral7b_v03_gpu.json",
+          "sha256": "bc8321db5b43b33a724ee7ba1e71f905ac8489350e828b5d3e9590a1b4cc1335"
+        }
+      ],
+      "sidecars_in_repo": [
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_llama31_8b_gpu.attestation.json",
+          "sha256": "58802f459affa75f852289eb0b99a9099c0a3b58b195775efadd0db307f022c7"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_llama31_8b_gpu.attestation.notary",
+          "sha256": "2192e09453d17c37455034342d316dc8a68599ee62ac7c793a6036929f72b03d"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_qwen25_7b_gpu.attestation.json",
+          "sha256": "eafd4970f3e2e4d31e9c5a908e86164564abcde9dde18d1bdfdbbaab271be950"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_qwen25_7b_gpu.attestation.notary",
+          "sha256": "6692a94f1744147baec4384e38846dec365f35bc66989de62266e4833536a5b9"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_mistral7b_v03_gpu.attestation.json",
+          "sha256": "4c5faa5e7f52f565fb47ce2fcc914f1053bf0b78574440032c88c25a25dd73d0"
+        },
+        {
+          "path": "experiments/decoding-reproducibility/results/decoding_matrix_mistral7b_v03_gpu.attestation.notary",
+          "sha256": "4b0af5fa5f7afe238494ae18a94cc9f1d8d53b3127223fdb3f8385cceeef5c3b"
+        }
+      ],
+      "generator": {
+        "script": {
+          "path": "docs/paper/latex/build_tables.py",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        },
+        "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
+        "output": {
+          "path": "docs/paper/latex/tables/decfull.tex",
+          "git": null,
+          "tracked": false,
+          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+        }
+      },
+      "capture": {
+        "script": "experiments/decoding-reproducibility/run_matrix.py",
+        "command": "ARI_D_DEVICE=cuda python experiments/decoding-reproducibility/run_matrix.py (RESULTS.md documents the CPU form ARI_D_DEVICE=cpu; SDK required)"
+      },
+      "environment_record": "Each JSON records model, device 'cuda', n_new_tokens 48, quant_bins 8, and the 48 prompts. RESULTS-production-models.md names one L40S. No torch, CUDA, driver, or SDK version is recorded. Attestation sidecars record only the signing host (macOS-26.5.1-arm64).",
+      "raw_artifacts": {
+        "status": "not retained in repository; location not recorded",
+        "detail": "Logit vectors and packed codes for the three L40S runs are not in the repository. No S3 key, tarball, or cache directory for them is recorded in RESULTS-production-models.md or the JSON.",
+        "cpu_pilot_related": {
+          "files": [
+            {
+              "path": "experiments/decoding-reproducibility/results/decoding_matrix.json",
+              "sha256": "1a359daeade72b73e587bd9b3928911c0f3b75bfa341ffb110d050764d8e2982"
+            },
+            {
+              "path": "experiments/decoding-reproducibility/results/decoding_matrix.attestation.json",
+              "sha256": "0667d7e2b99aad2786d1ed418935433f78b83ef229956439c756cea76459abf6"
+            },
+            {
+              "path": "experiments/decoding-reproducibility/results/decoding_matrix.attestation.notary",
+              "sha256": "43bdd6e3b3f74860fcd76724513faceb08d7428588ed01171cd7fe3e45b4325a"
+            }
+          ],
+          "cache": {
+            "files": [
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/reference.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/proc.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/threads1.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/batched.npz",
+                "sha256": "eccd0735ae4779184fa9cf36a6d727dbc456730b552af806e98f049d22296d46",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/bf16.npz",
+                "sha256": "3560bea6872aebd888926b227f800b7f25dc8cd3b01f07ccb44b5e1f03417817",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              },
+              {
+                "path": "experiments/decoding-reproducibility/results/cache/int8.npz",
+                "sha256": "fb7d2d1995e08d78e23e2d7464f5db6d47a6972bd6558c5b43f362ba78bd3669",
+                "tracked": false,
+                "note": "gitignored; pickled object arrays; present in the operator's checkout"
+              }
+            ],
+            "size_bytes_total": 325925111
+          },
+          "used_by_paper": "app:deccontrol text: TinyLlama-1.1B CPU run, int8 token agreement 74.21% and bf16 9 of 12 generations identical (decoding_matrix.json rows int8, bf16).",
+          "planned_s3": {
+            "bucket_var": "RESEARCH_RESULTS_BUCKET",
+            "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/",
+            "layout": "cache/*.npz, MANIFEST.sha256",
+            "state": "uploaded 2026-09-17; cache/bf16.npz downloaded, sha256 matches MANIFEST.sha256."
+          }
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Same as tab:decoding."
+    },
+    {
+      "label": "text:gpu-hosts",
+      "kind": "text",
+      "number": null,
+      "title": "GPU hosts",
+      "section": "app:selfhosted (GPU hosts paragraph) and sec:blind (TF32 2x2)",
+      "caption": "GPU-determinism rows: cross-GPU mean 0.999; TF32 on 12-46% disagreement vs CPU; mxbai 0.537; 2x2 TF32 x deterministic (1.000 off, 0.749 on).",
+      "experiment_dir": "experiments/gpu-determinism",
+      "result_files": [
+        {
+          "path": "experiments/gpu-determinism/results/a10g.csv",
+          "sha256": "b16b9c5975964c148f184da689e43fb508e27dfd829409068a0ac8e018f3bd2f"
+        },
+        {
+          "path": "experiments/gpu-determinism/results/isolation_2x2.csv",
+          "sha256": "e64a8e3d3d5f8a87483f3c9834bea5dbc4bca001053727ba71ce35d893be14e0"
+        },
+        {
+          "path": "experiments/gpu-determinism/results/mach_cross_gpu.csv",
+          "sha256": "bc68ceb7e04ef294a8ed0de0aaa9897be838477e331107b190c7ae0a8dd3e0e2"
+        }
+      ],
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": null,
+        "command": null,
+        "note": "Numbers quoted in prose from the CSVs and RESULTS.md."
+      },
+      "capture": {
+        "scripts": [
+          "experiments/gpu-determinism/run_matrix.py",
+          "experiments/gpu-determinism/isolation.py"
+        ],
+        "command": "python run_matrix.py --label a10g --tf32-available true --n 512 --out ~/gpu_out; python run_matrix.py --label t4 --tf32-available false --n 512 --out ~/gpu_out (SDK required)"
+      },
+      "environment_record": "RESULTS.md and README.md prose: g5.xlarge A10G (sm_86), g4dn.xlarge T4 (sm_75), n=512, PyTorch 2.3 default TF32 off, determinism cell uses use_deterministic_algorithms(warn_only=True) and CUBLAS_WORKSPACE_CONFIG=:4096:8. No environment JSON.",
+      "raw_artifacts": {
+        "status": "not in repository; tarred for S3 upload, key not recorded",
+        "detail": "run_matrix.py 'tars the outputs for S3 upload'; the CPU-fp32 reference captures were produced locally. No prefix is recorded in the repository."
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "Locate the tarballs and record the prefix; nothing local known."
+    },
+    {
+      "label": "text:selfhosted-panel",
+      "kind": "text",
+      "number": null,
+      "title": "self-hosted panel",
+      "section": "app:selfhosted (self-hosted panel paragraphs)",
+      "caption": "Nine self-hosted models at HER 1.000 in named core cells; CPU bf16 precision diagnostics; SFR-Embedding-2_R HER 0.0 and Hbar 24.4 on L40S.",
+      "experiment_dir": "experiments/deployed-agent-panel",
+      "result_files": [
+        {
+          "path": "docs/paper/evidence/embedding_panel/BAAI_bge-large-en-v1.5.json",
+          "sha256": "3b19f5b47a9d48d3b2a0f26cc50fa1aafe883146f2d345c6f2b225131db7f0ed"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/BAAI_bge-m3.json",
+          "sha256": "f17b4f6f7f4461654bd73e06fafad1e902f4a470866825e4a402d987826fb0dc"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/intfloat_multilingual-e5-large.json",
+          "sha256": "fccb55ec2fe0f25dccd2c74e9afe72f536679f731d71e372e032b15325e1e8c2"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/sentence-transformers_all-mpnet-base-v2.json",
+          "sha256": "04f8964fd0e98e2bd4c3708a39d9c2035ed0e044e529c0d16f36fc8f127816c5"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/sentence-transformers_all-MiniLM-L6-v2.json",
+          "sha256": "1c3945a567a0f6cdfc02327b4434483b69564db60d2b0972054c0f718c098f97"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/nomic-ai_nomic-embed-text-v1.5.json",
+          "sha256": "4ef4baab137f226b39c35692ae6b6334bcd29229138c09c72a0a693ef976b409"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/mixedbread-ai_mxbai-embed-large-v1.json",
+          "sha256": "f202bca124efca898c38105e860f0149f86cd348a49f57d9345016e240ef5f46"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/Snowflake_snowflake-arctic-embed-l.json",
+          "sha256": "4ff4f2237b0d14ccb8f11e7603ac46ff63d52d7f9a1a8bbf51bd6cec26d7262c"
+        },
+        {
+          "path": "docs/paper/evidence/embedding_panel/Salesforce_SFR-Embedding-2_R.json",
+          "sha256": "cd0929a82176aaad610316e11e38f2ec6b2575baa07216db4b2d09cb2f90da1c"
+        },
+        {
+          "path": "experiments/deployed-agent-panel/artifacts/selfhosted_bge_large_pinned.json",
+          "sha256": "0a491b38d7fc1851d69a0b8a81c83c559861fdb040d828c0a0959324585548d1"
+        },
+        {
+          "path": "experiments/deployed-agent-panel/artifacts/selfhosted_bge_large_x86_pinned.json",
+          "sha256": "a63fcf0382d6cdf6bc49e143acfaf61e37ccf8dd295266b9abbb4462b93c2a2c"
+        },
+        {
+          "path": "experiments/deployed-agent-panel/artifacts/selfhosted_bge_large_x86_unpinned.json",
+          "sha256": "0e960bc6098393d184c9b02b5b5d99673014c00b76f84b3eb07a63452bffe573"
+        }
+      ],
+      "sidecars_in_repo": [],
+      "generator": {
+        "script": null,
+        "command": null,
+        "note": "Quoted in prose."
+      },
+      "environment_record": "Snapshot 'environment' fields (arm64 for the eight 2026-07-06 captures; x86_64+L40S(g6e.xlarge) for SFR, 2026-08-31).",
+      "raw_artifacts": {
+        "status": "not in repository",
+        "detail": "Historical float matrices for the first thirteen models are absent (ari.tex app:selfhosted). SFR raw vectors are documented under capture-sessions/sfr-2r/ in the baselines bucket (experiments/deployed-agent-panel/RESULTS.md).",
+        "s3": {
+          "bucket_var": "BASELINES_BUCKET",
+          "prefix": "s3://$BASELINES_BUCKET/capture-sessions/sfr-2r/",
+          "object_count": 6,
+          "verified": "listed 2026-09-17 (sfr-out.tar.gz, ari-bundle.tar.gz, two scripts, two wheels); not downloaded."
+        }
+      },
+      "s3_upload_needed": true,
+      "s3_upload_note": "SFR prefix and object count recorded 2026-09-17; download and verify meta.json revision before citing."
+    }
+  ]
+}
