@@ -18,9 +18,10 @@ real run.) Run it on AWS where OPENAI_API_KEY is set:
 
     python proc_pilot.py --agent openai --n 200 --resamples 8 --out proc_pilot.json
 
-Offline logic check (no key, no network), simulating a provider that drifts across contexts:
+Offline logic check (no key, no network; the SEMQ SDK is still required), simulating a
+provider that drifts across contexts:
 
-    python proc_pilot.py --agent mock --n 200 --resamples 8 --mock-drift 3e-3 --probe-backend mock
+    python proc_pilot.py --agent mock --n 200 --resamples 8 --mock-drift 3e-3
 """
 from __future__ import annotations
 
@@ -99,9 +100,9 @@ def _bootstrap_her_ci(he_mat: np.ndarray, n_boot: int = 1000, seed: int = 0):
     return [round(float(lo), 6), round(float(hi), 6)]
 
 
-def run_pilot(source, inputs, k: int, probe_backend: str) -> dict:
+def run_pilot(source, inputs, k: int) -> dict:
     base_vecs = source.baseline(inputs.texts)
-    probe = load_probe(base_vecs, backend=probe_backend)
+    probe = load_probe(base_vecs)
     base_codes = probe.encode(base_vecs)
 
     n = len(inputs)
@@ -138,7 +139,6 @@ def main(argv=None) -> int:
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--resamples", type=int, default=8)
     ap.add_argument("--inputs", type=Path, help="ARI-Bench JSONL; omit for the sample set")
-    ap.add_argument("--probe-backend", choices=["auto", "semq", "mock"], default="auto")
     ap.add_argument("--max-workers", type=int, default=16, help="concurrent API requests")
     ap.add_argument("--mock-drift", type=float, default=3e-3, help="mock only: proc σ")
     ap.add_argument("--out", type=Path, default=Path("proc_pilot.json"))
@@ -147,7 +147,7 @@ def main(argv=None) -> int:
     inputs = load_ari_bench(args.inputs) if args.inputs else sample_inputs(args.n)
     source = (MockSource(args.mock_drift) if args.agent == "mock"
               else APISource(build_api_agent(args.agent, args.model, args.dimensions, args.max_workers)))
-    result = run_pilot(source, inputs, args.resamples, args.probe_backend)
+    result = run_pilot(source, inputs, args.resamples)
     result["agent"] = "mock" if args.agent == "mock" else source.agent.agent_id
     args.out.write_text(json.dumps(result, indent=2) + "\n")
 
