@@ -68,7 +68,7 @@ def main(argv=None) -> int:
 
     if args.mode == "capture":
         vecs = agent.encode(inputs.texts)
-        probe = load_probe(vecs, backend="semq")
+        probe = load_probe(vecs)
         codes = probe.encode(vecs)
         d.mkdir(parents=True, exist_ok=True)
         np.save(codes_p, codes)

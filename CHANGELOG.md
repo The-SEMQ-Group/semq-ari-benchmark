@@ -13,12 +13,24 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   writes them (SDK required) and `--check` recomputes HER from them with
   `ari.code_metrics` alone, so the code-level rows can be verified without
   the SDK. Verified equal to the committed table on every condition.
+
+### The mock probe is gone
+- `ari/probe.py` binds to the SDK only. The development stand-in quantizer is
+  removed: its magnitude edge and byte layout differed from the canonical
+  probe, so its HER and byte rates were comparable with nothing, and a
+  stand-in that matched the SDK would be the reimplementation CONTRIBUTING.md
+  forbids. `load_probe(X)` takes no backend and raises a clear error without
+  the SDK. The `--probe-backend` flag is gone from `ari.run`, `run_report`,
+  `selfhosted_pilot` and `proc_pilot`, and `proc_pilot` no longer falls back
+  to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
+  
 ### CI says when the probe was not tested
 - A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
   install the SDK; with it set, the job installs `semq`, runs the suite and
   fails if any test still skips for want of it. The public `pytest` job
   prints how many SDK-gated modules skipped. A green check no longer looks
   the same whether or not the probe ran (SEM-52).
+  
 ### The leaderboard refresh has no mock mode
 - `refresh_leaderboard.py --mock` is removed, with its fake agent and its
   numpy stand-in quantizer. The stand-in rounded to 256 uniform levels and
@@ -29,8 +41,8 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ### The operator is called QUANT
 - Prose, docstrings and comments say QUANT, the name the SDK has used since
-  1.5. QBIN remains only in `semq_compat.py`, which still accepts a 1.4.1
-  wheel under the old name, and in the record of the rename itself. The
+  1.5. QBIN remains only in a historical note in `semq_compat.py`, which now
+  requires `semq` 1.5.1, and in the record of the rename itself. The
   drift-sensitivity README's reference snippet now calls the harness probe
   instead of an SDK function that never existed under either name. Editorial
   only; no probe parameter, hash or scoring rule changes.

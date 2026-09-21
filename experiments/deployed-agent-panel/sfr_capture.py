@@ -104,7 +104,7 @@ def main() -> int:
 
     base_vecs = timed("base", lambda: enc(texts))
     dim = int(base_vecs.shape[1])
-    probe = load_probe(base_vecs, backend="semq")
+    probe = load_probe(base_vecs)
     base = probe.encode(base_vecs)
     print(f"probe: s={probe.s:.6f} dim={dim}", flush=True)
 

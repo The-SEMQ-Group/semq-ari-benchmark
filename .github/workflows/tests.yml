@@ -53,12 +53,6 @@ jobs:
             echo "::warning::$n test modules skipped because semq is not installed; see the sdk-tests job"
           fi
 
-      # The mock agent needs no provider credentials, but every code comes
-      # from the SDK. Run this only in the SDK-enabled job configuration.
-      - name: Validate the documented mock pipeline
-        if: vars.CODEARTIFACT_ROLE_ARN != ''
-        run: python -m ari.run --out /tmp/ari-report.json --validate
-
       - name: Build the package
         run: python -m build
 
@@ -114,3 +108,9 @@ jobs:
             echo "::error::semq is installed but some tests still skipped for want of it"
             exit 1
           fi
+
+      # The mock agent needs no credentials, but every code comes from the
+      # SDK, so the end-to-end run lives in this job.
+      - name: Validate the mock-agent pipeline
+        if: vars.CODEARTIFACT_ROLE_ARN != ''
+        run: python -m ari.run --out /tmp/ari-report.json --validate

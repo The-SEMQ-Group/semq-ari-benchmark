@@ -14,13 +14,10 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
-python -m ari.run --out /tmp/ari-report.json --validate
 python -m pytest -q -rs
 python -m build
 ```
 
-The mock command writes `/tmp/ari-report.json` and checks its structure against the report schema.
-It does not measure a real model or validate a leaderboard submission.
 Tests must finish without failures. The `-rs` option lists skipped tests and their reasons.
 Tests that require the separate `semq` SDK skip when that package is absent.
 The build writes a wheel and source archive to `dist/`.
@@ -31,13 +28,19 @@ For Windows, activate the environment with `.venv\Scripts\Activate.ps1` in Power
 
 ## Run a benchmark
 
-To exercise the mock pipeline with all 1,000 frozen embedding inputs:
+Every code comes from the SEMQ SDK. Install it first with the [SDK installation procedure](ari/README.md#install-the-canonical-probe).
+There is no substitute probe in this repository.
+
+To exercise the pipeline on the mock agent with all 1,000 frozen embedding inputs:
 
 ```bash
 python -m ari.run --inputs data/ari-bench-v0.1.jsonl --out /tmp/ari-report.json --validate
 ```
 
-For real captures, install the required provider or model dependencies and the canonical SEMQ probe.
+The command writes `/tmp/ari-report.json` and checks its structure against the report schema.
+It needs no credentials or network. It does not measure a real model or validate a leaderboard submission.
+
+For real captures, also install the required provider or model dependencies.
 Follow the [harness guide](ari/README.md). Provider calls incur charges. Model captures can require substantial memory and downloads.
 
 ## Measurements

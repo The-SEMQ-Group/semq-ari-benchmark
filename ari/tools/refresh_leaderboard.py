@@ -117,7 +117,7 @@ def measure_agent(provider, model, inputs, base_dir, workers, now):
         # bootstrap: capture the baseline (one encode + calibration) and stop — no row change,
         # no PR. Next run measures a real `time` against this and publishes the full row.
         v0 = agent.encode(inputs.texts)
-        probe = load_probe(v0, backend="semq")
+        probe = load_probe(v0)
         s, dim = float(probe.s), int(v0.shape[1])
         # save via the same path the comparison uses next run, so the baseline and future `time`
         # codes are guaranteed shape/scale-consistent.
