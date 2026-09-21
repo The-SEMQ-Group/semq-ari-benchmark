@@ -17,9 +17,9 @@ before loading `analysis.json`. The hashes establish consistency with the
 downloaded manifest; the manifest is not itself a signed scientific attestation.
 
 The aggregate curves substantiate the plotted values. Individual trajectories
-are absent; `results.jsonl` stores only the sigma grid. See
-[review limitations](../REVIEW.md) for the review-time statement of the
-corpus-size and Git SHA gaps, resolved below as far as the evidence allows.
+are absent; `results.jsonl` stores only the sigma grid. The advisor review that
+first stated the corpus-size and Git SHA gaps was removed from the repository
+on 2026-09-16; the two gaps are resolved below as far as the evidence allows.
 The companion experiment source is
 `semq-research/experiments/L3_09_agentic_compounding/experiment.py`.
 [`../EVIDENCE.md`](../EVIDENCE.md) indexes every paper table and figure.

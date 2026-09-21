@@ -1,12 +1,13 @@
 {
   "schema": 1,
-  "written": "2026-09-17; S3 verification and uploads 2026-09-17",
+  "written": "2026-09-17; S3 verification and uploads 2026-09-17; commit-pinned entries and status reconciliation 2026-09-21",
   "paper_source": {
     "path": "docs/paper/latex/ari.tex",
+    "git": "73139c81f6b83651f87565fa0b52f1403388b78e",
     "draft": "Labels, table numbers and captions follow the 2026-09-16 working draft on branch ilona/sdk-only-probe-and-paper (abstract: 'Under synthetic perturbations with clean top-10 overlap of 0.988, 11.5% of 15-hop retrieval trajectories diverge'). The tracked ari.tex on main is an earlier revision."
   },
   "conventions": {
-    "hashes": "sha256 of the file bytes in the working tree at the recorded path. Entries with 'tracked': false are on the operator's branch or working tree and not on main; docs/paper/check_evidence_manifest.py verifies them only when present.",
+    "hashes": "Result files, attestation sidecars and archived raw artifacts carry 'sha256' of the file bytes in the working tree at the recorded path. Specification files, generator scripts, generated tables and figures, and ari.tex carry 'git' instead: the commit on main that last changed the file, or null when the file is not on main. docs/paper/check_evidence_manifest.py hashes only entries with 'sha256'; it counts the others as recorded by commit. Entries with 'tracked': false are on the operator's branch or working tree and not on main; the checker verifies them only when present.",
     "buckets": "S3 locations name buckets by infra/operator.env variable: RESEARCH_RESULTS_BUCKET, BASELINES_BUCKET, BATCH_RESULTS_BUCKET. No bucket name or account id is written in this file.",
     "s3_upload_needed": "true marks a row whose raw vectors, codes, transcripts or trajectories are not in the repository. Rows with local copies list a planned_s3 prefix."
   },
@@ -123,6 +124,7 @@
       "label": "tab:panel",
       "kind": "table",
       "number": "Table 1",
+      "title": "API panel",
       "section": "sec:panels",
       "caption": "Exact-code agreement across five commercial embedding APIs on the frozen inputs, n=1,000.",
       "experiment_dir": "experiments/deployed-agent-panel",
@@ -161,14 +163,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/build_tables.py",
-          "sha256": "c46f57778298455bef8dff4833b502448545c318c3bb68e0d6329969cd34175d",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
         "output": {
           "path": "docs/paper/latex/tables/panel.tex",
-          "sha256": "4977c6562d629da3a01586b8d326b3b18e82227bd4c51d4d4ede5e7eac563968",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -189,6 +191,7 @@
       "label": "fig:arid",
       "kind": "figure",
       "number": "Figure 2",
+      "title": "hosted decoding",
       "section": "sec:panels",
       "caption": "Hosted decoding is a second black-box layer (five endpoints; gpt-4o-mini through vendor API and platform gateway).",
       "experiment_dir": "experiments/arid-dry-run",
@@ -223,14 +226,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/make_figure2.py",
-          "sha256": "8d4cdfe0b33245629593eb4df3ff63d06b8bce70a723b52d5f5b48c24517117c",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "cd docs/paper/latex && python make_figure2.py",
         "output": {
           "path": "docs/paper/latex/figure2.pdf",
-          "sha256": "f80b244eac5b9dc080e143eda4430da0d305bf8dc2cc6515fb5b8712983e7ac7",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -246,22 +249,23 @@
       },
       "environment_record": "manifest.json records per run: endpoint URL, model, params (temperature, top_p, max_tokens, seed), prompt_content_hash, calls, reconnects, wall_s. No client host record.",
       "raw_artifacts": {
-        "status": "not in repository; mirrored in the baselines bucket per RESULTS.md",
+        "status": "not in repository; archived in the baselines bucket, verified 2026-09-17",
         "detail": "Transcripts results/transcripts/*.jsonl.gz are digest-bound by manifest.json (sha256 per transcript) but absent from the checkout and from the operator's working tree.",
         "s3": {
           "bucket_var": "BASELINES_BUCKET",
           "prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
-          "object_count": null,
-          "verified": "not verified: reading infra/operator.env and listing the bucket were blocked by the session permission system on 2026-09-16."
+          "object_count": 16,
+          "verified": "verified 2026-09-17: two transcripts downloaded; sha256 equal to results/manifest.json runs[5] and runs[8]."
         }
       },
       "s3_upload_needed": true,
-      "s3_upload_note": "Confirm the transcripts under the baselines prefix and record the object count; nothing local to upload."
+      "s3_upload_note": "Transcripts confirmed under the baselines prefix (16 objects); nothing local to upload."
     },
     {
       "label": "fig:overview",
       "kind": "figure",
       "number": "Figure 1",
+      "title": "SciFact gap and retrieval walk",
       "section": "sec:blind",
       "caption": "Left: SciFact HER and Delta Recall@10 for controls, TF32 off, TF32 on, bf16, int8. Right: retrieval-walk trajectory divergence by hop for four sigma values.",
       "experiment_dir": [
@@ -323,17 +327,17 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/make_figure1.py",
-          "sha256": "e59af986e47d7c4617202218c7ad9a8fe9954232912ce3f022a414b34da5e38e"
+          "git": "73139c81f6b83651f87565fa0b52f1403388b78e"
         },
         "command": "cd docs/paper/latex && python make_figure1.py",
         "output": {
           "path": "docs/paper/latex/figure1.pdf",
-          "sha256": "662e1bf6eccd043f60218d5e5795072a629ff75cac9468821b0b01ec61fee1eb",
+          "git": "73139c81f6b83651f87565fa0b52f1403388b78e",
           "tracked": false,
-          "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
+          "note": "The tracked figure1.pdf is the main version; the 2026-09-16 draft regenerates it."
         }
       },
-      "generator_note": "The tracked make_figure1.py is the main version; the 2026-09-16 draft modifies it. Hash above is the tracked file.",
+      "generator_note": "The tracked make_figure1.py is the main version; the 2026-09-16 draft modifies it. The commit above is the tracked file's.",
       "capture": {
         "left": {
           "script": "experiments/regime-discrimination/run_matrix.py",
@@ -351,7 +355,7 @@
       },
       "raw_artifacts": {
         "left": {
-          "status": "partly in working tree, not in repository",
+          "status": "CPU conditions archived 2026-09-17; GPU conditions not retained",
           "cpu_conditions": {
             "vectors": {
               "files": [
@@ -457,7 +461,7 @@
               "bucket_var": "RESEARCH_RESULTS_BUCKET",
               "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/",
               "layout": "cache/*.npz, codes/*.npz, codes/MANIFEST.json, MANIFEST.sha256",
-              "state": "not uploaded; the upload command was blocked by the session permission system on 2026-09-16. results/ari-benchmark/ was listed empty before the attempt."
+              "state": "uploaded 2026-09-17; one cache file and two code files downloaded, sha256 matches MANIFEST.sha256; HER recomputed from the archived int8 codes equals regime_matrix.json."
             }
           },
           "gpu_conditions": {
@@ -495,12 +499,13 @@
         }
       },
       "s3_upload_needed": true,
-      "s3_upload_note": "Upload the CPU vectors and codes (planned prefix above). GPU-row vectors and walk trajectories cannot be uploaded from here."
+      "s3_upload_note": "CPU vectors and codes uploaded 2026-09-17. GPU-row vectors and walk trajectories cannot be uploaded from here."
     },
     {
       "label": "tab:decoding",
       "kind": "table",
       "number": "Table 2",
+      "title": "decoding range",
       "section": "sec:compound",
       "caption": "ARI-D-internal, range over Llama-3.1-8B, Qwen2.5-7B and Mistral-7B-v0.3 (one L40S).",
       "experiment_dir": "experiments/decoding-reproducibility",
@@ -547,14 +552,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/build_tables.py",
-          "sha256": "c46f57778298455bef8dff4833b502448545c318c3bb68e0d6329969cd34175d",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
         "output": {
           "path": "docs/paper/latex/tables/decoding.tex",
-          "sha256": "1f1d9d60851d2eda5d9771b5fb45fc2b43ac908b498e89db4d2084c9a780ebe8",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -628,24 +633,25 @@
             "bucket_var": "RESEARCH_RESULTS_BUCKET",
             "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/",
             "layout": "cache/*.npz, MANIFEST.sha256",
-            "state": "not uploaded; blocked as above."
+            "state": "uploaded 2026-09-17; cache/bf16.npz downloaded, sha256 matches MANIFEST.sha256."
           }
         }
       },
       "s3_upload_needed": true,
-      "s3_upload_note": "GPU logits/codes: nothing local. CPU pilot cache: local, planned prefix above."
+      "s3_upload_note": "GPU logits/codes: nothing local. CPU pilot cache: uploaded 2026-09-17 to the prefix above."
     },
     {
       "label": "tab:conditions",
       "kind": "table",
       "number": "Table 3",
+      "title": "condition set",
       "section": "app:conditions",
       "caption": "ARI execution conditions, grouped by reproducibility tier.",
       "experiment_dir": null,
       "result_files": [
         {
           "path": "spec/ari-canonical-v0.1.md",
-          "sha256": "2dfac909eb22684ace3a2b9f22d0057a02a299f8619d688fe801c4e71e8c9a9a"
+          "git": "5d697bc5a1499245aa63dbe01ba50d04e2a578ce"
         }
       ],
       "sidecars_in_repo": [],
@@ -664,6 +670,7 @@
       "label": "tab:arid",
       "kind": "table",
       "number": "Table 4",
+      "title": "hosted rates",
       "section": "app:arid",
       "caption": "Byte-identical repeat rates on five hosted text-generation endpoints.",
       "experiment_dir": "experiments/arid-dry-run",
@@ -693,14 +700,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/build_tables.py",
-          "sha256": "c46f57778298455bef8dff4833b502448545c318c3bb68e0d6329969cd34175d",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
         "output": {
           "path": "docs/paper/latex/tables/arid.tex",
-          "sha256": "c4712138cfbf40f1a01e1aeacda6b9db1d8984a144c4acad57786679232deadd",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -708,13 +715,13 @@
       "capture": "Same as fig:arid.",
       "environment_record": "Same as fig:arid.",
       "raw_artifacts": {
-        "status": "not in repository; mirrored in the baselines bucket per RESULTS.md",
+        "status": "not in repository; archived in the baselines bucket, verified 2026-09-17",
         "detail": "Transcripts results/transcripts/*.jsonl.gz are digest-bound by manifest.json (sha256 per transcript) but absent from the checkout and from the operator's working tree.",
         "s3": {
           "bucket_var": "BASELINES_BUCKET",
           "prefix": "s3://$BASELINES_BUCKET/arid-dry-run/transcripts/",
-          "object_count": null,
-          "verified": "not verified: reading infra/operator.env and listing the bucket were blocked by the session permission system on 2026-09-16."
+          "object_count": 16,
+          "verified": "verified 2026-09-17: two transcripts downloaded; sha256 equal to results/manifest.json runs[5] and runs[8]."
         }
       },
       "s3_upload_needed": true,
@@ -724,6 +731,7 @@
       "label": "fig:batch",
       "kind": "figure",
       "number": "Figure 3",
+      "title": "batch invariance",
       "section": "app:batch",
       "caption": "HER against a batch-32 reference on H100, at fp32 (TF32 off; TF32 on), with same-batch control column.",
       "experiment_dir": "experiments/batch-invariance",
@@ -756,14 +764,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/make_figure3.py",
-          "sha256": "00fa44c5ff28c4855960eb3b4c41cceaf251dbda32fdb2e0fad708984fee151f",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "cd docs/paper/latex && python make_figure3.py",
         "output": {
           "path": "docs/paper/latex/figure3.pdf",
-          "sha256": "b1df4ceb212af987ebcffe127bb404a57ceea3063fa9e67ce37e481b344904ba",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -775,22 +783,23 @@
       },
       "environment_record": "RESULTS.md prose only: 'Run 2026-09-08 on p5.48xlarge (8x H100 80GB, Hopper), torch 2.5.1+cu121, semq 1.5.0'. summary_with_control.json has no environment block (keys: label, n, reference_batch, batches, cells).",
       "raw_artifacts": {
-        "status": "not in repository; in S3 per RESULTS.md, key not recorded",
+        "status": "not in repository; in the batch-results bucket, listed 2026-09-17, not checksum-verified",
         "detail": "RESULTS.md: 'the code matrices from this run are retained in S3'. The prefix and object count are not written in the repository. The coordinator reports 211 code-matrix objects from the p5 run in the batch-results bucket.",
         "s3": {
           "bucket_var": "BATCH_RESULTS_BUCKET",
-          "prefix": "s3://$BATCH_RESULTS_BUCKET/<unrecorded>",
-          "object_count": "211 (reported, unverified)",
-          "verified": "not verified in this session (bucket name unreadable under the permission system)."
+          "prefix": "s3://$BATCH_RESULTS_BUCKET/batch-invariance/results/",
+          "object_count": "553 (all-encoders/ 211, with-control/ 254, boundary/ 85, plus summary.json and logs)",
+          "verified": "listed 2026-09-17; no object checksum compared yet."
         }
       },
       "s3_upload_needed": true,
-      "s3_upload_note": "Record the exact prefix and object count; verify one object against a manifest if one exists there."
+      "s3_upload_note": "Prefix and object count recorded 2026-09-17; verify one object's checksum against a capture meta.json before citing."
     },
     {
       "label": "tab:scifact",
       "kind": "table",
       "number": "Table 5",
+      "title": "full SciFact",
       "section": "app:scifact",
       "caption": "Retrieval quality and representation agreement under execution and precision changes (SciFact, all-MiniLM-L6-v2).",
       "experiment_dir": "experiments/regime-discrimination",
@@ -814,14 +823,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/build_tables.py",
-          "sha256": "c46f57778298455bef8dff4833b502448545c318c3bb68e0d6329969cd34175d",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
         "output": {
           "path": "docs/paper/latex/tables/scifact.tex",
-          "sha256": "5f22fcafdce12aec6b512c056f4b9002de03d024f958e5cf31fd7f2d9d535aa1",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -832,7 +841,7 @@
       },
       "environment_record": "Same as fig:overview left.",
       "raw_artifacts": {
-        "status": "partly in working tree, not in repository",
+        "status": "CPU conditions archived 2026-09-17; GPU conditions not retained",
         "cpu_conditions": {
           "vectors": {
             "files": [
@@ -938,7 +947,7 @@
             "bucket_var": "RESEARCH_RESULTS_BUCKET",
             "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/regime-discrimination/2026-09-17/",
             "layout": "cache/*.npz, codes/*.npz, codes/MANIFEST.json, MANIFEST.sha256",
-            "state": "not uploaded; the upload command was blocked by the session permission system on 2026-09-16. results/ari-benchmark/ was listed empty before the attempt."
+            "state": "uploaded 2026-09-17; one cache file and two code files downloaded, sha256 matches MANIFEST.sha256; HER recomputed from the archived int8 codes equals regime_matrix.json."
           }
         },
         "gpu_conditions": {
@@ -959,6 +968,7 @@
       "label": "tab:normalized",
       "kind": "table",
       "number": "Table 6",
+      "title": "normalized panel",
       "section": "app:panel",
       "caption": "The API panel under dimension- and sensitivity-normalized sigma-hat.",
       "experiment_dir": [
@@ -992,7 +1002,7 @@
         },
         {
           "path": "spec/fingerprints-v0.1.csv",
-          "sha256": "2323f9876b03a4db00cf9180d32c87ad0fcf377aa9457bb9a634d934292ea55d"
+          "git": "73139c81f6b83651f87565fa0b52f1403388b78e"
         }
       ],
       "related_files": [
@@ -1014,14 +1024,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/build_tables.py",
-          "sha256": "c46f57778298455bef8dff4833b502448545c318c3bb68e0d6329969cd34175d",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
         "output": {
           "path": "docs/paper/latex/tables/normalized.tex",
-          "sha256": "203cfbd57ab9f56c79f2a5630ad8381604277a76ac1cf0635ad49a381c8cebda",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -1038,6 +1048,7 @@
       "label": "tab:replication",
       "kind": "table",
       "number": "Table 7",
+      "title": "pilot replication",
       "section": "app:selfhosted",
       "caption": "Three independent realizations of proc and same on text-embedding-3-large, n=1,000 (pilot).",
       "experiment_dir": "experiments/deployed-agent-panel",
@@ -1066,6 +1077,7 @@
       "label": "tab:decfull",
       "kind": "table",
       "number": "Table 8",
+      "title": "per-model decoding",
       "section": "app:deccontrol",
       "caption": "Per-model decoding-layer results behind Table 2.",
       "experiment_dir": "experiments/decoding-reproducibility",
@@ -1112,14 +1124,14 @@
       "generator": {
         "script": {
           "path": "docs/paper/latex/build_tables.py",
-          "sha256": "c46f57778298455bef8dff4833b502448545c318c3bb68e0d6329969cd34175d",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         },
         "command": "python docs/paper/latex/build_tables.py  (repository root; --check compares)",
         "output": {
           "path": "docs/paper/latex/tables/decfull.tex",
-          "sha256": "459964c0270a4406aba6afffe4862e9a15a9f74ed90fd7026bf91006fe24381a",
+          "git": null,
           "tracked": false,
           "note": "On branch ilona/sdk-only-probe-and-paper; not on main when this manifest was written."
         }
@@ -1193,7 +1205,7 @@
             "bucket_var": "RESEARCH_RESULTS_BUCKET",
             "prefix": "s3://$RESEARCH_RESULTS_BUCKET/results/ari-benchmark/decoding-reproducibility/2026-09-17/",
             "layout": "cache/*.npz, MANIFEST.sha256",
-            "state": "not uploaded; blocked as above."
+            "state": "uploaded 2026-09-17; cache/bf16.npz downloaded, sha256 matches MANIFEST.sha256."
           }
         }
       },
@@ -1204,6 +1216,7 @@
       "label": "text:gpu-hosts",
       "kind": "text",
       "number": null,
+      "title": "GPU hosts",
       "section": "app:selfhosted (GPU hosts paragraph) and sec:blind (TF32 2x2)",
       "caption": "GPU-determinism rows: cross-GPU mean 0.999; TF32 on 12-46% disagreement vs CPU; mxbai 0.537; 2x2 TF32 x deterministic (1.000 off, 0.749 on).",
       "experiment_dir": "experiments/gpu-determinism",
@@ -1246,6 +1259,7 @@
       "label": "text:selfhosted-panel",
       "kind": "text",
       "number": null,
+      "title": "self-hosted panel",
       "section": "app:selfhosted (self-hosted panel paragraphs)",
       "caption": "Nine self-hosted models at HER 1.000 in named core cells; CPU bf16 precision diagnostics; SFR-Embedding-2_R HER 0.0 and Hbar 24.4 on L40S.",
       "experiment_dir": "experiments/deployed-agent-panel",
@@ -1312,12 +1326,12 @@
         "s3": {
           "bucket_var": "BASELINES_BUCKET",
           "prefix": "s3://$BASELINES_BUCKET/capture-sessions/sfr-2r/",
-          "object_count": null,
-          "verified": "not verified in this session."
+          "object_count": 6,
+          "verified": "listed 2026-09-17 (sfr-out.tar.gz, ari-bundle.tar.gz, two scripts, two wheels); not downloaded."
         }
       },
       "s3_upload_needed": true,
-      "s3_upload_note": "Confirm the SFR prefix and object count; nothing local to upload."
+      "s3_upload_note": "SFR prefix and object count recorded 2026-09-17; download and verify meta.json revision before citing."
     }
   ]
 }
