@@ -36,3 +36,5 @@ experiments/*/results/attestation-repo/
 .Rhistory
 *.synctex.gz
 .DS_Store
+# Fetched from the pinned dataset revision; verified against its committed manifest.
+experiments/harness-effect/results/outcomes.*.csv.gz

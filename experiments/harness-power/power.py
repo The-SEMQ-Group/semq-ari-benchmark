@@ -1,16 +1,10 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
-#
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
 """How many cases and repeats does ARI-E need before it can find anything?
 
-The ARI-E metric is built and tested, but no agent run has fed it yet. Before
-spending a day of compute on one, it is worth knowing what such a run could
-detect. A first smoke report on 25 cases put the interval on cross-harness
-agreement at [0.44, 0.80], which is wide enough that the design might not be
-able to answer its own question.
+The ARI-E estimator in ari/harness.py is applied to the Open-SWE-Traces
+contrasts in experiments/harness-effect. This simulation says what case and
+repeat counts a run needs before its interval can exclude zero at a given gap.
 
 This simulates runs with a known harness effect and asks how often the metric
 recovers it. Nothing here is a result about any real harness. It is a property
@@ -30,6 +24,7 @@ effect excludes zero.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -41,7 +36,10 @@ HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 
 N_CASES = (10, 25, 50, 100, 200)
-N_REPEATS = (2, 3, 5)
+# Repeats per case as (harness 1, harness 2). The unequal pairs cover the
+# shape the Open-SWE-Traces contrasts have, where one side has fewer graded
+# rollouts than the other.
+N_REPEATS = ((2, 2), (3, 3), (5, 5), (2, 3), (2, 5))
 # Difference in per-case pass probability between the two harnesses.
 GAPS = (0.0, 0.05, 0.10, 0.20, 0.40)
 BASE_PASS = 0.75          # how often the stronger harness passes a case
@@ -63,18 +61,17 @@ def true_effect(p1: np.ndarray, p2: np.ndarray) -> float:
     return float(np.mean(0.5 * (self1 + self2) - cross))
 
 
-def simulate(n_cases: int, n_repeats: int, gap: float,
+def simulate(n_cases: int, n_repeats: tuple[int, int], gap: float,
              rng: np.random.Generator) -> tuple[list[Trajectory], float]:
     # Per-case pass probability, jittered so cases are not interchangeable.
     p1 = np.clip(rng.normal(BASE_PASS, 0.12, n_cases), 0.02, 0.98)
     p2 = np.clip(p1 - gap, 0.02, 0.98)
 
     runs = []
-    for r in range(n_repeats):
-        for i in range(n_cases):
-            case = f"case{i:03d}"
-            runs.append(Trajectory(case, "h1", r, bool(rng.random() < p1[i])))
-            runs.append(Trajectory(case, "h2", r, bool(rng.random() < p2[i])))
+    for h, p, reps in (("h1", p1, n_repeats[0]), ("h2", p2, n_repeats[1])):
+        for r in range(reps):
+            for i in range(n_cases):
+                runs.append(Trajectory(f"case{i:03d}", h, r, bool(rng.random() < p[i])))
     return runs, true_effect(p1, p2)
 
 
@@ -103,16 +100,19 @@ def main() -> None:
                     te.append(t)
                 powers.append(hits / N_TRIALS)
                 truths.append(float(np.mean(te)))
-                rows.append({"gap": gap, "repeats": reps, "n_cases": n,
+                rows.append({"gap": gap, "repeats": list(reps), "n_cases": n,
                              "true_effect": truths[-1], "power": powers[-1]})
-            print(f"{gap:>6.2f} {np.mean(truths):>12.4f} {reps:>8}" +
+            print(f"{gap:>6.2f} {np.mean(truths):>12.4f} {'/'.join(map(str, reps)):>8}" +
                   "".join(f"{p:>9.0%}" for p in powers))
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / "power.json").write_text(json.dumps(
         {"n_trials": N_TRIALS, "base_pass": BASE_PASS, "seed": SEED,
-         "n_cases": list(N_CASES), "repeats": list(N_REPEATS),
-         "gaps": list(GAPS), "rows": rows}, indent=2) + "\n")
+         "n_cases": list(N_CASES), "repeats": [list(r) for r in N_REPEATS],
+         "gaps": list(GAPS), "n_resamples": N_RESAMPLES,
+         "harness_sha256": hashlib.sha256(
+             (HERE.parents[1] / "ari" / "harness.py").read_bytes()).hexdigest(),
+         "rows": rows}, indent=2) + "\n")
 
     print(f"\nwrote {RESULTS / 'power.json'}")
 
@@ -123,7 +123,7 @@ def main() -> None:
     references = build_references(
         config=config_ref({
             "n_trials": N_TRIALS, "base_pass": BASE_PASS, "seed": SEED,
-            "n_cases": list(N_CASES), "repeats": list(N_REPEATS),
+            "n_cases": list(N_CASES), "repeats": [list(r) for r in N_REPEATS],
             "gaps": list(GAPS), "n_resamples": N_RESAMPLES,
         }),
         code=code_ref(packages=["numpy"]),
