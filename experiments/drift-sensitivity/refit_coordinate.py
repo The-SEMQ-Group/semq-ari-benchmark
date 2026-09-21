@@ -65,14 +65,14 @@ def encode_inputs(model_id: str, texts: list[str], device: str) -> np.ndarray:
         model.encode(texts, normalize_embeddings=True, convert_to_numpy=True), dtype=np.float32)
 
 
-def sweep(X: np.ndarray, sigmas: np.ndarray, seed: int) -> tuple[dict, dict]:
+def sweep(X: np.ndarray, sigmas: np.ndarray, seed: int) -> tuple[dict, dict, dict]:
     """One calibration, then one noisy encode per sigma.
 
     Returns per-input rate matrices ``(n_sigma, n_inputs)`` keyed by rate
     name, and the calibration facts (scale, mean norm, floor probe).
     """
     dim = int(X.shape[1])
-    probe = load_probe(X)
+    probe = load_probe(X, backend="semq")
     clean = probe.encode(X)
     mean_norm = float(np.linalg.norm(X, axis=1).mean())
     rng = np.random.default_rng(seed)
@@ -103,8 +103,9 @@ def sweep(X: np.ndarray, sigmas: np.ndarray, seed: int) -> tuple[dict, dict]:
         "n_bytes": int(clean.shape[1]),
         "bits_per_coordinate": floor.bits_per_coordinate,
         "exact_zero_coordinate_fraction": float((X == 0).mean()),
-        # A coordinate this close to the sign boundary changes symbol under
-        # any noise, so this fraction is the floor a sweep cannot go below.
+        # An upper bound on the sign-boundary set, not the floor itself: for
+        # MiniLM only the coordinates below 1e-8 flip at FLOOR_SIGMA, and each
+        # flips with probability one half. floor_histogram.py resolves this.
         "near_zero_coordinate_fraction": float((np.abs(X) < NEAR_ZERO).mean()),
         "code_equality_rate": [float(v) for v in equality],
         "floor_probe": {"sigma": FLOOR_SIGMA, **floor_rates,
@@ -119,11 +120,11 @@ def fit_one(sigmas: np.ndarray, matrix: np.ndarray, dim: int, *, n_resamples: in
             bootstrap_seed: int) -> dict:
     means = matrix.mean(axis=1)
     try:
-        fit = fit_power_law(sigmas, means, dim, lo=FIT_LO, hi=FIT_HI)
+        fit = fit_power_law(sigmas, means, dim)
     except ValueError as e:
         return {"error": str(e), "mean_rate": [float(v) for v in means]}
     boot = bootstrap_power_law(sigmas, matrix, dim, n_resamples=n_resamples,
-                               seed=bootstrap_seed, lo=FIT_LO, hi=FIT_HI)
+                               seed=bootstrap_seed)
     # Residuals over the whole grid show where the power law bends; the
     # fit's own residuals cover the window only.
     pred = fit.predict(sigmas)
@@ -134,8 +135,7 @@ def fit_one(sigmas: np.ndarray, matrix: np.ndarray, dim: int, *, n_resamples: in
         "fit": fit.to_dict(),
         "bootstrap": boot.to_dict(),
         "grid_residuals_log": grid_resid,
-        "inverse": validate_inverse(sigmas, means, fit, bootstrap=boot,
-                                    lo=FIT_LO, hi=FIT_HI),
+        "inverse": validate_inverse(sigmas, means, fit, bootstrap=boot),
     }
 
 

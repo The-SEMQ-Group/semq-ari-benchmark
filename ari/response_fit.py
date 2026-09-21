@@ -25,7 +25,6 @@ FIT_LO, FIT_HI = 1e-5, 1e-3
 
 
 def sphere_prefactor(dim: int) -> float:
-    """``sqrt(2 * dim / pi)``: the uniform-on-sphere prediction for ``a``."""
     return float(np.sqrt(2.0 * dim / np.pi))
 
 

@@ -10,8 +10,9 @@ The historical fits below, in [`results/*.csv`](results/), and in the
 **packed code bytes** that differ (`(codes != clean).mean()` on the SDK's packed output). At
 `n_bins = 2` one byte holds four coordinates, so this rate is about four times the coordinate
 change rate while changes are sparse, and less than four times as changes become dense
-([`ari/code_metrics.py`](../../ari/code_metrics.py)). The paper reads the same axis as a
-coordinate change rate. The two readings are not the same quantity.
+([`ari/code_metrics.py`](../../ari/code_metrics.py)). The paper's "From bits to coordinates"
+paragraph distinguishes this byte convention from the coordinate change rate `rho`. The two are
+not the same quantity.
 
 - The historical byte-unit fits are preserved unchanged. They are the fits the registry publishes.
 - A coordinate-unit refit exists per model in [`results/coordinate/`](results/coordinate/),
@@ -145,13 +146,13 @@ precision, batched routing, a library bump), giving ARI a quantitative null hypo
 ## Coordinate-unit refit
 
 [`refit_coordinate.py`](refit_coordinate.py) repeats the sweep on the frozen ARI-Bench-v0.1
-inputs (1,000 texts, content hash `e9ec8b01…`) with the canonical probe calibrated once, and
+inputs (1,000 texts, content hash `e9ec8b01…`) with the canonical probe calibrated once. It
 records three rates per input per `sigma` from `ari.code_metrics.code_diff`: the coordinate
 change rate `rho`, the bit Hamming rate, and the legacy byte rate. It fits
-`log rho = log a + b log sigma` on the window `sigma in [1e-5, 1e-3]`, with a 1,000-resample
-bootstrap over inputs for intervals, residuals per cell, and the inverse `sigma-hat` checked
-only where the observed rate lies inside the fitted range. Per-input rates are kept in an `.npz`
-beside each JSON. Seeds: noise 0, bootstrap 1.
+`log rho = log a + b log sigma` on the window `sigma in [1e-5, 1e-3]`. Intervals come from a
+1,000-resample bootstrap over inputs. Residuals are reported per cell. The inverse `sigma-hat`
+is checked only where the observed rate lies inside the fitted range. Per-input rates are kept
+in an `.npz` beside each JSON. Seeds: noise 0, bootstrap 1.
 
 Environment for the runs below: macOS arm64, Python 3.11.12, numpy 2.4.6, torch 2.14.0,
 sentence-transformers 6.0.1, `semq` 1.5.1.dev32, one BLAS thread, CPU.
@@ -167,9 +168,9 @@ sentence-transformers 6.0.1, `semq` 1.5.1.dev32, one BLAS thread, CPU.
 ### Measured unit ratio
 
 Across the grid on both models the byte rate divided by the coordinate rate is 4.00 up to
-`sigma = 1e-5`, then falls as changes become dense. The bit Hamming rate is exactly 0.5 times the
-coordinate rate at every cell: at `n_bins = 2` a changed coordinate flips exactly one of its two
-bits. The paper's factor-of-four conversion holds in the sparse regime and does not hold at the
+`sigma = 1e-5`, then falls as changes become dense. The bit Hamming rate is 0.5 times the
+coordinate rate to within 2e-5 at every cell. At `n_bins = 2` a changed coordinate almost always
+flips one of its two bits; six inputs at `sigma = 1e-2` flip both bits of a coordinate. The paper's factor-of-four conversion holds in the sparse regime and does not hold at the
 top of the grid.
 
 | sigma | MiniLM byte/coord | bge-large byte/coord |
@@ -183,15 +184,23 @@ top of the grid.
 ### sentence-transformers/all-MiniLM-L6-v2 (dim 384, pilot)
 
 The registry lists this model as `floor_limited`: about one percent of code bytes changed at any
-`sigma`, so no `(b, κ)` was published. The refit measures the same floor in coordinate units and
-explains it.
+`sigma`, so no `(b, κ)` was published. The refit measures the same floor in coordinate units.
+[`floor_histogram.py`](floor_histogram.py) replays the floor draw and records which coordinates
+make it up: [`sentence-transformers__all-MiniLM-L6-v2.floor.json`](results/coordinate/sentence-transformers__all-MiniLM-L6-v2.floor.json).
 
-- Floor probe at `sigma = 1e-10`: coordinate change rate 2.68e-3, byte rate 1.07e-2, bit rate
-  1.34e-3. About one coordinate per 384-d vector changes at any `sigma > 0`.
-- Cause: 0.78 percent of this model's output coordinates have `|x| < 1e-6` (the changed
-  coordinates have `|x|` between 1e-36 and 9e-33). They sit on the sign boundary of the probe
-  and change symbol under any perturbation. No coordinate is exactly zero. The re-encode of
-  identical vectors is bit-identical, so this is not probe non-determinism.
+- Floor probe at `sigma = 1e-10`: coordinate change rate 2.68e-3 (0.27 percent), byte rate
+  1.07e-2, bit rate 1.34e-3. About one coordinate per 384-d vector changes at any `sigma > 0`.
+- Cause: every output vector has exactly two coordinates with `|x| < 1e-8`, 2,000 of 384,000
+  (0.52 percent). All of them lie between 1.5e-36 and 1.4e-32; no coordinate is exactly zero.
+  They sit on the probe's sign boundary, and under symmetric noise each changes sign with
+  probability one half. Expected floor: 0.26 percent. Measured: 1,029 of the 2,000 changed
+  symbol (51.5 percent), which is the 0.27 percent floor. The changed symbols are exactly the
+  coordinates whose sign changed in the raw vector, and no coordinate above 1.4e-32 changed.
+- The fraction with `|x| < 1e-6` is 0.78 percent. The further 0.26 percent of coordinates between
+  1e-8 and 1e-6 did not change at `sigma = 1e-10`. The coordinate rate reaches 0.78 percent only
+  near `sigma = 3e-4`, where the noise is large enough to cross them. The 0.78 percent is an
+  upper bound on the sign-boundary set, not the floor.
+- The re-encode of identical vectors is bit-identical, so this is not probe non-determinism.
 - Raw coordinate fit on the window: `b = 0.287 [0.279, 0.295]`, `κ = 0.0056 [0.0052, 0.0061]`,
   `R² (log) = 0.86`. The window residuals run +0.21, −0.09, −0.22, −0.13, +0.23 in log units.
   These numbers describe a floor plus an onset, not a power law. They are not a fingerprint.
@@ -225,9 +234,10 @@ the like-for-like check of the corpus change; the coordinate row is the new quan
 
 - Window residuals (log units) for the coordinate fit: −0.008, +0.011, +0.003, −0.009, +0.002.
   The power law holds on the window.
-- `κ_byte / κ_coord = 3.76`. The paper's `κ_byte / 4 = 0.733` sits inside the coordinate
-  interval but is 6 percent below the coordinate point estimate, because the byte-to-coordinate
-  ratio has already fallen to 3.89 at the top of the window.
+- `κ_byte / κ_coord = 3.76`. The refit's `κ_byte / 4 = 2.933 / 4 = 0.733` and the registry's
+  `2.887 / 4 = 0.722` both sit inside the coordinate interval. They are 6 to 7 percent below the
+  coordinate point estimate, because the byte-to-coordinate ratio has already fallen to 3.89 at
+  the top of the window.
 - Floor probe at `sigma = 1e-10`: all three rates are exactly zero. `near_zero_coordinate_fraction`
   is 2.5e-5 (26 coordinates in 1,024,000). No floor.
 - Inverse `sigma-hat` from the coordinate fit: inside the fitted rate range [1.9e-4, 2.0e-2]
@@ -240,26 +250,10 @@ the like-for-like check of the corpus change; the coordinate row is the new quan
 - Bootstrap standard errors: `b` 0.013, `κ` 0.081 (coordinate). The bootstrap resamples inputs,
   so the interval carries the between-input spread of the response and not the noise draw.
 
-### Proposed paper wording
+### Paper
 
-The paper is not edited here. Proposed replacement for the appendix paragraph "Response model"
-(`docs/paper/latex/ari.tex`), to be applied once the maintainers accept the refit:
-
-> **Response model.** The historical fits model the changed-byte fraction $r_{\rm byte}$ under
-> injected Gaussian noise, $\mathbb E[r_{\rm byte}]\approx\kappa_{\rm byte}\sqrt{2d/\pi}\,\sigma^b$,
-> with $b$ of mean 0.979 (s.d. 0.028) and $\kappa_{\rm byte}\in[1.484,3.058]$ across 13
-> architectures. A coordinate-unit refit on the frozen inputs measures $r_{\rm byte}/\rho=4.00$
-> for $\sigma\le10^{-5}$ at two bits per coordinate, falling to 2.97 at
-> $\sigma=10^{-2}$; the bit Hamming rate is exactly $\rho/2$. For the reference model the
-> coordinate-unit fit gives $b=$1.001\,[0.978,1.029] and $\kappa=$0.779\,[0.646,0.973] (bootstrap 95\% intervals over
-> inputs), against the byte-unit registry values $b=0.994$, $\kappa_{\rm byte}=2.887$. The
-> inversion $\hat\sigma=(\rho/(\kappa\sqrt{2d/\pi}))^{1/b}$ uses the coordinate-unit
-> $\kappa$ where one has been measured and $\kappa_{\rm byte}/4$ otherwise; it is validated only
-> for $\rho$ inside the fitted range, where the reference model's grid cells are recovered to within 1.1\%. `all-MiniLM-L6-v2` remains
-> floor-limited in coordinate units: 0.78\% of its output coordinates have $|x|<10^{-6}$ and
-> change symbol under any perturbation.
-
-Per-model numbers to substitute come from `results/coordinate/<model>.json`.
+The paper's "From bits to coordinates" paragraph in `docs/paper/latex/ari.tex` already records
+the unit correction; per-model numbers come from `results/coordinate/<model>.json`.
 
 ## Caveats
 

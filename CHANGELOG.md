@@ -16,6 +16,11 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   README and the spec say so; `fingerprints-v0.1.csv` gains a `fit_basis` column.
   No frozen value changed. Coordinate-unit fits supersede byte-unit fits per model
   as they land in `results/coordinate/`.
+- `all-MiniLM-L6-v2` stays floor-limited in coordinate units. Two of its 384
+  output coordinates per vector have `|x| < 1e-8` (all below 1.5e-32), and each
+  changes symbol with probability one half under any perturbation. The measured
+  floor is 0.27% of coordinates at `sigma = 1e-10`
+  (`experiments/drift-sensitivity/floor_histogram.py`).
 - `all-MiniLM-L6-v2` stays floor-limited in coordinate units: 0.78% of its output
   coordinates have `|x| < 1e-6` and change symbol under any perturbation.
 ### SciFact codes committed beside the results

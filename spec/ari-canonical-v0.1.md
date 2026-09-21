@@ -82,7 +82,9 @@ The `b` and `κ` columns are in packed-byte units; see [Fingerprint terms](#fing
 
 The historical sweep found a perturbation floor for `all-mpnet-base-v2` and `all-MiniLM-L6-v2`.
 Approximately one percent of code bytes changed under small synthetic perturbations, extending to σ = 1e-10.
-The coordinate-unit refit of `all-MiniLM-L6-v2` measures the same floor as 0.27 percent of coordinates and attributes it to output coordinates with `|x| < 1e-6`, which sit on the probe's sign boundary.
+The coordinate-unit refit of `all-MiniLM-L6-v2` measures the same floor as 0.27 percent of coordinates at σ = 1e-10.
+Two of the 384 output coordinates of every vector have `|x| < 1e-8` (all below 1.5e-32). Each changes symbol with probability one half under any perturbation, which gives the 0.27 percent.
+The measurement is in [`floor_histogram.py`](../experiments/drift-sensitivity/floor_histogram.py) and its output file.
 Their response slopes could not support a reliable κ fit, so the registry labels them `floor_limited`.
 This was model-specific: the 768-dimensional nomic model did not show the same floor.
 The two affected models still had measured ARI 1.000 in the original panel.

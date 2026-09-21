@@ -62,7 +62,7 @@ JSON fields:
 | `sigma_grid`, `fit_window` | the 11-point grid and `[1e-5, 1e-3]` |
 | `s`, `dim`, `n_bins`, `calibration_percentile` | the probe as calibrated once on the clean embeddings |
 | `sphere_prefactor` | `sqrt(2·dim/π)` |
-| `near_zero_coordinate_fraction` | fraction of clean coordinates with `abs(x) < 1e-6`; the floor a sweep cannot go below |
+| `near_zero_coordinate_fraction` | fraction of clean coordinates with `abs(x) < 1e-6`; an upper bound on the sign-boundary set, not the floor (see `<model>.floor.json`) |
 | `floor_probe` | the three rates at `sigma = 1e-10`, below the grid |
 | `cells` | per `sigma`: mean coordinate, bit and byte rates, and the byte and bit rates divided by the coordinate rate |
 | `fits.<rate>` | for each of the three rates: `fit` (`b`, `a`, `kappa`, window residuals in log units, `r2_log`, dropped zero cells), `bootstrap` (95 percent percentile intervals and standard errors for `b` and `kappa`), `grid_residuals_log` over all 11 cells, and `inverse` |
@@ -74,3 +74,15 @@ NPZ arrays: `sigmas` (11), `input_ids` (n), and for each of `coordinate_change_r
 `bit_hamming_rate`, `byte_change_rate` a `(11, n)` matrix of per-input rates plus a
 `floor_<rate>` vector (n) at `sigma = 1e-10`. `noise_seed`, `floor_sigma` and `model_id` are
 stored as scalars.
+
+## `coordinate/<model>.floor.json`
+
+Output of [`../floor_histogram.py`](../floor_histogram.py) for a floor-limited model. It replays
+the sweep's noise draws so the floor cell is the same draw as in the `.json` above.
+
+| field | meaning |
+| --- | --- |
+| `coordinate_change_rate`, `sign_change_rate` | fraction of coordinates whose symbol changed at `sigma = 1e-10`, and the fraction whose sign changed in the raw vector; `flipped_equals_sign_changed` says whether the two sets are identical |
+| `below_threshold.<t>` | fraction of coordinates with `abs(x) < t`, and the fraction of those that flipped |
+| `flipped_abs_x` | minimum, median, 99th percentile and maximum of `abs(x)` over the flipped coordinates |
+| `per_input_below_1e-8`, `per_input_flipped` | per-vector counts, minimum and maximum |
