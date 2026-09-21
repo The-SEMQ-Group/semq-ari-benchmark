@@ -6,21 +6,6 @@
 - Pilot plan: [PILOT.md](PILOT.md).
 - Linear task: SEM-50.
 
-## What the study is
-
-The study measures whether ARI diagnostics predict two operational events on a
-fixed retrieval system built from BEIR SciFact and `all-MiniLM-L6-v2`:
-
-1. A practically meaningful loss in Recall@10 or nDCG@10 against real
-   relevance judgements.
-2. A restoration of quality after the index is rebuilt.
-
-It compares ARI quantities (HER, coordinate change rate, bit Hamming distance,
-displacement bounds) with matched-budget baselines at the same achieved alarm
-rate. It separates three conclusions: the representation changed, retrieval
-degraded, rebuilding helped. Each has its own evidence and its own permitted
-wording (PROTOCOL.md section 10).
-
 The study reuses frozen definitions from three places:
 
 | Definition | Source |
@@ -42,15 +27,6 @@ The study reuses frozen definitions from three places:
 - Synthetic transformations (noise, rotations) are diagnostics of what the
   scorers measure. They are labelled `synthetic` in every table and are never
   summed with real interventions.
-
-## Relation to SEM-39, SEM-40 and SEM-41
-
-SEM-39, SEM-40 and SEM-41 restrict the scope of claims in existing documents.
-This study is separate from those tasks. It does not remove or relax any of
-those restrictions, and its protocol does not depend on them. If the
-confirmatory run produces a supported operational claim in the wording of
-PROTOCOL.md section 10, any change to the restricted documents is a separate
-change with its own review. Until then the restrictions stand as written.
 
 ## Order of work
 

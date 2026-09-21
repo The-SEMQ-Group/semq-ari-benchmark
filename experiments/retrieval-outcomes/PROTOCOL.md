@@ -5,7 +5,7 @@ The pilot in [PILOT.md](PILOT.md) runs first. The protocol is frozen as v1.0
 after the pilot, before any confirmatory episode. Section 13 gives the freeze
 procedure and the decisions that remain open.
 
-Linear task: SEM-50. Draft written at repository commit `73139c8` (`origin/main`).
+Linear task: SEM-50. Draft written at repository commit `fe803ac` (`origin/main`).
 
 This study asks whether ARI diagnostics predict two operational events on a
 fixed retrieval system: a loss of retrieval quality, and a benefit from
@@ -51,14 +51,6 @@ with `ari.hub.hub_revision`. Write the cache manifest with
 manifest mismatch.
 
 ### 1.2 Why SciFact
-
-1. The reference embeddings, codes, retrieval metrics and their manifest exist.
-   The reference Recall@10 is 0.7833 and nDCG@10 is 0.6451.
-2. Six real serving conditions are already measured on it. Their table is in
-   the paper appendix "Full SciFact condition table". New rows are comparable.
-3. The corpus encodes on a CPU in about one minute. Section 9 and PILOT.md use this.
-4. The judgements are real. A synthetic corpus pins Recall@10 at 1.0 and measures
-   the degeneracy, not the instrument. See [retractions](../../docs/retractions.md).
 
 The cost of SciFact is 300 queries. Section 3.2 gives the smallest loss this
 query count detects. A larger BEIR set with a CPU-sized corpus is reserved as a
@@ -194,10 +186,11 @@ Arithmetic (`n = 300`):
 2. Minimum detectable effect at 80% power, two-sided 5%:
    (1.96 + 0.84) × 0.192 / √300 = 0.031. At 90% power: 0.036.
 3. int8 nDCG@10 interval [−0.0185, +0.0101]. Half-width 0.0143. sd = 0.127.
-   MDE at 80% power = 0.021. At 90% power: 0.024.
-4. Under a pure-loss model where a fraction *p* of queries loses its single
-   relevant document, a 10,000-resample bootstrap interval excludes zero with
-   probability 0.85 at *p* = 0.02 and 0.98 at *p* = 0.03 (Monte Carlo, 400 trials).
+   MDE at 80% power = 0.020 (0.0204). At 90% power: 0.024.
+4. Under a pure-loss model, a fraction *p* of queries loses its single
+   relevant document. A 10,000-resample bootstrap interval then excludes zero
+   with probability 0.85 at *p* = 0.02 and 0.98 at *p* = 0.03 (Monte Carlo,
+   400 trials).
 5. Under a churn model with 5% losses and 2% gains, net −0.03, power is 0.53.
    Churn widens the interval. The threshold is not a guarantee of detection.
 
@@ -252,7 +245,7 @@ embeddings. Synthetic episodes are labelled `synthetic: true` in every table.
 | B2 `swap-q` | query-only, stale index | real | reference | different 384-d encoder | change | loss |
 | C1 `bf16`, `int8` | coordinated | real | rebuilt under condition | same condition | no change; `R0` changes | none measured before |
 | C2 `swap` | coordinated | real | rebuilt with new encoder | same encoder | no change; `R0` changes | either direction |
-| G1 `gpu_*` | as regime-discrimination | real | per condition | per condition | as measured | none measured before |
+| G1 `fp16`, `gpu_tf32_off`, `gpu_tf32_on`, `gpu_bf16` | as regime-discrimination | real | per condition | per condition | as measured | none measured before |
 | S1 `noise-both` | coordinated | synthetic | noisy | noisy, same draw | change | dose-dependent |
 | S2 `noise-q` | query-only | synthetic | reference | noisy | change | dose-dependent |
 | S3 `rot-shared` | coordinated, invariant | synthetic | rotated by Q | rotated by Q | change against `R0`; none against `R_idx` | none, exact search |
@@ -268,8 +261,9 @@ Alternative 384-dimension encoders for B2 and C2, with Hub revisions recorded:
 
 Noise for S1 and S2: isotropic Gaussian, standard deviation σ × mean norm, as
 in [drift-sensitivity](../drift-sensitivity/README.md). Grid
-σ ∈ {1e-3, 3e-3, 1e-2, 3e-2, 1e-1}. Renormalise after adding noise. Each
-episode draws its own seed.
+σ ∈ {1e-3, 3e-3, 1e-2, 3e-2, 1e-1}. Renormalise after adding noise. This is
+a deviation from drift-sensitivity, which does not renormalise. Each episode
+draws its own seed.
 
 ### 4.3 Real serving interventions
 
@@ -287,30 +281,27 @@ Procedure per episode:
    decomposition in float64. Fix the sign of each diagonal element of R so Q
    is Haar-distributed.
 2. Check ‖QᵀQ − I‖_max < 1e-12 in float64. Record the value.
-3. Apply Q to documents and queries in float64. Cast both to float32.
-4. Compute S = queries · documentsᵀ in float64 for the reference arrays and
-   for the rotated arrays. Record max |ΔS|. Acceptance: < 1e-12.
-5. Compute the same in float32. Record max |ΔS|. Acceptance: < 5e-5. Both
-   operands are float32 sums of 384 terms, so rounding alone is of order 1e-5.
-6. Run exact search on the rotated float32 arrays. Record the top-10 identical
+3. Apply Q to documents and queries in float64. Compute S = queries · documentsᵀ
+   in float64 for the reference arrays and for the rotated float64 arrays.
+   Record max |ΔS|. Acceptance: < 1e-12.
+4. Cast the rotated arrays to float32. Compute S in float32 for the reference
+   arrays and for the rotated float32 arrays. Record max |ΔS|. Acceptance:
+   < 1e-6. Basis: simulated float32 rotation of 384-d unit vectors gives
+   max |ΔS| of about 3e-7 (mean 2e-8). The acceptance is about three times the
+   simulated maximum, so rounding passes and an implementation error fails.
+5. Run exact search on the rotated float32 arrays. Record the top-10 identical
    rate and ΔRecall@10. No acceptance threshold. Differences arise only at
    near-ties and are reported as a measurement.
-7. Build an ANN index on the rotated documents and search with the rotated
+6. Build an ANN index on the rotated documents and search with the rotated
    queries. Record the top-10 identical rate and ΔRecall@10 against the ANN
    result on the reference arrays.
 
 ANN implementation: `faiss-cpu`, `IndexHNSWFlat(384, 32)`, inner product,
 `efConstruction = 200`, `efSearch = 128`. Build and search seeds recorded.
 The ANN result is compared with the exact result on the same arrays. A
-difference between step 6 and step 7 is an implementation effect, not a change
+difference between step 5 and step 6 is an implementation effect, not a change
 in the metric. Both are reported. The dependency is an open decision
 (section 13).
-
-Under this arm every coordinate-basis scorer against `R0` reports a change.
-Against `R_idx` it reports no change, because the probe inputs and the index
-were rotated together. Retrieval is unchanged under exact search. This arm
-therefore has a known answer to all three questions, and any scorer that
-alarms against `R_idx` on it has a false alarm.
 
 ### 4.5 One-sided rotation, a compatibility intervention
 
@@ -319,7 +310,7 @@ Apply Q from section 4.4 to the documents only (S4a) or to the queries only
 path in different bases. Retrieval is expected to collapse. The scorers against
 `R_idx` are expected to report a change. This arm and S3 share the same Q per
 seed, so the Q-REP reading against `R0` is identical and the Q-RET reading is
-not. That pairing is the point of including both.
+not.
 
 ---
 
@@ -492,36 +483,37 @@ its wider interval.
 Zero misses in K confirmed-degraded evaluation instances bounds the miss rate
 by the same formula. Target K ≥ 59 in the evaluation half for a 5% bound.
 Degradation is an outcome, so K is not known in advance. The arms expected to
-produce confirmed degradation are S4 and B2. Plan 120 S4 instances (60 `rot-doc`,
-60 `rot-q`), so that about 60 land in evaluation. If fewer than 59 are
-confirmed, report the achieved K and its bound.
+produce confirmed degradation are S4 and B2. The parity split of section 6
+puts each instance in evaluation with probability 1/2. With 120 S4 instances
+the probability that at least 59 land in evaluation is 0.61. Plan 150 S4
+instances (75 `rot-doc`, 75 `rot-q`); the probability is then 0.997. If fewer
+than 59 are confirmed, report the achieved K and its bound.
 
 ### 9.3 Instances per arm
 
 | Arm | Instances | Replicates per instance | Episodes | Encodes corpus |
 | --- | ---: | ---: | ---: | --- |
-| A0 controls | 360 | 1 | 360 | yes |
-| A1 | 3 | 30 | 90 | yes |
-| B1 | 2 | 30 | 60 | queries and probe inputs only |
-| B2 | 3 | 5 | 15 | probe inputs and queries |
-| C1 | 2 | 30 | 60 | yes |
-| C2 | 3 | 5 | 15 | yes |
+| A0 controls | 360 | 1 | 360 | yes, rebuilds index |
+| A1 | 3 | 1 | 3 | yes, rebuilds index |
+| B1 | 2 | 30 | 60 | yes, as probe inputs through the query path; index kept |
+| B2 | 3 | 5 | 15 | yes, as probe inputs through the query path; index kept |
+| C1 | 2 | 1 | 2 | yes, rebuilds index |
+| C2 | 3 | 5 | 15 | yes, rebuilds index |
 | S1 | 5 σ × 12 seeds = 60 | 1 | 60 | no |
 | S2 | 5 σ × 12 seeds = 60 | 1 | 60 | no |
 | S3 | 60 | 1 | 60 | no |
-| S4 | 120 | 1 | 120 | no |
+| S4 | 150 | 1 | 150 | no |
 | G1 | 4 | 5 | 20 | yes, GPU host |
 
-Total: 920 episodes. 600 run the encoder on a CPU host: 525 encode the
-corpus and 75 encode the query path only. G1 runs on a GPU host.
-PILOT.md converts this to wall-clock time once the encode time is measured.
+A1 and C1 run once per condition. Their replicates would enter no analysis:
+section 7.1 counts one instance per condition, and section 9.1 counts only A0
+as controls.
 
-### 9.4 Query-level power
-
-Section 3.2 gives the arithmetic. The 300-query set detects a 0.031 loss in
-Recall@10 at 80% power under int8-like dispersion. It does not detect a 0.01
-loss. A real intervention with a 0.01 loss reads as inconclusive. This limit
-is stated in every table that uses it.
+Total: 805 episodes. 455 run the encoder on a CPU host. Of these, 380 encode
+the corpus and rebuild the index. The other 75 (arms B) encode the corpus as
+probe inputs through the changed query path and keep the reference index. 330
+are synthetic. G1 runs on a GPU host. PILOT.md converts this to wall-clock time
+once the encode time is measured.
 
 ---
 
@@ -552,8 +544,8 @@ representation.
 Evidence: the labels helped and restored from section 8.2, with cost.
 
 Permitted: "Rebuilding restored Recall@10 to within 0.030 of the reference
-[interval] at a cost of Y seconds and Z bytes." Permitted when another remedy
-also restored: "Rollback also restored quality at a lower cost."
+[interval] at a cost of Y seconds and Z bytes." When another remedy also
+restored, this is permitted: "Rollback also restored quality at a lower cost."
 
 "Rebuilding was necessary" is permitted only when all of the following hold:
 
@@ -570,8 +562,8 @@ Otherwise write "rebuilding restored quality" and name the alternatives.
 
 Permitted, when section 7.1 supports it: "On the evaluation split, alarms
 against `R_idx` at zero achieved false alarms had sensitivity S [bound] to
-confirmed degradation on synthetic instances, and the real instances produced
-no confirmed degradation." Not permitted: "early warning", "predicts harm",
+confirmed degradation on synthetic instances. The real instances produced no
+confirmed degradation." Not permitted: "early warning", "predicts harm",
 or any claim about arms not run.
 
 ---
@@ -598,7 +590,7 @@ summed.
 
 1. Exclude an episode only for a recorded collection fault: manifest mismatch,
    scorer error, failed encode, or a rotation that fails the checks in
-   section 4.4 step 2 to 5. List every exclusion. Report analyses with and
+   section 4.4 step 2 to 4. List every exclusion. Report analyses with and
    without exclusions.
 2. Stop at the episode counts in section 9.3. Stop early only for a recorded
    collection fault. Do not inspect prediction performance during collection.
