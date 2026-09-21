@@ -645,7 +645,7 @@
       "result_files": [
         {
           "path": "spec/ari-canonical-v0.1.md",
-          "sha256": "e3e06c9cada2723fe6aeca2dc560018cb71148a746099decd7b1a9ef670db848"
+          "sha256": "2dfac909eb22684ace3a2b9f22d0057a02a299f8619d688fe801c4e71e8c9a9a"
         }
       ],
       "sidecars_in_repo": [],
