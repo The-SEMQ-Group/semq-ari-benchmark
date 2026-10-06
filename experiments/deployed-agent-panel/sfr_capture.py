@@ -67,7 +67,10 @@ p = json.load(open(sys.argv[1]))
 m = SentenceTransformer(p["model"], device="cuda", trust_remote_code=True,
                         revision=p["revision"],
                         model_kwargs={"torch_dtype": torch.bfloat16, "low_cpu_mem_usage": True})
-m.to(torch.float32)
+# "fp32" mirrors the main process (bf16-born weights upcast); "bf16" is a fresh bf16 load,
+# never an in-place cast of a loaded fp32 model, which crushes fp32-born rotary buffers.
+if p.get("dtype", "fp32") == "fp32":
+    m.to(torch.float32)
 v = m.encode(p["texts"], normalize_embeddings=True, convert_to_numpy=True, batch_size=16)
 np.save(p["out"], np.asarray(v, dtype=np.float32))
 '''
@@ -120,26 +123,36 @@ def main() -> int:
         return np.vstack(parts)
     vecs["conc"] = timed("conc", conc_pass)
 
-    # prec: bf16 diagnostic (cast back to fp32 afterwards; bf16-born weights roundtrip exactly)
-    model.to(torch.bfloat16)
-    vecs["prec"] = timed("prec", lambda: enc(texts))
-    model.to(torch.float32)
-
-    # time: end-of-session re-encode (confirmatory for local deterministic compute)
+    # time: end-of-session re-encode in the same process. This is a same-session repeat,
+    # not the >24h comparison of spec/condition-set.md; reports should say so.
     vecs["time"] = timed("time", lambda: enc(texts))
 
-    # proc: fresh subprocess with its own CUDA context
+    # Free the GPU before any worker loads a second copy: two fp32 7B models do not fit
+    # a 48 GB card, which is how the first v0.2 run of `proc` failed (CUDA OOM).
+    import gc
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+
     wpath = OUT / "_worker.py"
     wpath.write_text(WORKER_SRC)
-    payload = OUT / "_payload.json"
-    pout = OUT / "vecs_proc.npy"
-    payload.write_text(json.dumps({"model": MODEL_ID, "revision": REVISION,
-                                   "texts": texts, "out": str(pout)}))
-    t = time.time()
-    subprocess.run([sys.executable, str(wpath), str(payload)], check=True,
-                   env={**os.environ})
-    vecs["proc"] = np.load(pout)
-    print(f"proc: {vecs['proc'].shape} in {time.time()-t:.0f}s", flush=True)
+
+    def worker(name, dtype):
+        payload = OUT / f"_payload_{name}.json"
+        pout = OUT / f"vecs_{name}.npy"
+        payload.write_text(json.dumps({"model": MODEL_ID, "revision": REVISION, "dtype": dtype,
+                                       "texts": texts, "out": str(pout)}))
+        t = time.time()
+        subprocess.run([sys.executable, str(wpath), str(payload)], check=True,
+                       env={**os.environ})
+        v = np.load(pout)
+        print(f"{name}: {v.shape} in {time.time()-t:.0f}s", flush=True)
+        return v
+
+    # proc: fresh subprocess with its own CUDA context
+    vecs["proc"] = worker("proc", "fp32")
+    # prec: bf16 diagnostic from a fresh bf16 load in its own process
+    vecs["prec"] = worker("prec", "bf16")
 
     cond_codes = {c: probe.encode(v) for c, v in vecs.items()}
     metrics_by = {c: metrics.aggregate(base, codes) for c, codes in cond_codes.items()}
