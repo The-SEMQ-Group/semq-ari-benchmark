@@ -23,7 +23,7 @@ BUCKET=${BUCKET:-s3://semq-agent-memory-benchmark/ari-v02-reruns}
 LABEL=${LABEL:?set LABEL, e.g. a10g}
 OUT=${OUT:-$HOME/v02_out/$LABEL}
 mkdir -p "$OUT"
-cd "$REPO" && git fetch -q origin "$BRANCH" && git checkout -q -B "$BRANCH" "origin/$BRANCH" || exit 1
+cd "$REPO" && git fetch -q origin "$BRANCH" && git checkout -q -B "$BRANCH" FETCH_HEAD || exit 1
 export GIT_COMMIT=$(git rev-parse HEAD)
 $VP/pip install -q -e ".[data]" "semq==1.0.0" || { echo "ERROR: harness install failed"; exit 1; }
 # Fetched on the box through its instance role, so the token never passes through a command.
