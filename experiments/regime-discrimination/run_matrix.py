@@ -135,14 +135,13 @@ def load_scifact() -> tuple[
 
 def encode(cond: Condition, doc_texts: list[str], q_texts: list[str]) -> dict:
     import torch
-    from sentence_transformers import SentenceTransformer
-
+    from ari.st_load import load_sentence_transformer
     torch.set_num_threads(cond.threads)
     if cond.tf32 is not None:
         torch.backends.cuda.matmul.allow_tf32 = cond.tf32
         torch.backends.cudnn.allow_tf32 = cond.tf32
 
-    model = SentenceTransformer(ENCODER, device=cond.device)
+    model = load_sentence_transformer(ENCODER, device=cond.device)
     if cond.quantize:
         # A qengine has to be selected explicitly; the default is NoQEngine on
         # some builds. qnnpack covers arm64, fbgemm covers x86_64.

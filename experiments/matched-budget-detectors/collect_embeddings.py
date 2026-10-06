@@ -150,10 +150,9 @@ def main() -> int:
     torch.backends.cuda.matmul.allow_tf32 = tf32
     torch.backends.cudnn.allow_tf32 = tf32
 
-    from sentence_transformers import SentenceTransformer
-
+    from ari.st_load import load_sentence_transformer
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    model = SentenceTransformer(a.model, device=dev)
+    model = load_sentence_transformer(a.model, device=dev)
     if dtype_name == "fp16":
         model = model.half()
     elif dtype_name == "bf16":

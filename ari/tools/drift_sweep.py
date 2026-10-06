@@ -73,8 +73,8 @@ def sweep_from_embeddings(X: np.ndarray, model_id: str, seed: int = 0) -> dict:
 def sweep(model_id: str, texts, seed: int = 0) -> dict:
     """Self-hosted path — encode with SentenceTransformer (raw, normalized, no prefix, exactly
     as ari.agents.SentenceTransformerAgent does), then sweep."""
-    from sentence_transformers import SentenceTransformer
-    m = SentenceTransformer(model_id, device="cpu", trust_remote_code=True)
+    from ari.st_load import load_sentence_transformer
+    m = load_sentence_transformer(model_id, device="cpu", trust_remote_code=True)
     X = m.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
     return sweep_from_embeddings(X, model_id, seed=seed)
 

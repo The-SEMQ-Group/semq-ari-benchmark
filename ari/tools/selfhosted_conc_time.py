@@ -55,15 +55,14 @@ def main(argv=None) -> int:
     ap.add_argument("--burst-workers", type=int, default=8)
     args = ap.parse_args(argv)
 
-    from sentence_transformers import SentenceTransformer
-
+    from ari.st_load import load_sentence_transformer
     s, dim = _registry_s(args.model)
     if s is None:
         print(f"ERROR: no registry s for {args.model}"); return 1
     inputs = load_ari_bench(args.inputs)
     texts = inputs.texts[:args.n]
 
-    m = SentenceTransformer(args.model, device="cpu", trust_remote_code=True)
+    m = load_sentence_transformer(args.model, device="cpu", trust_remote_code=True)
 
     def enc(chunk, bs):
         return np.asarray(m.encode(chunk, normalize_embeddings=True, convert_to_numpy=True,

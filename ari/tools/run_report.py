@@ -55,8 +55,8 @@ def _load_st(model_id):
     # trust_remote_code=True is required by some encoders (e.g. nomic). It executes code from
     # the model repo — acceptable for the vetted, widely-used models in the panel; a stricter
     # deployment should pin/allowlist model revisions.
-    from sentence_transformers import SentenceTransformer
-    return SentenceTransformer(model_id, device="cpu", trust_remote_code=True)
+    from ari.st_load import load_sentence_transformer
+    return load_sentence_transformer(model_id, device="cpu", trust_remote_code=True)
 
 
 def selfhosted_codes(model_id, texts):
