@@ -22,7 +22,7 @@ fi
 VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "torch==2.6.0" \
   --index-url https://download.pytorch.org/whl/cu124 2>/dev/null || true
 VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "transformers==4.57.6" \
-  "sentence-transformers==4.1.0" datasets scikit-learn accelerate einops hf_transfer pip \
+  "sentence-transformers==4.1.0" datasets scikit-learn accelerate einops hf_transfer sentencepiece protobuf pip \
   || { echo "ERROR: dependency install failed"; exit 1; }
 BRANCH=${BRANCH:-ilona/v02-reruns}
 BUCKET=${BUCKET:-s3://semq-agent-memory-benchmark/ari-v02-reruns}
