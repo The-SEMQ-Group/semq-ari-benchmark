@@ -28,6 +28,9 @@ TOOL = HERE.parent.parent / "ari" / "tools" / "gpu_capture.py"
 INPUTS = HERE.parent.parent / "data" / "ari-bench-v0.1.jsonl"
 
 
+FAILED: list[str] = []
+
+
 def cap(model, tag, device, dtype, tf32, det, s, conds, n, out):
     slug = model.replace("/", "_")
     d = Path(out) / f"{slug}__{tag}"
@@ -41,7 +44,10 @@ def cap(model, tag, device, dtype, tf32, det, s, conds, n, out):
     if conds:
         cmd += ["--conditions", conds]
     print(f">>> {tag}: {model}", flush=True)
-    subprocess.run(cmd, check=True)
+    # One model failing (e.g. a .bin-only checkpoint on an old torch) must not
+    # discard the rest of the matrix; failures are reported at the end.
+    if subprocess.run(cmd).returncode != 0:
+        FAILED.append(tag + " " + model)
 
 
 def main():
@@ -77,3 +83,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    if FAILED:
+        print("FAILED captures:\n  " + "\n  ".join(FAILED), flush=True)
+        sys.exit(1)
