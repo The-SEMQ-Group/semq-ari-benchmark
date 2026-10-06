@@ -26,7 +26,11 @@ sudo -u ubuntu git clone --depth 1 \
   echo "clone failed (private repo?) -- copy the tree up with rsync instead"
 
 echo "--- python env ---"
-sudo -u ubuntu python3 -m venv /home/ubuntu/venv
+# semq needs Python >= 3.11 and the Deep Learning AMI ships 3.10, so the venv is
+# built with uv, which fetches a 3.12 interpreter. A python3 venv here installs
+# everything except semq, which fails with "Requires-Python >=3.11".
+sudo -u ubuntu bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh' >/dev/null 2>&1
+sudo -u ubuntu /home/ubuntu/.local/bin/uv venv -q -p 3.12 --seed /home/ubuntu/venv
 VP=/home/ubuntu/venv/bin
 sudo -u ubuntu $VP/pip install -q --upgrade pip wheel
 

@@ -42,7 +42,8 @@ os.environ.update(PIN)
 import numpy as np  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
+REPO = HERE.parents[1]
+sys.path.insert(0, str(REPO))
 
 from ari import metrics, report          # noqa: E402
 from ari.inputs import load_ari_bench    # noqa: E402
@@ -78,7 +79,7 @@ def main() -> int:
     torch.backends.cudnn.allow_tf32 = False
     torch.use_deterministic_algorithms(True, warn_only=True)
 
-    inputs = load_ari_bench(HERE / "data" / "ari-bench-v0.1.jsonl")
+    inputs = load_ari_bench(REPO / "data" / "ari-bench-v0.1.jsonl")
     texts = inputs.texts
     print(f"inputs: {len(texts)}  hash={inputs.content_hash[:16]}", flush=True)
 
