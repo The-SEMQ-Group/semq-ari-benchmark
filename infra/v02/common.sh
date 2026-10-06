@@ -14,13 +14,19 @@ if [ ! -x "$VP/python" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   uv venv -q -p 3.12 "$(dirname "$VP")" || { echo "ERROR: could not create a Python 3.12 env"; exit 1; }
   export VIRTUAL_ENV="$(dirname "$VP")"
-  uv pip install -q torch --index-url https://download.pytorch.org/whl/cu121
-  uv pip install -q transformers sentence-transformers datasets scikit-learn accelerate einops \
-    "huggingface_hub[hf_transfer]" pip
+  uv pip install -q "torch==2.5.1" --index-url https://download.pytorch.org/whl/cu121
 fi
+# Pinned on every run, so a box set up earlier converges. transformers 5 needs a newer
+# torch than 2.5.1 and breaks nomic's remote code; 4.57.6 loads all eight encoders, the
+# three decoders and SFR-Embedding-2_R. torch 2.5.1 matches the H100 batch sweep.
+VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "torch==2.5.1" \
+  --index-url https://download.pytorch.org/whl/cu121 2>/dev/null || true
+VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "transformers==4.57.6" \
+  "sentence-transformers==4.1.0" datasets scikit-learn accelerate einops pip \
+  || { echo "ERROR: dependency install failed"; exit 1; }
 BRANCH=${BRANCH:-ilona/v02-reruns}
 BUCKET=${BUCKET:-s3://semq-agent-memory-benchmark/ari-v02-reruns}
-LABEL=${LABEL:?set LABEL, e.g. a10g}
+export LABEL=${LABEL:?set LABEL, e.g. a10g}
 OUT=${OUT:-$HOME/v02_out/$LABEL}
 mkdir -p "$OUT"
 cd "$REPO" && git fetch -q origin "$BRANCH" && git checkout -q -B "$BRANCH" FETCH_HEAD || exit 1

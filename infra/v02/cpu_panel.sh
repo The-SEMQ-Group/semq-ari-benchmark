@@ -5,7 +5,8 @@
 # Self-hosted CPU panel, day 0: same/proc reports, the bf16 prec diagnostic, the
 # `time` baselines, and the CPU fp32 reference captures for the GPU `mach` compare.
 # Run cpu_panel_time.sh on this same machine >=24h later.
-LABEL=${LABEL:-cpu} source "$(dirname "$0")/common.sh"
+export LABEL=${LABEL:-cpu}
+source "$(dirname "$0")/common.sh"
 for m in "${MODELS8[@]}"; do
   slug=${m//\//_}
   echo ">>> $m"

@@ -3,7 +3,8 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # A10G: SciFact GPU rows, then the GPU-determinism matrix and its 2x2 isolation.
-LABEL=${LABEL:-a10g} source "$(dirname "$0")/common.sh"
+export LABEL=${LABEL:-a10g}
+source "$(dirname "$0")/common.sh"
 ( cd experiments/regime-discrimination && \
   ARI_R_CONDITIONS=reference,gpu_tf32_off,gpu_tf32_on,gpu_bf16,fp16 $VP/python -u run_matrix.py ) \
   2>&1 | tee "$OUT/regime_gpu.log"
