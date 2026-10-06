@@ -168,6 +168,12 @@
       "maximum": 1,
       "description": "Aggregate index: mean HER over the present comparable-core conditions {proc, conc, time}. mach/prec/lib are reported per-condition as diagnostics but are not averaged into ARI (they are not measurable for a black-box API, so folding them in would break cross-class comparability)."
     },
+    "ARI_R": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "ARI-R = 1 - mean coordinate_change_rate over the present comparable-core conditions. The dimension-normalized score for comparing models; ARI keeps its exact-match (HER) meaning. Added in v0.2."
+    },
     "drift_spectrum": {
       "type": "object",
       "description": "Optional per-condition histogram of per-input Hamming distances.",
@@ -261,6 +267,19 @@
           "minimum": 0,
           "maximum": 1,
           "description": "Hbar / n_bits. Added 2026-09-10."
+        },
+        "coordinate_change_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "rho: mean over inputs of the fraction of coordinates whose code symbol changed. Dimension-normalized under ARI-Canonical-v0.2, so comparable across models of different dimension. Added in v0.2."
+        },
+        "coordinate_change_rate_ci": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Bootstrap 95% CI of coordinate_change_rate over inputs. Added in v0.2."
         },
         "criterion_type": {
           "type": "string",
