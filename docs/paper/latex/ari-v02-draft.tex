@@ -209,6 +209,8 @@ condition & setting & HER (range over 8 encoders) \\
 \texttt{proc} & A10G fp32, \textbf{TF32 on} & \textbf{0.594--0.848} (mean 0.725) \\
 \texttt{prec} & bf16 / int8 (CPU) & \todo{CPU panel; locally 0.000--0.069} \\
 \texttt{conc}, \texttt{time} (>24\,h) & CPU & \todo{2026-10-07} \\
+\midrule
+\texttt{proc} / \texttt{conc} / \texttt{prec} & SFR-Embedding-2\_R (7B, 4{,}096-d), L40S fp32$^\ast$ & 1.000 / \textbf{0.998} / 0.000 \\
 batch 1 vs 32 & H100 & \todo{2026-10-13} \\
 \bottomrule
 \end{tabular}
@@ -226,6 +228,7 @@ batch 1 vs 32 & H100 & \todo{2026-10-13} \\
 \begin{itemize}
   \item Pinning precision (fp32, TF32 off) $\Rightarrow$ bit-reproducible across process and threads; $\ge$0.996 across GPU models.
   \item Exposed axis is CPU$\leftrightarrow$GPU and TF32; portable axis is GPU$\leftrightarrow$GPU.
+  \item Concurrent encoding on one shared model instance is not perfectly reproducible: SFR \texttt{conc} = 0.998 (2 of 1{,}000 inputs). $^\ast$fp32 compute on bf16-loaded weights.
 \end{itemize}
 
 \subsection{Task metrics do not register the change}\label{sec:retrieval}
@@ -385,7 +388,7 @@ Spearman with raw drift (bf16/int8) & \textbf{0.96} & 0.57--0.67 & 0.54--0.70 \\
 \end{tabular}
 \end{table}
 \begin{table}[h]\centering\footnotesize
-\caption{Decoding, 48 prompts $\times$ 48 tokens, greedy, one L40S, v0.2. \todo{Mistral-7B rerun}}
+\caption{Decoding, 48 prompts $\times$ 48 tokens, greedy, one L40S, v0.2. bf16: $<$1\% of tokens change, 21--42\% of generations differ.}
 \begin{tabular}{llrrr}
 \toprule
 model & condition & token agreement & logit HER & generations identical \\
@@ -400,6 +403,11 @@ Qwen2.5-7B & proc / threads / TF32 off & 100\% & 1.000 & 48/48 \\
  & batched (pad to 4) & 100\% & 0.251 & 48/48 \\
  & fp16 & 99.87\% & 0.000 & 43/48 \\
  & bf16 & 99.03\% & 0.000 & 28/48 \\
+Mistral-7B-v0.3 & proc / threads / TF32 off & 100\% & 1.000 & 48/48 \\
+ & TF32 on & 100\% & 0.000 & 48/48 \\
+ & batched (pad to 4) & 100\% & 0.674 & 48/48 \\
+ & fp16 & 99.96\% & 0.000 & 44/48 \\
+ & bf16 & 99.38\% & 0.000 & 38/48 \\
 \bottomrule
 \end{tabular}
 \end{table}
