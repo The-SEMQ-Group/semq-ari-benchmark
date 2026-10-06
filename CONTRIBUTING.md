@@ -8,26 +8,24 @@ Use a separate branch for each change. Keep unrelated generated files out of the
 1. Change the implementation and its documentation together.
 2. Add regression tests for changed behavior.
 3. Run `python -m pytest -q -rs` from the repository root.
-4. With the SDK installed, run the mock-agent report command in the root README.
+4. Run the mock-agent report command in the root README.
 5. Run `python -m build` when packaging changes.
 6. Describe the behavior change and verification results in the pull request.
 
-Report skipped tests. Public CI can skip SDK-dependent tests because `semq` requires separate access.
-Use the [SDK installation procedure](ari/README.md#install-the-canonical-probe) to test those paths when you have access.
+Report skipped tests. Some tests skip because they need private-SDK features that the public `semq` SDK does not have.
+Their skip reasons name the [port proposal](docs/proposals/public-sdk-port.md).
 
 ## Use the SEMQ operators through the SDK
 
-The SEMQ operators, including QUANT, are proprietary.
-The SEMQ Group Inc. distributes them only in the `semq` package.
-That package is subject to a commercial license owned by The SEMQ Group Inc. and is patent pending.
+The SEMQ Group Inc. distributes the SEMQ operators, including QUANT, only in the [`semq` package](https://github.com/The-SEMQ-Group/semq).
+That package is licensed under the PolyForm Noncommercial License 1.0.0 and is patent pending.
 This repository does not contain them and must not contain them.
 
 - Do not add an implementation of a SEMQ operator to this repository.
   This includes ports, translations, clean-room rewrites, and numerically equivalent approximations.
 - Do not copy or paraphrase code from the `semq` package into this repository.
-- Call the operators through the `semq` package. Use [semq_compat.py](ari/semq_compat.py) for version differences.
-- This repository contains no substitute for the operators. Code that needs them requires the SDK.
-  Tests that need them skip without it.
+- Call the operators through the `semq` package, and only from [semq_compat.py](ari/semq_compat.py).
+- This repository contains no substitute for the operators. The harness declares `semq` as a dependency.
 
 Pull requests that add an operator implementation are closed without review.
 The Apache-2.0 license covers the benchmark harness in this repository.

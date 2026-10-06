@@ -6,6 +6,25 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
+- The harness uses the public SEMQ SDK, `semq` 1.x from PyPI, now a declared
+  dependency. The private 1.2–1.5 builds are no longer supported. Python 3.11
+  or later is required, the SDK's floor.
+- The probe changes: QUANT bins over the fixed range `2 / sqrt(dim)` instead
+  of a 99th-percentile calibration, and rows are rescaled to unit norm first.
+  v0.1 and v0.2 codes are not comparable; `fixed_scale_codes` refuses a v0.1
+  baseline scale. The packed layout is unchanged.
+- Evidence and open decisions are in `docs/proposals/public-sdk-port.md`.
+  Calibrating on a different subset of the frozen inputs changed 60–100% of
+  v0.1 codes for identical vectors. Against ground truth from raw vectors the
+  fixed range detected changes at least as often in most conditions.
+- Not yet ported, and skipped with a reason: attestation (`semq.notary`),
+  change profiles and bound quality (`quant_regions`), and the logit
+  experiments (chunked calibrated encoding).
+- CI installs `semq` from PyPI in one job; the CodeArtifact job is removed.
+- The SDK is licensed under the PolyForm Noncommercial License 1.0.0. NOTICE,
+  README, CONTRIBUTING and source headers say so.
+
 ### Paper revision
 - The paper leads with the measurement protocol, adds Figures 2 and 3 (hosted
   decoding panel, batch invariance) with the scripts that draw them, and

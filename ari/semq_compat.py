@@ -1,70 +1,106 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
-"""One way to build a SEMQ quantizer context across SDK versions.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
+"""The one place the harness calls the public SEMQ SDK (``semq`` 1.x).
 
-The harness requires semq 1.5.1 or newer. ``Context.compare_codes``,
-``bits_per_coordinate`` and ``quant_regions`` were added after 1.5.0, so their
-presence is evidence of a new enough build, and the module refuses an older
-build below.
+The harness requires semq 1.0.0 or newer within major version 1, the first
+public release (https://github.com/The-SEMQ-Group/semq). Earlier private
+builds (1.2–1.5) exposed a different interface — ``semq.Context``,
+``calibrate``, ``scale_max`` — and are no longer supported; this module
+refuses them below.
 
-The operator is ``SEMQ_OP_QUANT`` with ``quant_n_bins`` and
-``quant_scale_max``. Version 1.4.1 named it ``SEMQ_OP_QBIN``; the guard above
-refuses builds that old. The name is read here rather than in each script
-because the first GPU run failed on it: the scripts were developed against a
-local build and failed against the published wheel, after the encoding had
-already finished.
+What changed with the public SDK, and why it matters for ARI:
 
-``SEMQ_MAX_DIM`` is read the same way, because a caller that chunks a long
-vector needs the limit and should not hard-code 65536.
+* **No calibration.** Public quant bins magnitudes over the fixed range
+  ``M = 2 / sqrt(dim)`` (``CodecConfig.max_magnitude``). There is no
+  percentile calibration and no ``scale_max``: the range is a function of the
+  dimension alone, so every party computes the same codes from the same
+  vectors without sharing a scale. ARI v0.2 adopts this probe
+  (spec/ari-canonical-v0.2.md).
+* **Unit-norm input.** ``encode`` rejects rows whose squared norm is more than
+  ``2^-10`` from 1. :func:`encode_packed` renormalises every row in binary64
+  before casting to float32, the same deterministic step for every condition,
+  so a provider that returns unnormalised vectors is still measurable.
+* **Same row layout.** Quant symbols are ``sign * bins + bin`` packed
+  least-significant-bit first, exactly as before, so ``ari.code_metrics`` and
+  every consumer of packed codes is unchanged.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import semq
 
-MIN_SDK = "1.5.1"
-_REQUIRED = ("compare_codes", "bits_per_coordinate", "quant_regions")
-_missing = [n for n in _REQUIRED if not hasattr(semq.Context, n)]
-if _missing:
+MIN_SDK = "1.0.0"
+
+if not hasattr(semq, "Codec") or hasattr(semq, "Context"):  # pragma: no cover
     raise ImportError(
-        f"semq {getattr(semq, '__version__', 'unknown')} lacks Context."
-        + ", Context.".join(_missing)
-        + f"; the ARI harness needs semq>={MIN_SDK}. Install a newer wheel."
-    )
+        f"semq {getattr(semq, '__version__', 'unknown')} is a pre-release build; "
+        f"the ARI harness needs the public SDK, semq>={MIN_SDK},<2 "
+        "(pip install semq).")
 
-if not hasattr(semq, "SEMQ_OP_QUANT"):  # pragma: no cover
-    raise ImportError(
-        "this SEMQ build does not expose SEMQ_OP_QUANT; "
-        f"it has {[n for n in dir(semq) if n.startswith('SEMQ_OP')]}")
-QUANT_OP = semq.SEMQ_OP_QUANT
-_BINS_KW, _SCALE_KW = "quant_n_bins", "quant_scale_max"
-
-MAX_DIM = int(getattr(semq, "SEMQ_MAX_DIM", 65536))
+MAX_DIM = 65536  # SEMQ_MAX_DIM in include/semq.h
 
 
-def quant_context(max_dim: int, n_bins: int = 8, scale_max: float | None = None):
-    """A Context on the magnitude-binning operator.
+def quant_codec(dim: int, n_bins: int) -> semq.Codec:
+    """The public quant codec: fixed range ``2 / sqrt(dim)``, ``n_bins`` magnitude bins."""
+    return semq.Codec.quant(int(dim), int(n_bins))
 
-    Pass ``scale_max`` to fix the calibration scale instead of calling
-    ``calibrate``. Fixing it explicitly is what lets one scale cover several
-    chunks of a vector too long for a single context.
 
-    The two are **not** interchangeable. ``calibrate`` takes the percentile in
-    the core in float32; ``numpy.percentile`` interpolates in float64, and the
-    scales differ by up to 2e-4 relative at the 0.999 percentile. That moves
-    coordinates sitting near a boundary across it: measured at dim 384, 60 of
-    38,400 code bytes differ at ``n_bins=8``. Prefer ``calibrate`` — it is the
-    definition every language binding shares — and treat a switch between the
-    two as a change that needs results regenerated, not a refactor.
+def max_magnitude(dim: int) -> float:
+    """The range quant bins over at ``dim``: ``(float)(2 / sqrt(dim))``.
+
+    This replaces the calibrated scale ``s``. Reports keep recording it under
+    ``fingerprint.s`` so the report schema is unchanged.
     """
-    kwargs = {"max_dim": max_dim, "op": QUANT_OP, _BINS_KW: n_bins}
-    if scale_max is not None:
-        kwargs[_SCALE_KW] = float(scale_max)
-    return semq.Context(**kwargs)
+    return float(semq.CodecConfig.quant(int(dim), 2).max_magnitude)
+
+
+def unit_rows(X: np.ndarray) -> np.ndarray:
+    """Rows rescaled to unit L2 norm (binary64 norm, float32 result).
+
+    A zero row has no direction and cannot be encoded; it raises here rather
+    than inside the SDK so the message names the row.
+    """
+    X = np.asarray(X)
+    norms = np.linalg.norm(X.astype(np.float64), axis=1, keepdims=True)
+    zero = np.flatnonzero(norms[:, 0] == 0)
+    if zero.size:
+        raise ValueError(f"row {int(zero[0])} is all zeros; it has no direction to encode")
+    return np.ascontiguousarray(X / norms, dtype=np.float32)
+
+
+def encode_packed(X: np.ndarray, n_bins: int) -> np.ndarray:
+    """Encode ``X`` (n, dim) to packed quant rows, (n, bytes_per_vector) uint8, in input order."""
+    X = unit_rows(X)
+    codec = quant_codec(X.shape[1], n_bins)
+    enc = codec.encode(X, ids=list(range(len(X))))
+    # ids are 0..n-1 and an Encoding sorts by id, so rows come back in input order.
+    return np.array(enc.rows, dtype=np.uint8, copy=True)
+
+
+def unpack(packed: np.ndarray, dim: int, n_bins: int) -> np.ndarray:
+    """The SDK's own unpacking of packed quant rows, (n, dim) symbols."""
+    codec = quant_codec(dim, n_bins)
+    packed = np.ascontiguousarray(packed, dtype=np.uint8)
+    enc = semq.Encoding(list(range(len(packed))), packed, codec.config)
+    return np.asarray(codec.unpack(enc))
+
+
+def quant_context(*_args, **_kwargs):
+    """Removed: the private-SDK calibrated context has no public equivalent.
+
+    Callers that fixed a calibration scale (``scale_max``) or chunked a vector
+    longer than one context under a shared scale — the logit experiments —
+    cannot be ported mechanically; see docs/proposals/public-sdk-port.md.
+    """
+    raise NotImplementedError(
+        "quant_context belonged to the private SEMQ SDK (calibrate / scale_max); the "
+        "public SDK has a fixed range. Use encode_packed, and see "
+        "docs/proposals/public-sdk-port.md for the experiments not yet ported.")
 
 
 def sdk_version() -> str:

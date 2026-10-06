@@ -1,10 +1,10 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
-"""The SDK is the authority on layout and calibration, not this repo.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
+"""The SDK is the authority on layout and range, not this repo.
 
 Each test here pins a fact that a hand-rolled replica got wrong or that a
 docstring asserted without checking.
@@ -18,12 +18,13 @@ import pytest
 pytest.importorskip("semq")
 
 from ari.code_metrics import bits_per_coordinate, unpack_symbols  # noqa: E402
-from ari.semq_compat import quant_context  # noqa: E402
+from ari import semq_compat  # noqa: E402
+from ari.probe import fixed_scale_codes, load_probe  # noqa: E402
+from ari.semq_compat import encode_packed, unpack  # noqa: E402
 
 
-def _codes(X, dim, bins, **kw):
-    with quant_context(dim, n_bins=bins, **kw) as ctx:
-        return np.asarray(ctx.batch_encode(np.ascontiguousarray(X, np.float32)))
+def _codes(X, dim, bins):
+    return encode_packed(X, bins)
 
 
 def test_local_unpacking_agrees_with_the_core():
@@ -31,10 +32,9 @@ def test_local_unpacking_agrees_with_the_core():
     rng = np.random.default_rng(0)
     dim, bins = 64, 8
     X = rng.standard_normal((8, dim)).astype(np.float32)
-    with quant_context(dim, n_bins=bins, scale_max=3.0) as ctx:
-        packed = np.asarray(ctx.batch_encode(X))
-        assert np.array_equal(ctx.unpack_codes(packed, dim),
-                              unpack_symbols(packed, dim=dim, n_bins=bins))
+    packed = encode_packed(X, bins)
+    assert np.array_equal(unpack(packed, dim, bins),
+                          unpack_symbols(packed, dim=dim, n_bins=bins))
 
 
 def test_symbol_order_within_a_byte_is_not_arbitrary():
@@ -47,7 +47,7 @@ def test_symbol_order_within_a_byte_is_not_arbitrary():
     dim, bins = 64, 8
     R = rng.standard_normal((32, dim)).astype(np.float32)
     C = R + rng.standard_normal((32, dim)).astype(np.float32) * 0.05
-    a, b = _codes(R, dim, bins, scale_max=3.0), _codes(C, dim, bins, scale_max=3.0)
+    a, b = _codes(R, dim, bins), _codes(C, dim, bins)
 
     w = bits_per_coordinate(bins)
     good_a = unpack_symbols(a, dim=dim, n_bins=bins)
@@ -63,38 +63,34 @@ def test_symbol_order_within_a_byte_is_not_arbitrary():
                               np.flatnonzero(swap(a)[0] != swap(b)[0]))
 
 
-def test_core_calibration_is_not_interchangeable_with_numpy_percentile():
-    """semq_compat used to claim these give bit-identical codes. They do not.
-
-    A tripwire, not a property worth preserving. If the core ever adopts
-    float64 interpolation the two paths converge, this test fails, and the
-    right response is to delete it and restore the docstring's claim -- not
-    to reintroduce the divergence.
-    """
-    rng = np.random.default_rng(7)
-    dim, bins, pct = 384, 8, 0.999
-    X = rng.standard_normal((200, dim)).astype(np.float32)
-
-    with quant_context(dim, n_bins=bins) as ctx:
-        core = float(ctx.calibrate(X, percentile=pct))
-        a = np.asarray(ctx.batch_encode(X))
-    hand = float(np.percentile(np.abs(X), pct * 100.0))
-    b = _codes(X, dim, bins, scale_max=hand)
-
-    assert core != hand
-    assert not np.array_equal(a, b), "if this passes, relax the docstring again"
-    assert (a != b).sum() < a.size * 0.01, "divergence should stay at the margin"
+def test_the_range_is_fixed_by_the_dimension():
+    """v0.2 has no calibration: s is 2/sqrt(dim) in float32, whatever the data."""
+    for dim in (17, 384, 1024, 4096):
+        assert semq_compat.max_magnitude(dim) == float(np.float32(2.0 / np.sqrt(dim)))
+    rng = np.random.default_rng(5)
+    assert load_probe(rng.standard_normal((4, 384))).s == load_probe(np.ones((9, 384))).s
 
 
-def test_compare_codes_separates_byte_rate_from_coordinate_rate():
-    """The published score counts packed bytes; the baselines count symbols."""
-    rng = np.random.default_rng(3)
-    dim, bins = 128, 8
-    R = rng.standard_normal((16, dim)).astype(np.float32)
-    C = R + rng.standard_normal((16, dim)).astype(np.float32) * 0.1
-    with quant_context(dim, n_bins=bins, scale_max=3.0) as ctx:
-        cmp = ctx.compare_codes(np.asarray(ctx.batch_encode(R)),
-                                np.asarray(ctx.batch_encode(C)), dim)
-    # two coordinates share a byte at 4 bits, so a byte rate cannot be smaller
-    assert (cmp.byte_change_rate >= cmp.coordinate_change_rate - 1e-12).all()
-    assert (cmp.bit_hamming_rate <= cmp.coordinate_change_rate + 1e-12).all()
+def test_row_scale_does_not_change_the_code():
+    """Rows are renormalised before encoding, so a provider's norm convention is moot."""
+    rng = np.random.default_rng(11)
+    X = rng.standard_normal((32, 384))
+    scales = rng.uniform(0.1, 50.0, size=(32, 1))
+    assert np.array_equal(encode_packed(X, 2), encode_packed(X * scales, 2))
+
+
+def test_a_zero_row_is_rejected_by_index():
+    X = np.ones((3, 8))
+    X[1] = 0.0
+    with pytest.raises(ValueError, match="row 1 is all zeros"):
+        encode_packed(X, 2)
+
+
+def test_a_v01_calibrated_baseline_scale_is_refused():
+    """A stored v0.1 scale would compare calibrated codes with fixed-range codes."""
+    rng = np.random.default_rng(13)
+    X = rng.standard_normal((4, 384))
+    s = semq_compat.max_magnitude(384)
+    assert np.array_equal(fixed_scale_codes(X, s, 384), load_probe(X).encode(X))
+    with pytest.raises(ValueError, match="calibrated by the v0.1 probe"):
+        fixed_scale_codes(X, 0.1318197101354599, 384)
