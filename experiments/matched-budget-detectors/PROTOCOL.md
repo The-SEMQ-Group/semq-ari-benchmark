@@ -49,6 +49,12 @@ diagnostics. Confirmatory collection must write a manifest.
 The probes are specified and reported separately; storage and detection results
 are never combined across probes.
 
+From ARI v0.2 the logit probe is `ARI-D-Logit-v0.2` (`ari/logit_probe.py`,
+`spec/arid-logit-probe-v0.2.md`): rows centred over the vocabulary, fixed
+65,536-wide chunks, each encoded by the public SEMQ SDK over its fixed range.
+It replaces the globally calibrated scale, so pilot results from the two
+probes are not comparable.
+
 ### 0.4 The published ARI score compares packed bytes, not symbols
 
 Measured directly against the SDK: `batch_encode` returns packed bytes at

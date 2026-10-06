@@ -69,7 +69,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ari.code_metrics import chunk_widths, chunked_code_diff
+from ari.code_metrics import chunked_code_diff
 
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
@@ -286,26 +286,13 @@ def statistics(ref: np.ndarray, cur: np.ndarray) -> dict:
         p = np.partition(x, -2, axis=1)[:, -2:]
         return p[:, 1] - p[:, 0]
 
-    from ari.semq_compat import MAX_DIM, quant_context
+    from ari.logit_probe import encode_logits
 
-    scale = float(np.percentile(np.abs(ref), 99.0))
-
-    # Every chunk pads its own final byte, so the widths are fixed once and
-    # reused: a coordinate-level comparison splits the concatenated buffer
-    # back at the same boundaries.
-    widths = chunk_widths(ref.shape[1], MAX_DIM)
-
-    def code(X):
-        parts, off = [], 0
-        for w in widths:
-            ctx = quant_context(w, n_bins=8, scale_max=scale)
-            parts.append(np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(X[:, off:off + w], np.float32))))
-            ctx.close()
-            off += w
-        return parts[0] if len(parts) == 1 else np.concatenate(parts, axis=1)
-
-    cr, cc = code(ref), code(cur)
+    # ARI-D v0.2 logit probe: centred rows, fixed 65,536-wide chunks. Every
+    # chunk pads its own final byte, so the widths come back with the codes
+    # and the comparison splits the concatenated buffer at the same boundaries.
+    cr, widths = encode_logits(ref, 8)
+    cc, _ = encode_logits(cur, 8)
     diff = chunked_code_diff(cr, cc, n_bins=8, widths=widths)
 
     # Top-20 set change, in row blocks. A whole-array argpartition allocates an

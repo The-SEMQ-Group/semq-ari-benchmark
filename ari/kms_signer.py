@@ -4,12 +4,12 @@
 
 The point of KMS here is custody, not cryptography. The signature format does not change:
 AWS KMS `ECC_NIST_EDWARDS25519` with `ED25519_SHA_512` and `MessageType: RAW` is PureEdDSA
-over the message you hand it, which is exactly what `semq.notary` produces locally and what
+over the message you hand it, which is exactly what a local key produces in `ari.attest` and what
 `ari/verify_report.py` checks. A sidecar signed through KMS verifies with the same code, and
 a verifier never learns where the private key lived.
 
     signer = KmsEd25519Signer(key_id="arn:aws:kms:eu-west-1:...:key/...")
-    attest(metric="ARI", report_path=..., input_paths=[...], repo_path=..., signer=signer)
+    attest(metric="ARI", report_path=..., input_paths=[...], signer=signer)
 
 What this changes: the private key never exists outside the HSM, and every signature leaves
 a CloudTrail record. What it does not change: a signature still says only that the holder of

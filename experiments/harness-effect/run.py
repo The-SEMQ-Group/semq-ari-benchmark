@@ -223,7 +223,7 @@ def sign_report(report: Path) -> None:
     )
     att = attest(metric="ARI-E", report_path=report, input_paths=[],
                  references=references,
-                 repo_path=RESULTS / "attestation-repo", signing_key=key,
+                 signing_key=key,
                  signer_identity=os.environ.get("ARI_SIGNER", "unnamed"),
                  extra={"dataset": DATASET})
     print(f"signed: {att.manifest_path.name}, {att.sidecar_path.name}")

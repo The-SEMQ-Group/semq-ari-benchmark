@@ -54,8 +54,8 @@ ARI_D_MODEL=Qwen/Qwen2.5-7B-Instruct bash ~/semq-ari-benchmark/infra/run_gpu.sh
 
 ```bash
 # 0. Once per account, before the first launch. operator.env holds the
-#    CodeArtifact and bucket coordinates and is gitignored: nothing in the
-#    public tree names an AWS account, domain, repository or bucket.
+#    result-bucket names and is gitignored: nothing in the public tree names
+#    an AWS account or bucket. The instance installs semq from PyPI.
 cp operator.env.example operator.env && $EDITOR operator.env
 ./budget.sh you@example.com 100
 
