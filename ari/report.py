@@ -40,6 +40,11 @@ def condition_digest(codes: np.ndarray) -> str:
     return hashlib.sha256(np.ascontiguousarray(codes, dtype=np.uint8).tobytes()).hexdigest()
 
 
+
+def _sig(x: float, digits: int = 6) -> float:
+    """``x`` to ``digits`` significant digits (a rate near 1e-5 keeps its precision)."""
+    return float(f"{x:.{digits}g}")
+
 def build_report(
     *,
     agent_id: str,
@@ -56,6 +61,10 @@ def build_report(
     if not present_averaged:
         raise ValueError("no averaged conditions present — cannot compute ARI")
     ari = float(np.mean([metrics_by_condition[c].HER for c in present_averaged]))
+    # ARI-R, the dimension-normalized score: 1 - mean coordinate change rate over the
+    # core. "ARI" keeps its HER meaning so existing reports and the leaderboard hold.
+    rhos = [metrics_by_condition[c].rho for c in present_averaged]
+    ari_r = None if any(r is None for r in rhos) else 1.0 - float(np.mean(rhos))
 
     # Conditions are born in the multi-detector shape
     # (spec/report-schema.json $defs/conditionResult); the flat pre-Matrix
@@ -77,6 +86,10 @@ def build_report(
             "n_coordinates": int(dim),
             "n_bits": n_bits,
             "bit_hamming_rate": round(m.Hbar / n_bits, 9),
+            # rho is typically 1e-5..1e-3, so keep significant digits, not decimals.
+            **({"coordinate_change_rate": _sig(m.rho),
+                "coordinate_change_rate_ci": [_sig(m.rho_ci[0]), _sig(m.rho_ci[1])]}
+               if m.rho is not None else {}),
             "criterion_type": "exact",
             "bytes_of_reference_state": bors,
             "unit": "code",
@@ -95,6 +108,8 @@ def build_report(
         "ARI": round(ari, 6),
         "audit_hashes": audit,
     }
+    if ari_r is not None:
+        report["ARI_R"] = round(ari_r, 9)
     if input_content_hash is not None:
         report["input_content_hash"] = input_content_hash
     if fingerprint is not None:

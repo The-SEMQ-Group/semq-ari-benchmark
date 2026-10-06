@@ -18,6 +18,16 @@ The probe must return identical codes for identical vectors.
 The SDK pins its bytes with conformance vectors on every supported CPU and binding.
 Record the SDK version and build id with every capture.
 
+## Metrics
+
+Report two numbers per condition, and one score:
+
+- `HER`: the fraction of inputs whose whole code matches the baseline. It answers whether a stored code, key or ID still matches. At equal per-coordinate noise it falls as the dimension grows, so do not compare it across models.
+- `rho` (`coordinate_change_rate`): the mean over inputs of the fraction of coordinates whose symbol changed. Because the range is `2 / sqrt(dim)`, the bin edges sit at the same position relative to a unit-norm vector's typical coordinate at every dimension, so `rho` is comparable across models.
+- `ARI-R = 1 - mean rho` over the core conditions `{proc, conc, time}`: the score for comparing models. The report keeps `ARI` as the mean core `HER`.
+
+On the frozen inputs under equal relative noise, `HER` falls from 0.64 at 384 dimensions to 0.26–0.32 at 1,024 while `rho` stays within 1.1–1.4 × 10⁻³ (eight encoders). `tests/test_rho.py` checks the same property on synthetic unit vectors up to 3,072 dimensions.
+
 ## Changes from v0.1
 
 | | v0.1 | v0.2 |
