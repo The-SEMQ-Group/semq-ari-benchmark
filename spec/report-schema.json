@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/The-SEMQ-Group/semq-ari-benchmark/blob/main/spec/report-schema.json",
   "title": "ARI Report v0.1",
-  "description": "Third-party-verifiable Agent Reproducibility Index report. Carries per-condition HER/Hbar, the aggregate ARI, an optional (s,b,kappa) fingerprint, and an environment manifest required by spec/condition-set.md.",
+  "description": "Third-party-verifiable AI Reproducibility Index report. Carries per-condition HER/Hbar, the aggregate ARI, an optional (s,b,kappa) fingerprint, and an environment manifest required by spec/condition-set.md.",
   "type": "object",
   "required": [
     "agent_id",
