@@ -5,8 +5,19 @@
 # Checks out the rerun branch, installs the harness at the pinned SDK, records
 # versions, and defines `publish` to copy outputs to S3.
 set -uo pipefail
-VP=${VP:-$HOME/venv/bin}
 REPO=${REPO:-$HOME/semq-ari-benchmark}
+# semq needs Python >= 3.11 and the Deep Learning AMI ships 3.10, so build a 3.12
+# environment with uv once per box (uv fetches the interpreter).
+VP=${VP:-$HOME/venv312/bin}
+if [ ! -x "$VP/python" ]; then
+  command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1
+  export PATH="$HOME/.local/bin:$PATH"
+  uv venv -q -p 3.12 "$(dirname "$VP")" || { echo "ERROR: could not create a Python 3.12 env"; exit 1; }
+  export VIRTUAL_ENV="$(dirname "$VP")"
+  uv pip install -q torch --index-url https://download.pytorch.org/whl/cu121
+  uv pip install -q transformers sentence-transformers datasets scikit-learn accelerate einops \
+    "huggingface_hub[hf_transfer]" pip
+fi
 BRANCH=${BRANCH:-ilona/v02-reruns}
 BUCKET=${BUCKET:-s3://semq-agent-memory-benchmark/ari-v02-reruns}
 LABEL=${LABEL:?set LABEL, e.g. a10g}
