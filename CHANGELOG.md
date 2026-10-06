@@ -7,8 +7,8 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 ## [Unreleased]
 
 ### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
-- The harness uses the public SEMQ SDK, `semq` 1.x from PyPI, now a declared
-  dependency. The private 1.2–1.5 builds are no longer supported. Python 3.11
+- The harness uses the public SEMQ SDK from PyPI, pinned to `semq==1.0.0`
+  and checked at import. The private 1.2–1.5 builds are no longer supported. Python 3.11
   or later is required, the SDK's floor.
 - The probe changes: QUANT bins over the fixed range `2 / sqrt(dim)` instead
   of a 99th-percentile calibration, and rows are rescaled to unit norm first.

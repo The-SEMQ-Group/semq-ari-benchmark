@@ -6,11 +6,12 @@
 # Apache License.
 """The one place the harness calls the public SEMQ SDK (``semq`` 1.x).
 
-The harness requires semq 1.0.0 or newer within major version 1, the first
-public release (https://github.com/The-SEMQ-Group/semq). Earlier private
-builds (1.2–1.5) exposed a different interface — ``semq.Context``,
-``calibrate``, ``scale_max`` — and are no longer supported; this module
-refuses them below.
+The harness pins semq 1.0.0, the first public release
+(https://github.com/The-SEMQ-Group/semq), so every capture uses the same
+build; this module refuses any other version below. Bump ``SDK_VERSION`` and
+the pin in pyproject.toml together, and regenerate results when you do.
+Earlier private builds (1.2–1.5) exposed a different interface —
+``semq.Context``, ``calibrate``, ``scale_max`` — and are no longer supported.
 
 What changed with the public SDK, and why it matters for ARI:
 
@@ -34,13 +35,12 @@ from __future__ import annotations
 import numpy as np
 import semq
 
-MIN_SDK = "1.0.0"
+SDK_VERSION = "1.0.0"
 
-if not hasattr(semq, "Codec") or hasattr(semq, "Context"):  # pragma: no cover
+if getattr(semq, "__version__", None) != SDK_VERSION:  # pragma: no cover
     raise ImportError(
-        f"semq {getattr(semq, '__version__', 'unknown')} is a pre-release build; "
-        f"the ARI harness needs the public SDK, semq>={MIN_SDK},<2 "
-        "(pip install semq).")
+        f"semq {getattr(semq, '__version__', 'unknown')} is installed; the ARI harness "
+        f"is pinned to semq=={SDK_VERSION} (pip install 'semq=={SDK_VERSION}').")
 
 MAX_DIM = 65536  # SEMQ_MAX_DIM in include/semq.h
 

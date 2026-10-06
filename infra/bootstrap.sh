@@ -40,7 +40,7 @@ sudo -u ubuntu $VP/pip install -q \
 # own line: pip fails a whole install command when one requirement fails, and
 # this script has no `set -e`, so a shared line once took transformers down
 # with it while the box still logged "bootstrap complete".
-if sudo -u ubuntu $VP/pip install -q "semq>=1.0,<2"; then
+if sudo -u ubuntu $VP/pip install -q "semq==1.0.0"; then
   sudo -u ubuntu $VP/python -c "import semq; print('semq', semq.__version__, semq.build_info().build_id)"
 else
   echo "ERROR: semq install failed; nothing that computes codes will run"

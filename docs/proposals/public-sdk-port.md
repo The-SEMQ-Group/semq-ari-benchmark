@@ -74,7 +74,7 @@ Capture tools should pass the intended dtype explicitly and assert it after load
 - `ari/probe.py`: the v0.2 probe; `fixed_scale_codes` refuses a v0.1 baseline scale.
 - Every capture tool through `load_probe` and `fixed_scale_codes`, unchanged.
 - `experiments/regime-discrimination`: `run_matrix.py`, `export_codes.py`.
-- `pyproject.toml`: `semq>=1.0,<2` is a dependency; Python 3.11 or later.
+- `pyproject.toml`: `semq==1.0.0` is a dependency, checked again at import; Python 3.11 or later.
 - CI: one job, no CodeArtifact role; it fails if a test skips for want of `semq`.
 
 ## Decisions
