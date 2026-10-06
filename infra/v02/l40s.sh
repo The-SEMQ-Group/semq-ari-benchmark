@@ -8,10 +8,10 @@ source "$(dirname "$0")/common.sh"
 for spec in "NousResearch/Meta-Llama-3.1-8B-Instruct llama31_8b" "Qwen/Qwen2.5-7B-Instruct qwen25_7b" \
             "mistralai/Mistral-7B-Instruct-v0.3 mistral7b_v03"; do
   model=${spec% *}; tag=${spec#* }
-  ( cd experiments/decoding-reproducibility && ARI_D_MODEL=$model ARI_D_DEVICE=cuda \
-    $VP/python -u run_matrix.py ) 2>&1 | tee "$OUT/decoding_$tag.log"
-  cp experiments/decoding-reproducibility/results/decoding_matrix.json "$OUT/decoding_matrix_${tag}_gpu.json"
+  rm -f experiments/decoding-reproducibility/results/decoding_matrix.json
+  step "decoding $tag" bash -c "cd experiments/decoding-reproducibility && ARI_D_MODEL='$model' ARI_D_DEVICE=cuda $VP/python -u run_matrix.py 2>&1 | tee '$OUT/decoding_$tag.log'; exit \${PIPESTATUS[0]}"
+  step "copy decoding $tag" cp experiments/decoding-reproducibility/results/decoding_matrix.json "$OUT/decoding_matrix_${tag}_gpu.json"
 done
-$VP/python -u experiments/deployed-agent-panel/sfr_capture.py 2>&1 | tee "$OUT/sfr.log"
-cp -r experiments/deployed-agent-panel/out "$OUT/sfr_out" 2>/dev/null
+step "sfr" bash -c "$VP/python -u experiments/deployed-agent-panel/sfr_capture.py 2>&1 | tee '$OUT/sfr.log'; exit \${PIPESTATUS[0]}"
+step "copy sfr" cp -r experiments/deployed-agent-panel/out "$OUT/sfr_out"
 publish

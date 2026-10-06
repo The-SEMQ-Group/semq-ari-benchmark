@@ -5,11 +5,9 @@
 # A10G: SciFact GPU rows, then the GPU-determinism matrix and its 2x2 isolation.
 export LABEL=${LABEL:-a10g}
 source "$(dirname "$0")/common.sh"
-( cd experiments/regime-discrimination && \
-  ARI_R_CONDITIONS=reference,gpu_tf32_off,gpu_tf32_on,gpu_bf16,fp16 $VP/python -u run_matrix.py ) \
-  2>&1 | tee "$OUT/regime_gpu.log"
-cp experiments/regime-discrimination/results/regime_matrix.json "$OUT/regime_matrix_gpu.json"
-$VP/python experiments/gpu-determinism/run_matrix.py --label a10g --tf32-available true --n 512 \
-  --out "$OUT/gpu_det" --skip-7b 2>&1 | tee "$OUT/gpu_det.log"
-$VP/python experiments/gpu-determinism/isolation.py --n 512 --out "$OUT/iso" 2>&1 | tee "$OUT/iso.log"
+rm -f experiments/regime-discrimination/results/regime_matrix.json
+step "scifact gpu" bash -c "cd experiments/regime-discrimination && ARI_R_CONDITIONS=reference,gpu_tf32_off,gpu_tf32_on,gpu_bf16,fp16 $VP/python -u run_matrix.py 2>&1 | tee '$OUT/regime_gpu.log'; exit \${PIPESTATUS[0]}"
+step "copy scifact" cp experiments/regime-discrimination/results/regime_matrix.json "$OUT/regime_matrix_gpu.json"
+step "gpu-determinism" bash -c "$VP/python experiments/gpu-determinism/run_matrix.py --label a10g --tf32-available true --n 512 --out '$OUT/gpu_det' --skip-7b 2>&1 | tee '$OUT/gpu_det.log'; exit \${PIPESTATUS[0]}"
+step "isolation 2x2" bash -c "$VP/python experiments/gpu-determinism/isolation.py --n 512 --out '$OUT/iso' 2>&1 | tee '$OUT/iso.log'; exit \${PIPESTATUS[0]}"
 publish

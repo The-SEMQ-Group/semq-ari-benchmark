@@ -22,7 +22,7 @@ fi
 VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "torch==2.5.1" \
   --index-url https://download.pytorch.org/whl/cu121 2>/dev/null || true
 VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "transformers==4.57.6" \
-  "sentence-transformers==4.1.0" datasets scikit-learn accelerate einops pip \
+  "sentence-transformers==4.1.0" datasets scikit-learn accelerate einops hf_transfer pip \
   || { echo "ERROR: dependency install failed"; exit 1; }
 BRANCH=${BRANCH:-ilona/v02-reruns}
 BUCKET=${BUCKET:-s3://semq-agent-memory-benchmark/ari-v02-reruns}
@@ -44,7 +44,16 @@ print("torch", torch.__version__, "cuda", torch.cuda.is_available(),
 print("transformers", transformers.__version__, "sentence-transformers", sentence_transformers.__version__)
 PY
 } | tee "$OUT/versions.txt"
-publish() { aws s3 cp --recursive --quiet --region us-east-2 "$OUT" "$BUCKET/$LABEL/" && echo "published -> $BUCKET/$LABEL/"; }
+# Every step is run through `step`, so a failure is recorded rather than lost in a log,
+# and `publish` uploads a STATUS file saying which steps failed. Results without
+# "STATUS: ok" are not results.
+FAILED=()
+step() { local name="$1"; shift; echo ">>> step: $name"; "$@" || { echo "FAILED step: $name"; FAILED+=("$name"); }; }
+publish() {
+  if [ ${#FAILED[@]} -eq 0 ]; then echo "STATUS: ok" > "$OUT/STATUS"; else printf "STATUS: failed\n%s\n" "${FAILED[@]}" > "$OUT/STATUS"; fi
+  cat "$OUT/STATUS"
+  aws s3 cp --recursive --quiet --region us-east-2 "$OUT" "$BUCKET/$LABEL/" && echo "published -> $BUCKET/$LABEL/"
+}
 MODELS8=(BAAI/bge-large-en-v1.5 BAAI/bge-m3 intfloat/multilingual-e5-large
          sentence-transformers/all-mpnet-base-v2 sentence-transformers/all-MiniLM-L6-v2
          nomic-ai/nomic-embed-text-v1.5 mixedbread-ai/mxbai-embed-large-v1
