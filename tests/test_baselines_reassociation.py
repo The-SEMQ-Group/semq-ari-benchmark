@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """The reassociation probe must only ask the question it can answer.
 
 Reversing the vocabulary axis reorders a reduction, which is the point for KL, JS and the
@@ -29,12 +29,16 @@ def bl():
     spec = importlib.util.spec_from_file_location("_baselines", BASELINES)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    # The SEMQ statistics need the SEMQ package, which CI does not have. They
-    # are not what these tests are about, and skipping the whole file over them
-    # would take the index-valued regression with it.
+    # The SEMQ statistics need the private SDK's calibrated context, which the
+    # public SDK does not have (docs/proposals/public-sdk-port.md). They are not
+    # what these tests are about, and skipping the whole file over them would
+    # take the index-valued regression with it.
     try:
-        import semq  # noqa: F401
+        import semq
+        calibrated = hasattr(semq, "Context")
     except ImportError:
+        calibrated = False
+    if not calibrated:
         mod.STATS = {k: v for k, v in mod.STATS.items()
                      if not k.startswith("SEMQ ")}
     return mod

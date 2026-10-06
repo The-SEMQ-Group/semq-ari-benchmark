@@ -35,27 +35,24 @@ This is a development check. Submit real reports through the separate leaderboar
 
 ## Install the canonical probe
 
-The public development dependencies do not include `semq`.
-The SDK is subject to a commercial license owned by The SEMQ Group Inc., is patent pending, and is not open source.
-Contact The SEMQ Group for access.
-The repository's CI installs it from a private AWS CodeArtifact repository when an authorized role is configured.
-The domain, repository, region and account are operator-only and are not committed;
-they live in `infra/operator.env` (see `infra/operator.env.example`).
-With AWS CLI credentials that can read the SDK repository:
+The probe is the public [SEMQ SDK](https://github.com/The-SEMQ-Group/semq), `semq` on PyPI.
+The package declares it as a dependency, so `pip install -e .` installs it:
 
 ```bash
-source infra/operator.env
-aws codeartifact login --tool pip --domain "$CA_DOMAIN" --domain-owner "$CA_OWNER" \
-    --repository "$CA_REPO" --region "$CA_REGION"
-python -m pip install semq
-python -m pip show semq
+python -m pip install -e ".[dev]"
+python -c "import semq; print(semq.__version__, semq.build_info().build_id)"
 ```
 
-The login command changes the local pip index configuration.
+The harness needs `semq` 1.0.0 or newer within major version 1.
+Pre-release private builds (1.2–1.5) expose a different interface and fail at import.
+Record the SDK version and build id with each capture; `ari.run` writes the version into the report environment.
 
-The harness needs `semq` 1.5.1 or newer; an older build fails at import with the missing names. Record the installed SDK version with each capture. Use an approved wheel if you cannot access the repository.
+The SDK is licensed under the PolyForm Noncommercial License 1.0.0 and is patent pending; it is not covered by this repository's Apache License.
+Production use by companies, and any other use that license does not permit, requires a separate license from The SEMQ Group Inc.
 
-The capture backend requires the QUANT interface used in `probe.py`; SDK interface compatibility must be checked before a full capture.
+The v0.2 probe has no calibration. QUANT bins magnitudes over the fixed range `2 / sqrt(dim)`, and the harness renormalizes every row to unit length before encoding.
+Codes from the v0.1 calibrated probe are not comparable with v0.2 codes; `fixed_scale_codes` refuses a stored v0.1 scale.
+See [ARI-Canonical-v0.2](../spec/ari-canonical-v0.2.md).
 
 ## Capture a real model
 

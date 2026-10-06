@@ -5,6 +5,7 @@ Compare reports only when their required artifacts and conditions match.
 
 | File | Contract |
 | --- | --- |
+| [ari-canonical-v0.2.md](ari-canonical-v0.2.md) | Draft: embedding probe on the public SEMQ SDK, fixed range. |
 | [ari-canonical-v0.1.md](ari-canonical-v0.1.md) | Embedding probe, calibration, and reference model. |
 | [ari-bench-v0.1.md](ari-bench-v0.1.md) | Frozen embedding inputs. |
 | [arid-bench-v0.1.md](arid-bench-v0.1.md) | Decoding inputs, protocol, and detectors. |

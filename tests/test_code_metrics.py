@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Coordinate, bit and byte rates over SEMQ codes.
 
 The unpacking here duplicates the SDK's bit layout, so the first test
@@ -18,7 +18,7 @@ from ari.code_metrics import (bits_per_coordinate, chunk_widths, code_diff,
 
 semq = pytest.importorskip("semq")
 
-from ari.semq_compat import quant_context  # noqa: E402
+from ari.semq_compat import encode_packed, unpack  # noqa: E402
 
 
 def _vectors(n, dim, seed=38):
@@ -26,12 +26,8 @@ def _vectors(n, dim, seed=38):
     return rng.uniform(-0.99, 0.99, size=(n, dim)).astype(np.float32)
 
 
-def _encode(X, n_bins, scale=1.0):
-    ctx = quant_context(X.shape[1], n_bins=n_bins, scale_max=scale)
-    try:
-        return np.asarray(ctx.batch_encode(np.ascontiguousarray(X, np.float32)))
-    finally:
-        ctx.close()
+def _encode(X, n_bins):
+    return encode_packed(X, n_bins)
 
 
 @pytest.mark.parametrize("n_bins,bits", [
@@ -47,15 +43,8 @@ def test_bits_per_coordinate_matches_the_encoded_width(n_bins, bits):
 @pytest.mark.parametrize("dim", [17, 384, 4096])
 def test_unpacking_matches_the_sdk(n_bins, dim):
     """Pins the local bit layout against the C packing."""
-    X = _vectors(4, dim)
-    ctx = quant_context(dim, n_bins=n_bins, scale_max=1.0)
-    try:
-        codes = np.asarray(ctx.batch_encode(np.ascontiguousarray(X, np.float32)))
-        if not hasattr(ctx, "unpack_codes"):
-            pytest.skip("this SEMQ build has no unpack_codes")
-        expected = np.asarray(ctx.unpack_codes(codes, dim))
-    finally:
-        ctx.close()
+    codes = _encode(_vectors(4, dim), n_bins)
+    expected = unpack(codes, dim, n_bins)
     np.testing.assert_array_equal(unpack_symbols(codes, n_bins, dim), expected)
 
 

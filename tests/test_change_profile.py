@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Extent, quantized movement and location, and what they cost.
 
 The fixtures put known movement at known coordinates so the reported
@@ -25,7 +25,10 @@ from ari.semq_compat import quant_context  # noqa: E402
 
 
 def _regions_available() -> bool:
-    ctx = quant_context(8, n_bins=2, scale_max=1.0)
+    try:
+        ctx = quant_context(8, n_bins=2, scale_max=1.0)
+    except NotImplementedError:  # the public SDK has no regions; not yet ported
+        return False
     try:
         return supported(ctx)
     finally:
@@ -34,7 +37,8 @@ def _regions_available() -> bool:
 
 pytestmark = pytest.mark.skipif(
     not _regions_available(),
-    reason="this SEMQ build has no Context.quant_regions")
+    reason="needs Context.quant_regions, which the public SEMQ SDK does not have "
+           "(docs/proposals/public-sdk-port.md)")
 
 
 def _encode(ctx, X):

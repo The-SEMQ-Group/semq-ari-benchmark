@@ -6,7 +6,7 @@ The [leaderboard repository](https://github.com/The-SEMQ-Group/ari-leaderboard) 
 
 ## Build and test
 
-Use Python 3.12 to match CI. The package declares support for Python 3.9 and later.
+Use Python 3.12 to match CI. The package declares support for Python 3.11 and later, the floor of the SEMQ SDK.
 Run these commands from the repository root on Linux or macOS:
 
 ```bash
@@ -19,7 +19,7 @@ python -m build
 ```
 
 Tests must finish without failures. The `-rs` option lists skipped tests and their reasons.
-Tests that require the separate `semq` SDK skip when that package is absent.
+Some tests skip because they need private-SDK features that the public `semq` SDK lacks; see the [port proposal](docs/proposals/public-sdk-port.md).
 The build writes a wheel and source archive to `dist/`.
 
 These commands require no API credentials, model downloads, or GPU.
@@ -28,8 +28,8 @@ For Windows, activate the environment with `.venv\Scripts\Activate.ps1` in Power
 
 ## Run a benchmark
 
-Every code comes from the SEMQ SDK. Install it first with the [SDK installation procedure](ari/README.md#install-the-canonical-probe).
-There is no substitute probe in this repository.
+Every code comes from the [SEMQ SDK](https://github.com/The-SEMQ-Group/semq), which the package installs as a dependency.
+There is no substitute probe in this repository. See the [SDK notes](ari/README.md#install-the-canonical-probe).
 
 To exercise the pipeline on the mock agent with all 1,000 frozen embedding inputs:
 
@@ -77,6 +77,6 @@ See the [condition specification](spec/condition-set.md) and [measurement scope]
 
 Code under `ari/` uses Apache-2.0. Specifications and benchmark selections use CC BY 4.0.
 Source documents retain their original licenses. See [LICENSE](LICENSE) and [dataset licensing](data/README.md).
-This version uses the SEMQ SDK, a library that is subject to a commercial license owned by The SEMQ Group Inc. and is patent pending.
+This version uses the SEMQ SDK, a separate library licensed under the PolyForm Noncommercial License 1.0.0 and patent pending.
 The SDK is not covered by the Apache License. See [NOTICE](NOTICE).
 Use [CITATION.cff](CITATION.cff) for citation metadata.

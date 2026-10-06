@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Scoring a probe too wide for one context.
 
 The pilot's logit probe is 32,000 coordinates and modern vocabularies are
@@ -18,7 +18,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-pytest.importorskip("semq")
+semq = pytest.importorskip("semq")
+if not hasattr(semq, "Context"):
+    pytest.skip("the pilot chunks logits under a shared calibrated scale, which the public "
+                "SEMQ SDK does not have (docs/proposals/public-sdk-port.md)",
+                allow_module_level=True)
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "run_pilot.py"
 SPEC = importlib.util.spec_from_file_location("run_pilot", MODULE_PATH)

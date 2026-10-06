@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """KMS-backed signing produces exactly what a local key produces.
 
 Moving custody into an HSM must not move the format. These tests stand in a fake KMS
@@ -186,7 +186,7 @@ def test_a_kms_signed_sidecar_verifies(tmp_path, fake):
     classifies the same sidecar as `attested` is the board's contract and is tested
     in the ari-leaderboard repo, which owns the scorer.
     """
-    pytest.importorskip("semq")
+    pytest.importorskip("semq.notary", reason="semq.notary is not in the public SEMQ SDK")
     import sys
 
     sys.path.insert(0, str(REPO_ROOT))
@@ -208,7 +208,7 @@ def test_a_kms_signed_sidecar_verifies(tmp_path, fake):
 
 def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake, monkeypatch):
     """Custody changes; the signed bytes do not."""
-    pytest.importorskip("semq")
+    pytest.importorskip("semq.notary", reason="semq.notary is not in the public SEMQ SDK")
     import sys
     from datetime import datetime, timezone
 
@@ -244,7 +244,7 @@ def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake, monkeypatch):
 
 
 def test_attest_refuses_both_key_sources_at_once(tmp_path, fake):
-    pytest.importorskip("semq")
+    pytest.importorskip("semq.notary", reason="semq.notary is not in the public SEMQ SDK")
     import sys
 
     sys.path.insert(0, str(REPO_ROOT))
@@ -259,7 +259,7 @@ def test_attest_refuses_both_key_sources_at_once(tmp_path, fake):
 
 
 def test_attest_refuses_no_key_at_all(tmp_path):
-    pytest.importorskip("semq")
+    pytest.importorskip("semq.notary", reason="semq.notary is not in the public SEMQ SDK")
     import sys
 
     sys.path.insert(0, str(REPO_ROOT))
