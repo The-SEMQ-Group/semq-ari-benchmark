@@ -287,7 +287,7 @@
         },
         "change_profile": {
           "type": "object",
-          "description": "Extent and location of the change, and its quantized movement where the probe can bound it. Added 2026-09-10; absent from earlier reports, which are not re-signed. These measure movement in the representation and are not a measure of functional harm.",
+          "description": "Retired in ARI v0.2: the harness no longer writes this block, because the public SEMQ SDK has no quant_regions to bound movement with. Kept so reports written 2026-09-10 onward still validate. Extent and location of the change, and its quantized movement where the probe could bound it; not a measure of functional harm.",
           "required": [
             "n_coordinates",
             "bits_per_coordinate",
