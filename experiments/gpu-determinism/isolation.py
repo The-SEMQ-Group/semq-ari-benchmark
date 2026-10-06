@@ -9,15 +9,16 @@ framework's *default* allow_tf32 (settles the "by default" question). See RESULT
 import argparse, subprocess, sys, os
 from pathlib import Path
 
-S = {
-    "BAAI/bge-large-en-v1.5": 0.077546, "BAAI/bge-m3": 0.082476,
-    "intfloat/multilingual-e5-large": 0.076236,
-    "sentence-transformers/all-mpnet-base-v2": 0.096253,
-    "sentence-transformers/all-MiniLM-L6-v2": 0.132349,
-    "nomic-ai/nomic-embed-text-v1.5": 0.093399,
-    "mixedbread-ai/mxbai-embed-large-v1": 0.078308,
-    "Snowflake/snowflake-arctic-embed-l": 0.082256,
-}
+S = (  # v0.2 probe: the range is 2/sqrt(dim), so no per-model scale
+    "BAAI/bge-large-en-v1.5",
+    "BAAI/bge-m3",
+    "intfloat/multilingual-e5-large",
+    "sentence-transformers/all-mpnet-base-v2",
+    "sentence-transformers/all-MiniLM-L6-v2",
+    "nomic-ai/nomic-embed-text-v1.5",
+    "mixedbread-ai/mxbai-embed-large-v1",
+    "Snowflake/snowflake-arctic-embed-l",
+)
 # (tag, tf32, deterministic) — the 2x2. Two are new; two re-confirm the prior run, all in one
 # internally-consistent session.
 CONFIGS = [("tf32on_nondet", "on", False), ("tf32off_nondet", "off", False),
@@ -30,7 +31,7 @@ INPUTS = HERE.parent.parent / "data" / "ari-bench-v0.1.jsonl"
 def cap(model, tag, tf32, det, s, n, out):
     slug = model.replace("/", "_")
     cmd = [sys.executable, str(TOOL), "capture", "--model", model, "--device", "cuda",
-           "--dtype", "fp32", "--tf32", tf32, "--scale-s", str(s), "--conditions", "same,proc",
+           "--dtype", "fp32", "--tf32", tf32, "--conditions", "same,proc",
            "--inputs", str(INPUTS), "--n", str(n), "--outdir", str(Path(out) / f"{slug}__{tag}"),
            "--tag", f"{slug}__{tag}"]
     if det:
@@ -54,7 +55,7 @@ def main():
     for m in S:
         for tag, tf32, det in CONFIGS:
             print(f">>> {m} :: {tag}", flush=True)
-            cap(m, tag, tf32, det, S[m], a.n, a.out)
+            cap(m, tag, tf32, det, None, a.n, a.out)
 
     tarball = f"{a.out}.tar.gz"
     subprocess.run(["tar", "czf", tarball, "-C", str(Path(a.out).parent), Path(a.out).name], check=True)
