@@ -78,7 +78,6 @@ def _cache() -> Path:
 
 
 QUANT_BINS = 8
-CALIBRATION_PERCENTILE = 0.99
 SIGMAS = (1e-4, 1e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1.0)
 TOP_K_API = 20          # what a hosted API typically exposes
 N_NOISE_TRIALS = 5
@@ -154,24 +153,16 @@ def stat_token_flip(r: np.ndarray, c: np.ndarray) -> np.ndarray:
     return (r.argmax(axis=1) != c.argmax(axis=1)).astype(float)
 
 
-def _semq_chunks(X: np.ndarray, scale: float) -> list[tuple[int, np.ndarray]]:
-    """Encode X in MAX_DIM chunks, as (coordinates, codes) pairs.
+def _semq_chunks(X: np.ndarray) -> list[tuple[int, np.ndarray]]:
+    """Encode X under the ARI-D v0.2 logit probe, as (coordinates, codes) pairs.
 
     The chunks are not concatenated. Each one pads its own final byte, so
     a comparison over the joined buffer would read another chunk's
     padding as coordinates.
     """
-    from ari.semq_compat import MAX_DIM, quant_context
+    from ari.logit_probe import encode_logit_chunks
 
-    dim = X.shape[1]
-    bounds = list(range(0, dim, MAX_DIM)) + [dim]
-    out = []
-    for lo, hi in zip(bounds, bounds[1:]):
-        ctx = quant_context(hi - lo, n_bins=QUANT_BINS, scale_max=scale)
-        out.append((hi - lo, np.asarray(ctx.batch_encode(
-            np.ascontiguousarray(X[:, lo:hi], np.float32)))))
-        ctx.close()
-    return out
+    return encode_logit_chunks(X, QUANT_BINS)
 
 
 _semq_memo: dict = {}
@@ -186,11 +177,9 @@ def _semq_rates(r: np.ndarray, c: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     key = (id(r), id(c))
     if _semq_memo.get("key") != key:
-        scale = float(np.percentile(np.abs(r), CALIBRATION_PERCENTILE * 100.0))
         parts = [
             code_diff(a, b, n_bins=QUANT_BINS, dim=width)
-            for (width, a), (_, b) in zip(_semq_chunks(r, scale),
-                                          _semq_chunks(c, scale))
+            for (width, a), (_, b) in zip(_semq_chunks(r), _semq_chunks(c))
         ]
         changed = sum(p.n_coordinates_changed for p in parts)
         bytes_changed = sum(p.n_bytes_changed for p in parts)
@@ -202,10 +191,7 @@ def _semq_rates(r: np.ndarray, c: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def stat_semq(r: np.ndarray, c: np.ndarray) -> np.ndarray:
-    """Per-step fraction of coordinates whose SEMQ symbol changed.
-
-    Scale frozen from the reference.
-    """
+    """Per-step fraction of coordinates whose SEMQ symbol changed (ARI-D v0.2 probe)."""
     return _semq_rates(r, c)[0]
 
 
@@ -449,7 +435,7 @@ def main() -> None:
         config=config_ref({
             "sigmas": list(SIGMAS), "top_k_api": TOP_K_API,
             "n_noise_trials": N_NOISE_TRIALS, "quant_bins": QUANT_BINS,
-            "calibration_percentile": CALIBRATION_PERCENTILE, "seed": SEED,
+            "probe": "ARI-D-Logit-v0.2", "seed": SEED,
             "vocab": int(vocab),
         }),
         code=code_ref(packages=["semq", "numpy"]),

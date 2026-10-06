@@ -29,16 +29,12 @@ def bl():
     spec = importlib.util.spec_from_file_location("_baselines", BASELINES)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    # The SEMQ statistics need the private SDK's calibrated context, which the
-    # public SDK does not have (docs/proposals/public-sdk-port.md). They are not
-    # what these tests are about, and skipping the whole file over them would
-    # take the index-valued regression with it.
+    # The SEMQ statistics need the SEMQ package. They are not what these tests
+    # are about, and skipping the whole file over them would take the
+    # index-valued regression with it.
     try:
-        import semq
-        calibrated = hasattr(semq, "Context")
+        import semq  # noqa: F401
     except ImportError:
-        calibrated = False
-    if not calibrated:
         mod.STATS = {k: v for k, v in mod.STATS.items()
                      if not k.startswith("SEMQ ")}
     return mod

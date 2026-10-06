@@ -66,7 +66,7 @@ MODEL = os.environ.get("ARI_D_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 DEVICE = os.environ.get("ARI_D_DEVICE", "cpu")
 N_NEW_TOKENS = 48
 QUANT_BINS = 8
-CALIBRATION_PERCENTILE = 0.99
+PROBE = "ARI-D-Logit-v0.2"  # ari/logit_probe.py
 
 PROMPTS = (
     "Explain why the sky appears blue.",
@@ -259,42 +259,21 @@ def teacher_forced_logits(tok, model, prompt: str, cont: list[int],
 # Metrics
 # ---------------------------------------------------------------------------
 
-def semq_codes(X: np.ndarray, scale_source: np.ndarray):
-    """SEMQ codes and chunk widths, at a scale frozen from scale_source.
+def semq_codes(X: np.ndarray):
+    """SEMQ codes and chunk widths under the ARI-D v0.2 logit probe.
 
-    SEMQ's Context caps max_dim at 65,536, which is smaller than the
-    vocabulary of every model in current use except the small ones. A
-    vocabulary above the cap is split into consecutive chunks and the codes
-    are concatenated.
-
-    The scale is computed once over the whole reference and passed to every
-    chunk explicitly. Calibrating each chunk on its own slice would give each
-    one a different scale and make the concatenated codes incomparable.
-
-    Passing quant_scale_max = percentile(|scale_source|, 99) is bit-identical
-    to calibrate(scale_source, percentile=0.99), so a chunked run stays
-    directly comparable with an unchunked one.
+    Rows are centred over the full vocabulary, split at fixed 65,536-wide
+    boundaries, and each chunk is encoded by the public SDK
+    (ari/logit_probe.py). No reference scale is involved, so every condition
+    is encoded independently of the others.
 
     The chunk widths are returned with the codes because every chunk pads
     its own final byte: a coordinate-level comparison has to split the
     concatenated buffer back at the same boundaries.
     """
-    from ari.semq_compat import MAX_DIM, quant_context
+    from ari.logit_probe import encode_logits
 
-    scale = float(np.percentile(np.abs(scale_source),
-                                CALIBRATION_PERCENTILE * 100.0))
-    dim = X.shape[1]
-    bounds = list(range(0, dim, MAX_DIM)) + [dim]
-
-    out, widths = [], []
-    for lo, hi in zip(bounds, bounds[1:]):
-        ctx = quant_context(hi - lo, n_bins=QUANT_BINS, scale_max=scale)
-        out.append(np.asarray(ctx.batch_encode(
-            np.ascontiguousarray(X[:, lo:hi], np.float32))))
-        ctx.close()
-        widths.append(hi - lo)
-    codes = out[0] if len(out) == 1 else np.concatenate(out, axis=1)
-    return codes, widths
+    return encode_logits(X, QUANT_BINS)
 
 
 def top2_margin(logits: np.ndarray) -> np.ndarray:
@@ -373,7 +352,7 @@ def _identity() -> dict:
         "device": DEVICE,
         "n_new_tokens": N_NEW_TOKENS,
         "quant_bins": QUANT_BINS,
-        "calibration_percentile": CALIBRATION_PERCENTILE,
+        "probe": PROBE,
         "n_prompts": len(PROMPTS),
         "prompts_sha256": hashlib.sha256("\n".join(PROMPTS).encode()).hexdigest(),
         **_versions(),
@@ -449,7 +428,7 @@ def compare(ref: dict, cur: dict, ref_codes: np.ndarray,
 
     # Would this condition have emitted the same token, given identical history?
     same_token = (c_log.argmax(1) == r_log.argmax(1))
-    codes, _ = semq_codes(c_log, scale_source=r_log)
+    codes, _ = semq_codes(c_log)
     # HER is exact-match, so it saturates at 0 for any real precision change
     # and cannot rank severity. A coordinate change rate can.
     diff = chunked_code_diff(ref_codes, codes, n_bins=QUANT_BINS, widths=widths)
@@ -543,8 +522,7 @@ def main() -> None:
 
     usable = [c for c in active if c.name not in failed]
     ref = dict(np.load(cache_path("reference"), allow_pickle=True))
-    ref_codes, code_widths = semq_codes(ref["logits"],
-                                        scale_source=ref["logits"])
+    ref_codes, code_widths = semq_codes(ref["logits"])
 
     rows = []
     for c in usable:
@@ -600,7 +578,7 @@ def main() -> None:
         config=config_ref({
             "model": MODEL, "n_new_tokens": N_NEW_TOKENS,
             "quant_bins": QUANT_BINS,
-            "calibration_percentile": CALIBRATION_PERCENTILE,
+            "probe": PROBE,
             "prompts": list(PROMPTS),
             "conditions": [c.name for c in CONDITIONS],
         }),

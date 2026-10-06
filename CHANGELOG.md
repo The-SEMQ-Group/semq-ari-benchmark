@@ -18,9 +18,16 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   Calibrating on a different subset of the frozen inputs changed 60–100% of
   v0.1 codes for identical vectors. Against ground truth from raw vectors the
   fixed range detected changes at least as often in most conditions.
-- Not yet ported, and skipped with a reason: attestation (`semq.notary`),
-  change profiles and bound quality (`quant_regions`), and the logit
-  experiments (chunked calibrated encoding).
+- Attestation no longer uses SEMQ: `ari/attest.py` writes the `NTRY` sidecar
+  directly, for a local key or the KMS key. The 10 committed reports, signed
+  with a demo key outside `spec/signers.json`, are re-signed with
+  `alias/semq-ari-attestation`; their manifests are unchanged.
+- `ari.change_profile` and `ari.bound_quality` are retired; they needed
+  `quant_regions`. The schema keeps the optional block, marked retired.
+- ARI-D-Logit-v0.2 (`spec/arid-logit-probe-v0.2.md`, `ari/logit_probe.py`)
+  replaces the calibrated logit probe: rows centred over the vocabulary,
+  fixed 65,536-wide chunks, each encoded by the public SDK. The decoding,
+  baselines, drift-rank-profile and matched-budget code uses it.
 - CI installs `semq` from PyPI in one job; the CodeArtifact job is removed.
 - The SDK is licensed under the PolyForm Noncommercial License 1.0.0. NOTICE,
   README, CONTRIBUTING and source headers say so.
