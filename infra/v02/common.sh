@@ -14,13 +14,13 @@ if [ ! -x "$VP/python" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   uv venv -q -p 3.12 "$(dirname "$VP")" || { echo "ERROR: could not create a Python 3.12 env"; exit 1; }
   export VIRTUAL_ENV="$(dirname "$VP")"
-  uv pip install -q "torch==2.5.1" --index-url https://download.pytorch.org/whl/cu121
+  uv pip install -q "torch==2.6.0" --index-url https://download.pytorch.org/whl/cu124
 fi
 # Pinned on every run, so a box set up earlier converges. transformers 5 needs a newer
 # torch than 2.5.1 and breaks nomic's remote code; 4.57.6 loads all eight encoders, the
-# three decoders and SFR-Embedding-2_R. torch 2.5.1 matches the H100 batch sweep.
-VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "torch==2.5.1" \
-  --index-url https://download.pytorch.org/whl/cu121 2>/dev/null || true
+# three decoders and SFR-Embedding-2_R. torch >= 2.6 is needed to load .bin-only checkpoints (bge-m3).
+VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "torch==2.6.0" \
+  --index-url https://download.pytorch.org/whl/cu124 2>/dev/null || true
 VIRTUAL_ENV="$(dirname "$VP")" "$HOME/.local/bin/uv" pip install -q "transformers==4.57.6" \
   "sentence-transformers==4.1.0" datasets scikit-learn accelerate einops hf_transfer pip \
   || { echo "ERROR: dependency install failed"; exit 1; }
