@@ -90,18 +90,5 @@ def unpack(packed: np.ndarray, dim: int, n_bins: int) -> np.ndarray:
     return np.asarray(codec.unpack(enc))
 
 
-def quant_context(*_args, **_kwargs):
-    """Removed: the private-SDK calibrated context has no public equivalent.
-
-    Callers that fixed a calibration scale (``scale_max``) or chunked a vector
-    longer than one context under a shared scale — the logit experiments —
-    cannot be ported mechanically; see docs/proposals/public-sdk-port.md.
-    """
-    raise NotImplementedError(
-        "quant_context belonged to the private SEMQ SDK (calibrate / scale_max); the "
-        "public SDK has a fixed range. Use encode_packed, and see "
-        "docs/proposals/public-sdk-port.md for the experiments not yet ported.")
-
-
 def sdk_version() -> str:
     return str(getattr(semq, "__version__", "unknown"))
