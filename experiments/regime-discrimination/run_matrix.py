@@ -54,9 +54,15 @@ HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 CACHE = RESULTS / "cache"
 
-ENCODER = "sentence-transformers/all-MiniLM-L6-v2"
+# Overridable for the case-study sweep across corpora and encoders; the defaults are the
+# committed SciFact run.
+ENCODER = os.environ.get("ARI_R_ENCODER", "sentence-transformers/all-MiniLM-L6-v2")
+DATASET = os.environ.get("ARI_R_DATASET", "scifact")
 TOP_K = 10
-QUANT_BINS = 8
+QUANT_BINS = int(os.environ.get("ARI_R_BINS", "8"))
+_DEFAULTS = (ENCODER == "sentence-transformers/all-MiniLM-L6-v2" and DATASET == "scifact" and QUANT_BINS == 8)
+OUT_NAME = ("regime_matrix.json" if _DEFAULTS else
+            f"regime_matrix_{DATASET}_{ENCODER.split('/')[-1]}_b{QUANT_BINS}.json")
 PROBE = "SEMQ quant, fixed range 2/sqrt(dim), rows renormalised (ARI v0.2)"
 
 
@@ -107,9 +113,9 @@ def load_scifact() -> tuple[
     """Return (doc_ids, doc_texts, query_ids, query_texts, qrels) for SciFact."""
     from datasets import load_dataset
 
-    corpus = load_dataset("BeIR/scifact", "corpus", split="corpus")
-    queries = load_dataset("BeIR/scifact", "queries", split="queries")
-    qrels_ds = load_dataset("BeIR/scifact-qrels", split="test")
+    corpus = load_dataset(f"BeIR/{DATASET}", "corpus", split="corpus")
+    queries = load_dataset(f"BeIR/{DATASET}", "queries", split="queries")
+    qrels_ds = load_dataset(f"BeIR/{DATASET}-qrels", split="test")
 
     qrels: dict[str, set[str]] = {}
     for row in qrels_ds:
@@ -280,9 +286,9 @@ def _identity() -> dict:
     return {
         "encoder": ENCODER,
         "encoder_revision": _hub_revision(ENCODER),
-        "dataset": "BeIR/scifact",
-        "dataset_revision": _hub_revision("BeIR/scifact", "dataset"),
-        "qrels_revision": _hub_revision("BeIR/scifact-qrels", "dataset"),
+        "dataset": f"BeIR/{DATASET}",
+        "dataset_revision": _hub_revision(f"BeIR/{DATASET}", "dataset"),
+        "qrels_revision": _hub_revision(f"BeIR/{DATASET}-qrels", "dataset"),
         "top_k": TOP_K,
         "quant_bins": QUANT_BINS,
         "probe": PROBE,
@@ -423,25 +429,26 @@ def main() -> None:
               f"{r['top10_identical']:>10.2%} {r['semq_her']:>10.4f}")
 
     RESULTS.mkdir(parents=True, exist_ok=True)
-    (RESULTS / "regime_matrix.json").write_text(json.dumps(
-        {"encoder": ENCODER, "top_k": TOP_K, "quant_bins": QUANT_BINS,
+    out_path = RESULTS / OUT_NAME
+    out_path.write_text(json.dumps(
+        {"encoder": ENCODER, "dataset": DATASET, "top_k": TOP_K, "quant_bins": QUANT_BINS,
          "gpu": have_gpu, "n_queries": len(q_ids), "n_docs": len(doc_ids),
          "skipped": [c.name for c in skipped], "failed": failed,
          "rows": rows}, indent=2) + "\n")
-    print(f"\nwrote {RESULTS / 'regime_matrix.json'}")
+    print(f"\nwrote {out_path}")
 
     from ari.attest import (sign_if_configured, build_references, dataset_ref,
                             model_ref, config_ref, code_ref)
     from ari.hub import hub_revision
-    scifact_rev = hub_revision("BeIR/scifact", "dataset")
+    scifact_rev = hub_revision(f"BeIR/{DATASET}", "dataset")
     references = build_references(
         datasets=[
-            dataset_ref("BeIR/scifact", scifact_rev,
+            dataset_ref(f"BeIR/{DATASET}", scifact_rev,
                         config="corpus", split="corpus"),
-            dataset_ref("BeIR/scifact", scifact_rev,
+            dataset_ref(f"BeIR/{DATASET}", scifact_rev,
                         config="queries", split="queries"),
-            dataset_ref("BeIR/scifact-qrels",
-                        hub_revision("BeIR/scifact-qrels", "dataset"),
+            dataset_ref(f"BeIR/{DATASET}-qrels",
+                        hub_revision(f"BeIR/{DATASET}-qrels", "dataset"),
                         split="test"),
         ],
         models=[model_ref(ENCODER, hub_revision(ENCODER, "model"))],
@@ -453,7 +460,7 @@ def main() -> None:
         code=code_ref(packages=["semq", "torch", "sentence-transformers",
                                 "datasets", "numpy"]),
     )
-    sign_if_configured(metric="ARI-R", report_path=RESULTS / "regime_matrix.json",
+    sign_if_configured(metric="ARI-R", report_path=out_path,
                        references=references,
                        extra={"encoder": ENCODER, "top_k": TOP_K, "gpu": have_gpu})
     if skipped:
