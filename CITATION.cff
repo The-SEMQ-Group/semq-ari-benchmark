@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "ARI — Agent Reproducibility Index"
+title: "ARI — AI Reproducibility Index"
 message: "If you use ARI, the leaderboard, or the ARI-Bench input set, please cite it."
 type: software
 authors:
@@ -10,7 +10,7 @@ license: Apache-2.0
 repository-code: "https://github.com/The-SEMQ-Group/semq-ari-benchmark"
 url: "https://github.com/The-SEMQ-Group/semq-ari-benchmark"
 abstract: >-
-  ARI (Agent Reproducibility Index) is a third-party-verifiable measurement of how
+  ARI (AI Reproducibility Index) is a third-party-verifiable measurement of how
   reproducibly an AI agent's internal representation survives the operational noise of
   real deployment. It is built on SEMQ, a deterministic quantiser whose invariance to the
   host machine follows from the form of the operator rather than from a learned codebook,

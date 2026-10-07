@@ -63,9 +63,14 @@ instance of the same type.
 | H3 | any batch effect is weaker than the precision effect | **confirmed**, worst batch reading 0.5560 against 0.0000 under bf16 |
 | H4 | TF32 raises batch sensitivity | **mixed**, see below |
 
-H4 does not resolve cleanly. TF32 lowers agreement on MiniLM (1.0000 to 0.9470) and nomic
-(1.0000 to 0.8670). It leaves mxbai unchanged at 0.5560. On arctic the batch 1 reading goes
-*up*, from 0.9990 to 1.0000.
+At batch 1, TF32 lowers agreement on five of the seven models: MiniLM (1.0000 to 0.9470),
+mpnet (1.0000 to 0.8560), nomic (0.9990 to 0.8670), bge-large (1.0000 to 0.9990) and e5-large
+(0.9990 to 0.9980). It leaves mxbai unchanged at 0.5560. On arctic the batch 1 reading goes
+*up*, from 0.9990 to 1.0000. Values are from `results/summary_with_control.json`, cells A and C.
+
+mxbai's 0.5560 is likely not an fp32 measurement. Its checkpoint declares float16, and
+`gpu_capture.py` named no dtype for fp32 cells, so transformers 5.x loaded it in fp16, where
+the TF32 setting has no effect. Re-measure it with the dtype enforced (`ari/st_load.py`).
 
 ## Reading
 
