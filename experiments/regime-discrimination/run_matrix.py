@@ -177,7 +177,9 @@ def encode(cond: Condition, doc_texts: list[str], q_texts: list[str]) -> dict:
 
 def retrieval_metrics(docs: np.ndarray, queries: np.ndarray, doc_ids: list[str],
                       q_ids: list[str], qrels: dict[str, set[str]]) -> dict:
-    scores = queries @ docs.T
+    # A non-finite embedding (fp16 overflow) must not rank first, as NaN does
+    # under argsort; it ranks last instead.
+    scores = np.nan_to_num(queries @ docs.T, nan=-np.inf, posinf=-np.inf, neginf=-np.inf)
     top = np.argpartition(-scores, TOP_K, axis=1)[:, :TOP_K]
     order = np.take_along_axis(scores, top, 1).argsort(axis=1)[:, ::-1]
     top = np.take_along_axis(top, order, 1)
@@ -217,13 +219,18 @@ def semq_codes(X: np.ndarray):
 
 
 def compare(ref: dict, cur: dict, doc_ids, q_ids, qrels, ref_codes) -> dict:
-    cos = (ref["docs"] * cur["docs"]).sum(1)
+    # A condition can emit non-finite vectors (EmbeddingGemma 2 in fp16 does). The probe
+    # refuses them by contract, so they are counted, treated as changed for HER, and
+    # left out of the coordinate and cosine statistics.
+    finite = np.isfinite(cur["docs"]).all(axis=1)
+    cos = (ref["docs"][finite] * cur["docs"][finite]).sum(1)
     r_ref = retrieval_metrics(ref["docs"], ref["queries"], doc_ids, q_ids, qrels)
     r_cur = retrieval_metrics(cur["docs"], cur["queries"], doc_ids, q_ids, qrels)
 
-    codes = semq_codes(cur["docs"])
-    diff = code_diff(ref_codes, codes, n_bins=QUANT_BINS,
+    codes = semq_codes(cur["docs"][finite])
+    diff = code_diff(ref_codes[finite], codes, n_bins=QUANT_BINS,
                      dim=cur["docs"].shape[1])
+    her = float(diff.codes_equal.sum() / len(finite))
 
     r_lo, r_hi = paired_bootstrap_ci(
         r_ref["per_query_recall"], r_cur["per_query_recall"])
@@ -243,7 +250,9 @@ def compare(ref: dict, cur: dict, doc_ids, q_ids, qrels, ref_codes) -> dict:
         "ndcg_delta_significant": not (n_lo <= 0.0 <= n_hi),
         "top10_identical": float(
             (r_cur["top10_ids"] == r_ref["top10_ids"]).all(1).mean()),
-        "semq_her": float(diff.codes_equal.mean()),
+        "semq_her": her,
+        "nonfinite_docs": int((~finite).sum()),
+        "nonfinite_queries": int((~np.isfinite(cur["queries"]).all(axis=1)).sum()),
         "semq_coord_change": float(diff.coordinate_change_rate.mean()),
         "semq_byte_change_legacy": float(diff.byte_change_rate.mean()),
     }
