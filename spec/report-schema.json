@@ -168,6 +168,12 @@
       "maximum": 1,
       "description": "Aggregate index: mean HER over the present comparable-core conditions {proc, conc, time}. mach/prec/lib are reported per-condition as diagnostics but are not averaged into ARI (they are not measurable for a black-box API, so folding them in would break cross-class comparability)."
     },
+    "ARI_R": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "ARI-R = 1 - mean coordinate_change_rate over the present comparable-core conditions. The dimension-normalized score for comparing models; ARI keeps its exact-match (HER) meaning. Added in v0.2."
+    },
     "drift_spectrum": {
       "type": "object",
       "description": "Optional per-condition histogram of per-input Hamming distances.",
@@ -262,6 +268,19 @@
           "maximum": 1,
           "description": "Hbar / n_bits. Added 2026-09-10."
         },
+        "coordinate_change_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "rho: mean over inputs of the fraction of coordinates whose code symbol changed. Dimension-normalized under ARI-Canonical-v0.2, so comparable across models of different dimension. Added in v0.2."
+        },
+        "coordinate_change_rate_ci": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Bootstrap 95% CI of coordinate_change_rate over inputs. Added in v0.2."
+        },
         "criterion_type": {
           "type": "string",
           "enum": [
@@ -287,7 +306,7 @@
         },
         "change_profile": {
           "type": "object",
-          "description": "Extent and location of the change, and its quantized movement where the probe can bound it. Added 2026-09-10; absent from earlier reports, which are not re-signed. These measure movement in the representation and are not a measure of functional harm.",
+          "description": "Retired in ARI v0.2: the harness no longer writes this block, because the public SEMQ SDK has no quant_regions to bound movement with. Kept so reports written 2026-09-10 onward still validate. Extent and location of the change, and its quantized movement where the probe could bound it; not a measure of functional harm.",
           "required": [
             "n_coordinates",
             "bits_per_coordinate",

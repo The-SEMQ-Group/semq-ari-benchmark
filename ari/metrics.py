@@ -8,6 +8,13 @@ Definitions (spec/report-schema.json, spec/condition-set.md):
 - H(x)   = Hamming distance in bits (popcount of the XOR) between the two codes
 - HER    = mean_x HE(x)         (Hash Equality Rate ∈ [0,1])
 - H̄      = mean_x H(x)          (mean Hamming drift)
+- ρ      = mean_x (coordinates whose symbol changed / d)   (coordinate change rate)
+
+HER asks whether the whole code still matches, so it falls as the dimension
+grows at equal per-coordinate noise. ρ is the dimension-normalized measure:
+under the v0.2 probe the bin edges sit at the same position relative to a
+unit-norm vector's typical coordinate (range 2/sqrt(d)), so ρ is comparable
+across models of different dimension. ARI-R = 1 - mean ρ over the core.
 """
 from __future__ import annotations
 
@@ -26,6 +33,8 @@ class ConditionMetrics:
     Hbar: float
     HER_ci: tuple[float, float]
     n: int
+    rho: float | None = None
+    rho_ci: tuple[float, float] | None = None
 
 
 def per_input(baseline_codes: np.ndarray, condition_codes: np.ndarray):
@@ -58,11 +67,33 @@ def _bootstrap_ci(values: np.ndarray, n_resamples: int, seed: int, alpha: float 
     return (float(lo), float(hi))
 
 
-def aggregate(baseline_codes, condition_codes, n_resamples: int = 1000, seed: int = 0) -> ConditionMetrics:
+def coordinate_change(baseline_codes, condition_codes, n_bins: int, dim: int | None = None) -> np.ndarray:
+    """Per input, the fraction of coordinates whose QUANT symbol changed.
+
+    ``dim`` defaults to the number of coordinates the packed width holds, which is
+    exact whenever ``dim`` fills whole bytes (every embedding size in use: 384,
+    768, 1024, 1536, 3072, 4096 at 2 bits). Pass it when it may not.
+    """
+    from ari.code_metrics import bits_per_coordinate, unpack_symbols
+
+    a = np.ascontiguousarray(baseline_codes, dtype=np.uint8)
+    b = np.ascontiguousarray(condition_codes, dtype=np.uint8)
+    if dim is None:
+        dim = a.shape[1] * 8 // bits_per_coordinate(n_bins)
+    sa = unpack_symbols(a, n_bins=n_bins, dim=dim)
+    sb = unpack_symbols(b, n_bins=n_bins, dim=dim)
+    return (sa != sb).mean(axis=1)
+
+
+def aggregate(baseline_codes, condition_codes, n_resamples: int = 1000, seed: int = 0,
+              n_bins: int = 2, dim: int | None = None) -> ConditionMetrics:
     he, hamming = per_input(baseline_codes, condition_codes)
+    rho = coordinate_change(baseline_codes, condition_codes, n_bins, dim)
     return ConditionMetrics(
         HER=float(he.mean()),
         Hbar=float(hamming.mean()),
         HER_ci=_bootstrap_ci(he.astype(float), n_resamples, seed),
         n=len(he),
+        rho=float(rho.mean()),
+        rho_ci=_bootstrap_ci(rho, n_resamples, seed),
     )

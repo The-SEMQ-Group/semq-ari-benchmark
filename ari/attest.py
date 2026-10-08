@@ -1,9 +1,5 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
-#
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
 """Sign an ARI report so a third party can check it without trusting us.
 
 An ARI number is a claim about someone's system, and often a claim they would
@@ -11,8 +7,8 @@ rather not be true. It is worth very little if the only evidence is that we say
 we ran the measurement. This binds a report to the exact inputs it came from,
 and signs that binding.
 
-**What gets signed is a manifest, not the report alone.** The notary signs one
-artifact at a time, so signing only the report would leave the inputs free to
+**What gets signed is a manifest, not the report alone.** A signature covers
+one artifact, so signing only the report would leave the inputs free to
 change underneath it. The manifest names every input by digest, names the
 report by digest, and records the metric version. Signing the manifest binds
 all of them at once, and swapping any one of them breaks the check.
@@ -29,9 +25,14 @@ What this does and does not establish:
 * It does not establish that the inputs describe reality. A dataset can be
   filtered before it reaches here. Attestation makes tampering after the fact
   detectable, and says nothing about the honesty of the run itself.
-* Without a timestamp authority, `created_at` is the signer's local clock and
-  is worth nothing against a determined signer. Pass `tsa_url` for a time that
-  a third party can check.
+* `created_at` is the signer's local clock and is worth nothing against a
+  determined signer. RFC-3161 timestamps are not implemented.
+
+**Signing needs no SEMQ code.** The sidecar format (`NTRY`, schema 1) came from
+the private SDK's `semq.notary`, which the public SDK does not ship. It is a
+JSON object holding a PureEdDSA signature over the raw bytes of the manifest's
+SHA-256, and `verify_report.py` defines it independently, so this module writes
+it directly. A local Ed25519 key and the AWS KMS key produce the same sidecar.
 """
 
 from __future__ import annotations
@@ -70,12 +71,15 @@ def canonical_json(obj) -> bytes:
                       ensure_ascii=False).encode("utf-8")
 
 
+SIDECAR_MAGIC = "NTRY"
+SIDECAR_SCHEMA = 1
+
+
 @dataclass(frozen=True)
 class Attestation:
     manifest_path: Path
     sidecar_path: Path
     manifest_sha256: str
-    snap_id: str
 
 
 # --- structured references: immutable inputs that are not local files -------
@@ -265,34 +269,48 @@ def build_manifest(
     }
 
 
-def _notarize_with_signer(manifest_bytes: bytes, signer, *,
-                          signer_identity, sidecar_path) -> None:
-    """Write a notary sidecar for a signer that is not an Ed25519PrivateKey.
+class LocalEd25519Signer:
+    """A local `Ed25519PrivateKey` behind the signer interface `KmsEd25519Signer` has."""
 
-    `semq.notary.notarize` requires a real `Ed25519PrivateKey`, which an
-    HSM-backed key can never be — the private half does not exist outside the
-    HSM. The signature is identical either way: PureEdDSA over the raw bytes of
-    the manifest digest, which is exactly what `ari/verify_report.py`
-    recomputes. This builds the same public `NotarizedSnapshot` rather than
-    reaching into notary internals.
+    def __init__(self, key):
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+        if not isinstance(key, Ed25519PrivateKey):
+            raise TypeError(f"an Ed25519 private key is required, got {type(key).__name__}")
+        self._key = key
+
+    def sign(self, message: bytes) -> bytes:
+        return self._key.sign(message)
+
+    def public_key_raw(self) -> bytes:
+        from cryptography.hazmat.primitives import serialization
+
+        return self._key.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+
+
+def write_sidecar(manifest_sha256: str, signer, *, signer_identity, sidecar_path) -> dict:
+    """Sign a manifest digest and write the `NTRY` sidecar `verify_report.py` checks.
+
+    The signature is PureEdDSA over the 32 raw digest bytes, not the hex text.
+    Keys are sorted so the sidecar bytes do not depend on dict order.
     """
     import base64
 
-    from semq.notary import NotarizedSnapshot
-
-    digest = sha256_bytes(manifest_bytes)
-    ns = NotarizedSnapshot(
-        magic="NTRY",
-        schema=1,
-        snapshot_sha256=digest,
-        signer_public_key=base64.b64encode(signer.public_key_raw()).decode("ascii"),
-        signature=base64.b64encode(signer.sign(bytes.fromhex(digest))).decode("ascii"),
-        signer_identity=signer_identity,
-        tsa_url=None,
-        tsa_token=None,
-        created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    )
-    ns.write_sidecar(sidecar_path)
+    sidecar = {
+        "magic": SIDECAR_MAGIC,
+        "schema": SIDECAR_SCHEMA,
+        "snapshot_sha256": manifest_sha256,
+        "signer_public_key": base64.b64encode(signer.public_key_raw()).decode("ascii"),
+        "signature": base64.b64encode(
+            signer.sign(bytes.fromhex(manifest_sha256))).decode("ascii"),
+        "signer_identity": signer_identity,
+        "tsa_url": None,
+        "tsa_token": None,
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    Path(sidecar_path).write_text(json.dumps(sidecar, sort_keys=True))
+    return sidecar
 
 
 def attest(
@@ -300,17 +318,15 @@ def attest(
     metric: str,
     report_path,
     input_paths: Sequence,
-    repo_path,
     signing_key=None,
     signer=None,
     references: Optional[dict] = None,
     out_dir=None,
     metric_version: str = "0.1",
     signer_identity: Optional[str] = None,
-    tsa_url: Optional[str] = None,
     extra: Optional[dict] = None,
 ) -> Attestation:
-    """Store the report and its inputs, then sign a manifest binding them.
+    """Sign a manifest binding the report to its inputs.
 
     Pass exactly one of:
 
@@ -329,11 +345,10 @@ def attest(
     alone authenticates the output bytes and says nothing about where they came
     from.
     """
-    from semq import Repo
-    from semq.notary import notarize
-
     if (signing_key is None) == (signer is None):
         raise ValueError("pass exactly one of signing_key or signer")
+    if signer is None:
+        signer = LocalEd25519Signer(signing_key)
 
     references = references or {}
     if not _binds_inputs(input_paths, references):
@@ -348,39 +363,21 @@ def attest(
     out_dir = Path(out_dir) if out_dir else report_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    repo_path = Path(repo_path)
-    repo = (Repo.open(repo_path) if (repo_path / "HEAD").exists()
-            else Repo.init(repo_path))
-
-    # Content-address the inputs and the report so the artifacts survive
-    # alongside the digests that name them.
-    for p in list(input_paths) + [report_path]:
-        repo.snapshot(Path(p).read_bytes(), label=f"{metric}/{Path(p).name}")
-
     manifest = build_manifest(
         metric=metric, report_path=report_path, input_paths=input_paths,
         references=references, metric_version=metric_version, extra=extra)
     manifest_bytes = canonical_json(manifest)
     manifest_sha256 = sha256_bytes(manifest_bytes)
 
-    snap = repo.snapshot(manifest_bytes, label=f"{metric}/manifest")
     sidecar = out_dir / f"{report_path.stem}.attestation.notary"
-    if signer is not None:
-        if tsa_url is not None:
-            raise NotImplementedError(
-                "the signer path does not request an RFC-3161 timestamp yet")
-        _notarize_with_signer(manifest_bytes, signer,
-                              signer_identity=signer_identity, sidecar_path=sidecar)
-    else:
-        notarize(repo, str(snap.id), signing_key,
-                 signer_identity=signer_identity, tsa_url=tsa_url,
-                 sidecar_path=sidecar)
+    write_sidecar(manifest_sha256, signer, signer_identity=signer_identity,
+                  sidecar_path=sidecar)
 
     manifest_out = out_dir / f"{report_path.stem}.attestation.json"
     manifest_out.write_bytes(manifest_bytes)
 
     return Attestation(manifest_path=manifest_out, sidecar_path=sidecar,
-                       manifest_sha256=manifest_sha256, snap_id=str(snap.id))
+                       manifest_sha256=manifest_sha256)
 
 
 def sign_if_configured(
@@ -425,8 +422,7 @@ def sign_if_configured(
     bound = [p for p in input_paths if Path(p).exists()]
     common = dict(
         metric=metric, report_path=report_path, input_paths=bound,
-        references=references, repo_path=report_path.parent / "attestation-repo",
-        signer_identity=os.environ.get("ARI_SIGNER"), extra=extra)
+        references=references, signer_identity=os.environ.get("ARI_SIGNER"), extra=extra)
 
     if kms_key_id:
         from ari.kms_signer import KmsEd25519Signer

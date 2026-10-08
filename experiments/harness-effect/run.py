@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """ARI-E on real harnesses: does the scaffold or the model decide the outcome?
 
 This is the first ARI-E measurement against harnesses nobody here built.
@@ -223,7 +223,7 @@ def sign_report(report: Path) -> None:
     )
     att = attest(metric="ARI-E", report_path=report, input_paths=[],
                  references=references,
-                 repo_path=RESULTS / "attestation-repo", signing_key=key,
+                 signing_key=key,
                  signer_identity=os.environ.get("ARI_SIGNER", "unnamed"),
                  extra={"dataset": DATASET})
     print(f"signed: {att.manifest_path.name}, {att.sidecar_path.name}")

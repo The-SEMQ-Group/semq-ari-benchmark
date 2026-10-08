@@ -1,13 +1,13 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
-"""Scoring a probe too wide for one context.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
+"""Scoring a probe too wide for one SEMQ row.
 
-The pilot's logit probe is 32,000 coordinates and modern vocabularies are
-wider still, so the chunking path is the one that has to hold.
+Modern vocabularies are wider than 65,536 logits, so the chunked path of the
+ARI-D v0.2 logit probe is the one that has to hold.
 """
 
 from __future__ import annotations
@@ -27,68 +27,33 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(run_pilot)
 
 
-def _pair(n=24, dim=3072, seed=0):
+def _pair(n=6, vocab=70000, seed=0):
     rng = np.random.default_rng(seed)
-    r = (rng.standard_normal((n, dim)) * 4).astype(np.float32)
-    return r, r + (rng.standard_normal((n, dim)) * 0.3).astype(np.float32)
+    r = (rng.standard_normal((n, vocab)) * 4).astype(np.float32)
+    return r, r + (rng.standard_normal((n, vocab)) * 0.3).astype(np.float32)
 
 
-@pytest.mark.parametrize("max_dim", [1536, 1024, 768, 512, 384])
-def test_the_score_does_not_depend_on_how_the_probe_was_chunked(monkeypatch,
-                                                                max_dim):
-    """Chunking is an encoding detail. It must not move a reported number."""
-    import ari.semq_compat as semq_compat
-
+def test_a_wide_vocabulary_uses_the_fixed_layout():
     r, c = _pair()
-    whole, whole_meta = run_pilot._ari_scores(r, c, 8)
-    assert whole_meta["n_chunks"] == 1
-
-    monkeypatch.setattr(semq_compat, "MAX_DIM", max_dim)
-    chunked, chunked_meta = run_pilot._ari_scores(r, c, 8)
-
-    assert chunked_meta["n_chunks"] > 1
-    # one calibration over every coordinate, not one per chunk
-    assert chunked_meta["scale"] == whole_meta["scale"]
-    for key, value in whole.items():
-        assert np.array_equal(chunked[key], value), key
-
-
-def test_calibration_is_global_and_not_per_chunk(monkeypatch):
-    """Per-chunk calibration is the thing that does not compose.
-
-    Coordinates are not exchangeable across a logit vector, so a chunk
-    calibrated on its own slice gets a different scale and its codes stop
-    being comparable with the next chunk's.
-    """
-    import ari.semq_compat as semq_compat
-    from ari.semq_compat import quant_context
-
-    # a probe whose second half is on a different scale from its first
-    rng = np.random.default_rng(3)
-    left = (rng.standard_normal((16, 512)) * 1.0).astype(np.float32)
-    right = (rng.standard_normal((16, 512)) * 9.0).astype(np.float32)
-    r = np.ascontiguousarray(np.hstack([left, right]))
-
-    monkeypatch.setattr(semq_compat, "MAX_DIM", 512)
-    _, meta = run_pilot._ari_scores(r, r.copy(), 8)
+    scores, meta = run_pilot._ari_scores(r, c, 8)
+    assert meta["chunk_widths"] == [65536, 4464]
     assert meta["n_chunks"] == 2
-
-    with quant_context(512, n_bins=8) as ctx:
-        per_chunk_left = float(ctx.calibrate(left, percentile=0.99))
-    # the global scale is pulled up by the wider half; a per-chunk scale is not
-    assert meta["scale"] > per_chunk_left * 2
-
-
-def test_chunk_width_divides_evenly_and_packs_whole_bytes():
-    for dim, max_dim in ((128256, 65536), (256128, 65536), (3072, 1024),
-                         (32000, 65536)):
-        width = run_pilot._chunk_width(dim, max_dim, 2)
-        assert width <= max_dim
-        assert dim % width == 0, (dim, width)
-        assert width % 2 == 0
+    assert meta["probe"] == "ARI-D-Logit-v0.2"
+    for key in ("ari_byte_mismatch", "ari_code_hamming", "ari_symbol_mismatch"):
+        assert scores[key].shape == (len(r),)
+        assert (scores[key] > 0).all(), key
 
 
-def test_an_unchunkable_width_is_refused_rather_than_silently_padded():
-    """A prime wider than the context has no equal, byte-aligned split."""
-    with pytest.raises(ValueError, match="no chunk width"):
-        run_pilot._chunk_width(65539, 65536, 2)     # 65539 is prime
+def test_identical_logits_score_zero():
+    r, _ = _pair()
+    scores, _ = run_pilot._ari_scores(r, r.copy(), 8)
+    for key, value in scores.items():
+        assert not value.any(), key
+
+
+def test_the_byte_rate_is_not_smaller_than_the_symbol_rate():
+    """Two symbols share a byte at 4 bits, so a byte rate cannot be smaller. PROTOCOL §0.4."""
+    r, c = _pair()
+    s, _ = run_pilot._ari_scores(r, c, 8)
+    assert (s["ari_byte_mismatch"] >= s["ari_symbol_mismatch"] - 1e-12).all()
+    assert (s["ari_code_hamming"] <= s["ari_symbol_mismatch"] + 1e-12).all()

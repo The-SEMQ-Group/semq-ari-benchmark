@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Attestation round-trip, and the tampering it has to catch.
 
 A signature check that only passes is untested. Each test here changes one
@@ -21,7 +21,6 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("semq")
 pytest.importorskip("cryptography")
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -42,7 +41,6 @@ def signed(tmp_path):
     report.write_text(json.dumps({"effect": 0.089, "n_cases": 10788}) + "\n")
 
     att = attest(metric="ARI-E", report_path=report, input_paths=[inp],
-                 repo_path=tmp_path / "repo",
                  signing_key=Ed25519PrivateKey.generate(),
                  signer_identity="test@example.com")
     return tmp_path, report, inp, att
@@ -89,7 +87,6 @@ def test_swapped_manifest_fails(signed, tmp_path):
     report2 = other / "harness_effect.json"
     report2.write_text(json.dumps({"effect": 0.999}) + "\n")
     att2 = attest(metric="ARI-E", report_path=report2, input_paths=[inp2],
-                  repo_path=other / "repo",
                   signing_key=Ed25519PrivateKey.generate())
     shutil.copy(att2.manifest_path, att.manifest_path)
     assert verify(report) is False
@@ -223,7 +220,6 @@ def test_attest_refuses_to_bind_nothing(tmp_path):
     report.write_text("{}\n")
     with pytest.raises(ValueError, match="would bind no inputs"):
         attest(metric="ARI-R", report_path=report, input_paths=[],
-               repo_path=tmp_path / "repo",
                signing_key=Ed25519PrivateKey.generate())
 
 
@@ -235,8 +231,7 @@ def test_attest_with_references_only_round_trips(tmp_path):
         datasets=[dataset_ref("BeIR/scifact", "abc123", config="corpus")],
         models=[model_ref("all-MiniLM-L6-v2", "def456")])
     att = attest(metric="ARI-R", report_path=report, input_paths=[],
-                 references=refs, repo_path=tmp_path / "repo",
-                 signing_key=Ed25519PrivateKey.generate(),
+                 references=refs, signing_key=Ed25519PrivateKey.generate(),
                  signer_identity="test@example.com")
     assert att.manifest_path.exists()
     assert verify(report) is True

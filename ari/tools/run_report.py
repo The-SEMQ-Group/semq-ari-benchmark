@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Generate a schema-valid ARI report for one agent and (optionally) add it to the
 leaderboard. Runs baseline E0 + the conditions we can measure now (`same`, `proc`), builds
 the report, scores it with the leaderboard scorer, and appends a row.
@@ -55,8 +55,8 @@ def _load_st(model_id):
     # trust_remote_code=True is required by some encoders (e.g. nomic). It executes code from
     # the model repo — acceptable for the vetted, widely-used models in the panel; a stricter
     # deployment should pin/allowlist model revisions.
-    from sentence_transformers import SentenceTransformer
-    return SentenceTransformer(model_id, device="cpu", trust_remote_code=True)
+    from ari.st_load import load_sentence_transformer
+    return load_sentence_transformer(model_id, device="cpu", trust_remote_code=True)
 
 
 def selfhosted_codes(model_id, texts):

@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """How exposed is a frozen product quantizer to floating-point reassociation?
 
 A vector-quantizer probe assigns a code by argmin over floating-point
@@ -38,7 +38,7 @@ from pathlib import Path
 
 import numpy as np
 from datasets import load_dataset
-from sentence_transformers import SentenceTransformer
+from ari.st_load import load_sentence_transformer
 from sklearn.cluster import KMeans
 
 ENCODER = "sentence-transformers/all-MiniLM-L6-v2"
@@ -58,7 +58,7 @@ def embed_corpus() -> np.ndarray:
         (t + " " + x).strip()
         for t, x in zip(ds["title"][:N_DOCS], ds["text"][:N_DOCS])
     ]
-    model = SentenceTransformer(ENCODER)
+    model = load_sentence_transformer(ENCODER)
     X = model.encode(texts, batch_size=128, show_progress_bar=False,
                      normalize_embeddings=True)
     return np.ascontiguousarray(X, dtype=np.float32)

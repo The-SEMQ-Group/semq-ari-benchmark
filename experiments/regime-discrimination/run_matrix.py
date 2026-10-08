@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Can retrieval metrics tell you which serving configuration you are in?
 
 The ARI probe-choice analysis claims that discrete serving changes -- a precision
@@ -18,8 +18,8 @@ reference run (fp32, CPU, fixed thread count and batch size) on:
 
   * mean and 1st-percentile cosine similarity of the embeddings
   * Recall@10 and nDCG@10 against real relevance judgements
-  * SEMQ hash-equality rate (HER) and mean Hamming drift, at a calibration
-    scale frozen from the reference run
+  * SEMQ hash-equality rate (HER) and mean Hamming drift, from the public
+    SDK's fixed-range probe (ARI v0.2), which needs no reference calibration
 
 Real qrels matter here. On a clean corpus Recall@10 saturates at 1.0 and any
 comparison against it measures the saturation, not the instrument -- that
@@ -57,7 +57,7 @@ CACHE = RESULTS / "cache"
 ENCODER = "sentence-transformers/all-MiniLM-L6-v2"
 TOP_K = 10
 QUANT_BINS = 8
-CALIBRATION_PERCENTILE = 0.99
+PROBE = "SEMQ quant, fixed range 2/sqrt(dim), rows renormalised (ARI v0.2)"
 
 
 @dataclass(frozen=True)
@@ -135,14 +135,13 @@ def load_scifact() -> tuple[
 
 def encode(cond: Condition, doc_texts: list[str], q_texts: list[str]) -> dict:
     import torch
-    from sentence_transformers import SentenceTransformer
-
+    from ari.st_load import load_sentence_transformer
     torch.set_num_threads(cond.threads)
     if cond.tf32 is not None:
         torch.backends.cuda.matmul.allow_tf32 = cond.tf32
         torch.backends.cudnn.allow_tf32 = cond.tf32
 
-    model = SentenceTransformer(ENCODER, device=cond.device)
+    model = load_sentence_transformer(ENCODER, device=cond.device)
     if cond.quantize:
         # A qengine has to be selected explicitly; the default is NoQEngine on
         # some builds. qnnpack covers arm64, fbgemm covers x86_64.
@@ -204,16 +203,11 @@ def paired_bootstrap_ci(a: np.ndarray, b: np.ndarray, n: int = 10000,
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def semq_codes(X: np.ndarray, scale_source: np.ndarray | None = None):
-    """Encode X with SEMQ QUANT, calibrated on scale_source (or on X)."""
-    from ari.semq_compat import quant_context
+def semq_codes(X: np.ndarray):
+    """Encode X with the public SEMQ quant probe (fixed range, no calibration)."""
+    from ari.semq_compat import encode_packed
 
-    ctx = quant_context(X.shape[1], n_bins=QUANT_BINS)
-    ctx.calibrate(scale_source if scale_source is not None else X,
-                  percentile=CALIBRATION_PERCENTILE)
-    codes = np.asarray(ctx.batch_encode(np.ascontiguousarray(X, np.float32)))
-    ctx.close()
-    return codes
+    return encode_packed(X, QUANT_BINS)
 
 
 def compare(ref: dict, cur: dict, doc_ids, q_ids, qrels, ref_codes) -> dict:
@@ -221,7 +215,7 @@ def compare(ref: dict, cur: dict, doc_ids, q_ids, qrels, ref_codes) -> dict:
     r_ref = retrieval_metrics(ref["docs"], ref["queries"], doc_ids, q_ids, qrels)
     r_cur = retrieval_metrics(cur["docs"], cur["queries"], doc_ids, q_ids, qrels)
 
-    codes = semq_codes(cur["docs"], scale_source=ref["docs"])
+    codes = semq_codes(cur["docs"])
     diff = code_diff(ref_codes, codes, n_bins=QUANT_BINS,
                      dim=cur["docs"].shape[1])
 
@@ -291,7 +285,7 @@ def _identity() -> dict:
         "qrels_revision": _hub_revision("BeIR/scifact-qrels", "dataset"),
         "top_k": TOP_K,
         "quant_bins": QUANT_BINS,
-        "calibration_percentile": CALIBRATION_PERCENTILE,
+        "probe": PROBE,
         **_versions(),
     }
 
@@ -453,7 +447,7 @@ def main() -> None:
         models=[model_ref(ENCODER, hub_revision(ENCODER, "model"))],
         config=config_ref({
             "encoder": ENCODER, "top_k": TOP_K, "quant_bins": QUANT_BINS,
-            "calibration_percentile": CALIBRATION_PERCENTILE,
+            "probe": PROBE,
             "conditions": [c.name for c in CONDITIONS],
         }),
         code=code_ref(packages=["semq", "torch", "sentence-transformers",

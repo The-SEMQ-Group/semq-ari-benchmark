@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Drift-sensitivity sweep → the `(b, κ)` fingerprint for a self-hosted model.
 
 Perturbs a model's embeddings with isotropic Gaussian noise across a σ grid, measures the
@@ -73,8 +73,8 @@ def sweep_from_embeddings(X: np.ndarray, model_id: str, seed: int = 0) -> dict:
 def sweep(model_id: str, texts, seed: int = 0) -> dict:
     """Self-hosted path — encode with SentenceTransformer (raw, normalized, no prefix, exactly
     as ari.agents.SentenceTransformerAgent does), then sweep."""
-    from sentence_transformers import SentenceTransformer
-    m = SentenceTransformer(model_id, device="cpu", trust_remote_code=True)
+    from ari.st_load import load_sentence_transformer
+    m = load_sentence_transformer(model_id, device="cpu", trust_remote_code=True)
     X = m.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
     return sweep_from_embeddings(X, model_id, seed=seed)
 

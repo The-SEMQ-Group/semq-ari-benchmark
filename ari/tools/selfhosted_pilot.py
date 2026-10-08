@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Self-hosted contrast — a model *you* control, measured with the same SEMQ probe as the
 API panel, to show the governance point: self-hosted is reproducible, the API is not.
 
@@ -55,10 +55,10 @@ def main(argv=None) -> int:
     from ari import metrics                       # noqa: E402
     from ari.inputs import sample_inputs          # noqa: E402
     from ari.probe import load_probe              # noqa: E402
-    from sentence_transformers import SentenceTransformer  # noqa: E402
+    from ari.st_load import load_sentence_transformer  # noqa: E402
 
     inputs = sample_inputs(args.n)
-    model = SentenceTransformer(args.model, device="cpu", trust_remote_code=True)
+    model = load_sentence_transformer(args.model, device="cpu", trust_remote_code=True)
 
     def encode_inproc(texts):
         return np.asarray(model.encode(texts, normalize_embeddings=True, convert_to_numpy=True),

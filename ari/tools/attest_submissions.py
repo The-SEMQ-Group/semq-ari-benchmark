@@ -2,9 +2,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Sign every leaderboard submission, binding each report to the frozen input set.
 
     ARI_SIGNING_KEY=/path/to/ed25519.pem ARI_SIGNER="ARI leaderboard operator" \
@@ -20,7 +20,7 @@ The manifest names `data/ari-bench-v0.1.jsonl`, so re-pointing a signed report a
 inputs breaks the signature. That binding is the whole reason to sign a report rather than
 just publish a digest of it.
 
-Requires `semq` (the notary writes into a SEMQ repo) and `cryptography`. Verification does
+Requires `cryptography` (and `boto3` for the KMS key). Verification does
 not: `ari/verify_report.py` needs only the standard library and `cryptography`, so a third
 party never has to install our stack to check our claim.
 """
@@ -120,7 +120,6 @@ def main() -> int:
             metric="ARI",
             report_path=report,
             input_paths=[input_set],
-            repo_path=args.submissions / "attestation-repo",
             signing_key=key,
             signer=kms,
             signer_identity=identity,

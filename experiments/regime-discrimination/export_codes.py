@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Write the packed SEMQ codes behind regime_matrix.json to results/codes/.
 
 Encoding needs the SEMQ SDK. Reading the codes back does not: every rate in
@@ -35,7 +35,6 @@ MATRIX = HERE / "results" / "regime_matrix.json"
 REFERENCE = "reference"
 CONDITIONS = ("proc", "threads1", "batch8", "batch128", "bf16", "int8")
 QUANT_BINS = 8
-CALIBRATION_PERCENTILE = 0.99
 
 
 def _sha256(path: Path) -> str:
@@ -47,33 +46,25 @@ def _docs(name: str) -> np.ndarray:
 
 
 def export() -> None:
-    from ari.semq_compat import quant_context, sdk_version
+    from ari.semq_compat import encode_packed, max_magnitude, sdk_version
 
-    ref = _docs(REFERENCE)
-    dim = ref.shape[1]
-    ctx = quant_context(dim, n_bins=QUANT_BINS)
-    try:
-        # Calibrated once on the reference and frozen, as run_matrix.py does.
-        scale = float(ctx.calibrate(ref, percentile=CALIBRATION_PERCENTILE))
-        CODES.mkdir(parents=True, exist_ok=True)
-        files = {}
-        for name in (REFERENCE,) + CONDITIONS:
-            codes = np.asarray(ctx.batch_encode(_docs(name)), dtype=np.uint8)
-            out = CODES / f"{name}.npz"
-            np.savez_compressed(out, codes=codes)
-            files[name] = {"sha256": _sha256(out), "shape": list(codes.shape),
-                           "source_sha256": _sha256(CACHE / f"{name}.npz")}
-    finally:
-        ctx.close()
+    dim = _docs(REFERENCE).shape[1]
+    CODES.mkdir(parents=True, exist_ok=True)
+    files = {}
+    for name in (REFERENCE,) + CONDITIONS:
+        codes = encode_packed(_docs(name), QUANT_BINS)
+        out = CODES / f"{name}.npz"
+        np.savez_compressed(out, codes=codes)
+        files[name] = {"sha256": _sha256(out), "shape": list(codes.shape),
+                       "source_sha256": _sha256(CACHE / f"{name}.npz")}
 
     manifest = {
         "operator": "SEMQ QUANT",
         "n_bins": QUANT_BINS,
         "bits_per_coordinate": bits_per_coordinate(QUANT_BINS),
         "dim": dim,
-        "calibration_percentile": CALIBRATION_PERCENTILE,
-        "calibrated_on": REFERENCE,
-        "scale_max": scale,
+        "range": "fixed 2/sqrt(dim); rows renormalised to unit length (ARI v0.2)",
+        "max_magnitude": max_magnitude(dim),
         "layout": ("one row per document; coordinates packed contiguously from "
                    "the least significant bit of byte 0, final byte zero-padded; "
                    "decode with ari.code_metrics.unpack_symbols"),

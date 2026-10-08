@@ -5,7 +5,10 @@ Code in this repository is licensed under the Apache License, Version 2.0
 (see LICENSE). Specifications and benchmark selections are licensed under
 CC BY 4.0. Source documents retain their original licenses.
 
-This version uses the SEMQ SDK to compute SEMQ codes and to notarize results. The SDK is a separate
-library that is subject to a commercial license owned by The SEMQ Group Inc.
-and is patent pending. It is not part of this repository and is not covered
-by the Apache License.
+This version uses the SEMQ SDK (https://github.com/The-SEMQ-Group/semq) to
+compute SEMQ codes. The SDK is a separate library licensed under the PolyForm
+Noncommercial License 1.0.0 and is patent pending. It is not part of this
+repository and is not covered by the Apache License. As the SDK's README
+states, production use by companies, and any other use that license does not
+permit, requires a separate license from The SEMQ Group Inc.
+(licensing@thesemqgroup.ai).

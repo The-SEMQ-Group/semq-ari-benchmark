@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """KMS-backed signing produces exactly what a local key produces.
 
 Moving custody into an HSM must not move the format. These tests stand in a fake KMS
@@ -186,7 +186,6 @@ def test_a_kms_signed_sidecar_verifies(tmp_path, fake):
     classifies the same sidecar as `attested` is the board's contract and is tested
     in the ari-leaderboard repo, which owns the scorer.
     """
-    pytest.importorskip("semq")
     import sys
 
     sys.path.insert(0, str(REPO_ROOT))
@@ -197,7 +196,7 @@ def test_a_kms_signed_sidecar_verifies(tmp_path, fake):
 
     signer = kms_signer.KmsEd25519Signer("arn:test", client=fake, identity="org key")
     attest(metric="ARI", report_path=report, input_paths=[data],
-           repo_path=tmp_path / "repo", signer=signer, signer_identity="org key",
+           signer=signer, signer_identity="org key",
            extra={"input_set": "ARI-Bench-v0.1"})
 
     # The shipped standalone verifier accepts it.
@@ -208,7 +207,6 @@ def test_a_kms_signed_sidecar_verifies(tmp_path, fake):
 
 def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake, monkeypatch):
     """Custody changes; the signed bytes do not."""
-    pytest.importorskip("semq")
     import sys
     from datetime import datetime, timezone
 
@@ -236,7 +234,7 @@ def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake, monkeypatch):
         d.mkdir()
         report = _fixture_report(d / "fixture_report.json")
         attest(metric="ARI", report_path=report, input_paths=[data],
-               repo_path=d / "repo", signer_identity="same", **kwargs)
+               signer_identity="same", **kwargs)
         sidecar = json.loads((d / f"{report.stem}.attestation.notary").read_text())
         digests[name] = (sidecar["snapshot_sha256"], sidecar["signer_public_key"])
 
@@ -244,7 +242,6 @@ def test_kms_and_local_keys_sign_the_same_digest(tmp_path, fake, monkeypatch):
 
 
 def test_attest_refuses_both_key_sources_at_once(tmp_path, fake):
-    pytest.importorskip("semq")
     import sys
 
     sys.path.insert(0, str(REPO_ROOT))
@@ -254,12 +251,11 @@ def test_attest_refuses_both_key_sources_at_once(tmp_path, fake):
     report.write_text("{}")
     with pytest.raises(ValueError, match="exactly one"):
         attest(metric="ARI", report_path=report, input_paths=[],
-               repo_path=tmp_path / "repo", signing_key=fake.key,
+               signing_key=fake.key,
                signer=kms_signer.KmsEd25519Signer("arn:test", client=fake))
 
 
 def test_attest_refuses_no_key_at_all(tmp_path):
-    pytest.importorskip("semq")
     import sys
 
     sys.path.insert(0, str(REPO_ROOT))
@@ -268,5 +264,4 @@ def test_attest_refuses_no_key_at_all(tmp_path):
     report = tmp_path / "r.json"
     report.write_text("{}")
     with pytest.raises(ValueError, match="exactly one"):
-        attest(metric="ARI", report_path=report, input_paths=[],
-               repo_path=tmp_path / "repo")
+        attest(metric="ARI", report_path=report, input_paths=[])

@@ -1,9 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
+# Apache License.
 """Pilot: score every detector on the legacy decoding cache.
 
 Pilot, not confirmatory. The arrays are TinyLlama-1.1B on CPU over 12 prompts
@@ -48,81 +48,33 @@ INTERVENTIONS = ["threads1", "batched", "bf16", "int8"]
 QUANT_BINS_LOGIT = 8          # PROTOCOL §0.3: the logit probe, 4 bits/dim
 
 
-def _chunk_width(dim: int, max_dim: int, coords_per_byte: int) -> int:
-    """Widest equal chunk that fits a context and packs into whole bytes.
-
-    Equal widths keep the aggregation a plain mean: every chunk contributes
-    the same number of coordinates, bits and bytes. A width that did not
-    divide ``coords_per_byte`` would pad each chunk's last byte, and those
-    pad bits would then count toward the byte rate.
-    """
-    for n_chunks in range(-(-dim // max_dim), dim + 1):
-        if dim % n_chunks:
-            continue
-        width = dim // n_chunks
-        if width % coords_per_byte == 0:
-            return width
-    raise ValueError(
-        f"no chunk width divides dim {dim} into pieces of at most {max_dim} "
-        f"coordinates that pack into whole bytes at {coords_per_byte} "
-        "coordinates per byte")
-
-
 def _ari_scores(r, c, bins):
     """Three distinct ARI quantities. PROTOCOL §0.4.
 
     The published score counts packed bytes; symbol mismatch and bit Hamming
     are what the coordinate-wise baselines are actually comparable against.
 
-    Every quantity here comes from the SDK. The packed layout, the symbol
-    unpacking and the calibration percentile all live in the core, so this
-    file cannot drift from the encoder it is measuring. An earlier inline
-    unpacking read each byte's symbols in the wrong order: it reported the
-    same aggregate rate, because the error permutes coordinates identically
-    in both operands, but every changed-coordinate index it produced was
-    wrong.
-
-    A probe wider than one context is split into equal chunks. Calibration
-    stays global: the core takes the percentile over the whole buffer it is
-    given, so calibrating on the array reshaped to the chunk width yields the
-    same float32 scale a single wide context would, and that one scale is
-    then fixed across every chunk. Calibrating each chunk separately is the
-    thing that does not compose, and is not what happens here.
+    Codes come from the ARI-D v0.2 logit probe (ari/logit_probe.py): rows are
+    centred over the full vocabulary and split at fixed 65,536-wide
+    boundaries, and the public SDK encodes each chunk. Each chunk is
+    normalised on its own, so the chunk layout is part of the probe; it is
+    fixed by the vocabulary size, never chosen here. ``chunked_code_diff``
+    splits the joined buffers at the same boundaries, so each chunk's padding
+    is never read as coordinates and the rates come out of one total.
     """
-    from ari.semq_compat import MAX_DIM, quant_context
+    from ari.code_metrics import bits_per_coordinate, chunked_code_diff
+    from ari.logit_probe import PROBE_ID, encode_logits
 
-    dim = r.shape[1]
-    r = np.ascontiguousarray(r, np.float32)
-    c = np.ascontiguousarray(c, np.float32)
-
-    with quant_context(min(dim, MAX_DIM), n_bins=bins) as ctx:
-        bits = ctx.bits_per_coordinate
-    coords_per_byte = 8 // bits
-    width = (dim if dim <= MAX_DIM
-             else _chunk_width(dim, MAX_DIM, coords_per_byte))
-
-    with quant_context(width, n_bins=bins) as ctx:
-        scale = float(ctx.calibrate(r.reshape(-1, width), percentile=0.99))
-
-    parts = []
-    with quant_context(width, n_bins=bins, scale_max=scale) as ctx:
-        for lo in range(0, dim, width):
-            a = np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(r[:, lo:lo + width])))
-            b = np.asarray(ctx.batch_encode(
-                np.ascontiguousarray(c[:, lo:lo + width])))
-            parts.append(ctx.compare_codes(a, b, width))
-
-    # The SDK joins chunk comparisons: it sums the counts and shifts the
-    # coordinate indices, so the rates come out of one total rather than an
-    # average of averages, and changed_coordinates stays usable.
-    cmp = parts[0] if len(parts) == 1 else type(parts[0]).concatenate(parts)
+    a, widths = encode_logits(r, bins)
+    b, _ = encode_logits(c, bins)
+    d = chunked_code_diff(a, b, n_bins=bins, widths=widths)
+    bits = bits_per_coordinate(bins)
     return {
-        "ari_byte_mismatch": cmp.byte_change_rate,
-        "ari_code_hamming": cmp.bit_hamming_rate,
-        "ari_symbol_mismatch": cmp.coordinate_change_rate,
-    }, {"bits_per_dim": bits, "coords_per_byte": coords_per_byte,
-        "scale": scale, "chunk_width": width, "n_chunks": dim // width}
+        "ari_byte_mismatch": d.byte_change_rate,
+        "ari_code_hamming": d.bit_hamming_rate,
+        "ari_symbol_mismatch": d.coordinate_change_rate,
+    }, {"bits_per_dim": bits, "coords_per_byte": 8 // bits, "probe": PROBE_ID,
+        "chunk_widths": widths, "n_chunks": len(widths)}
 
 
 def _hash_scores(r, c, roundings):

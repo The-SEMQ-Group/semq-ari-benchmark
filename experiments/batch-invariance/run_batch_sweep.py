@@ -21,19 +21,18 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Canonical QUANT scales from spec/fingerprints-v0.1.csv, the same fixed values the
-# gpu-determinism matrix uses. A per-capture calibration would move the bin edges with the
-# data and could hide or invent disagreement, so the scale is fixed everywhere.
-S = {
-    "sentence-transformers/all-MiniLM-L6-v2": 0.132349,
-    "BAAI/bge-large-en-v1.5": 0.077546,
-    "BAAI/bge-m3": 0.082476,
-    "intfloat/multilingual-e5-large": 0.076236,
-    "sentence-transformers/all-mpnet-base-v2": 0.096253,
-    "nomic-ai/nomic-embed-text-v1.5": 0.093399,
-    "mixedbread-ai/mxbai-embed-large-v1": 0.078308,
-    "Snowflake/snowflake-arctic-embed-l": 0.082256,
-}
+# The encoders. A per-capture calibration would move the bin edges with the data and could
+# hide or invent disagreement; the v0.2 probe has none, its range is fixed by the dimension.
+S = (  # v0.2 probe: the range is 2/sqrt(dim), so no per-model scale
+    "sentence-transformers/all-MiniLM-L6-v2",
+    "BAAI/bge-large-en-v1.5",
+    "BAAI/bge-m3",
+    "intfloat/multilingual-e5-large",
+    "sentence-transformers/all-mpnet-base-v2",
+    "nomic-ai/nomic-embed-text-v1.5",
+    "mixedbread-ai/mxbai-embed-large-v1",
+    "Snowflake/snowflake-arctic-embed-l",
+)
 DEFAULT_MODELS = ["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-large-en-v1.5"]
 # BAAI/bge-m3 ships pytorch_model.bin and no safetensors. transformers 5.x
 # refuses to torch.load a .bin under torch < 2.6 (CVE-2025-32434), and the
@@ -58,7 +57,7 @@ INPUTS = HERE.parent.parent / "data" / "ari-bench-v0.1.jsonl"
 def capture(model, tag, tf32, deterministic, batch, n, outdir):
     d = Path(outdir) / tag
     cmd = [sys.executable, str(TOOL), "capture", "--model", model, "--device", "cuda",
-           "--dtype", "fp32", "--tf32", tf32, "--scale-s", str(S[model]),
+           "--dtype", "fp32", "--tf32", tf32,
            "--inputs", str(INPUTS), "--n", str(n), "--batch-size", str(batch),
            "--outdir", str(d), "--tag", tag]
     if deterministic:
@@ -116,10 +115,6 @@ def main() -> int:
         models = DEFAULT_MODELS
     else:
         models = [m.strip() for m in a.models.split(",") if m.strip()]
-    for m in models:
-        if m not in S:
-            print(f"ERROR: no canonical scale for {m}. Add it from "
-                  f"spec/fingerprints-v0.1.csv before running."); return 1
 
     batches = [int(x) for x in a.batches.split(",") if x.strip()]
     if REFERENCE_BATCH not in batches:

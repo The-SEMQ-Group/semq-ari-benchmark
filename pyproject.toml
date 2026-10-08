@@ -7,11 +7,15 @@ name = "ari-benchmark"
 version = "0.1.0"
 description = "Agent Reproducibility Index (ARI) — reference implementation, scorer, and benchmark harness"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "The SEMQ Group" }]
 keywords = ["reproducibility", "embeddings", "benchmark", "ARI", "SEMQ", "AI-governance"]
-dependencies = ["numpy>=1.24"]
+# semq is the public SEMQ SDK, licensed under the PolyForm Noncommercial License
+# 1.0.0 (not Apache-2.0); it computes every code. 3.11 is its Python floor.
+# Pinned exactly so every capture uses the same build; ari/semq_compat.py
+# checks it at import. Bump both together.
+dependencies = ["numpy>=1.24", "semq==1.0.0"]
 
 [project.optional-dependencies]
 dev = ["jsonschema>=4.20", "pytest>=7", "cryptography>=41", "build>=1"]
@@ -19,8 +23,6 @@ scoring = ["jsonschema>=4.20"]
 apis = ["openai>=1.0", "cohere>=5.0", "voyageai>=0.2", "google-genai>=0.3"]
 selfhosted = ["sentence-transformers>=3.0", "torch>=2.0"]
 data = ["datasets>=2.0"]
-# The SEMQ QUANT probe (`semq`) is required to compute codes. It is the SEMQ SDK —
-# public on PyPI once the SDK ships; `pip install semq` at that point.
 
 [project.urls]
 Homepage = "https://github.com/The-SEMQ-Group/semq-ari-benchmark"

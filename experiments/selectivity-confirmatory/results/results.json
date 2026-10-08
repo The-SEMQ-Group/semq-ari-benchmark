@@ -1,0 +1,240 @@
+{
+ "n_episodes": 600,
+ "missing": [],
+ "duplicates": 486,
+ "n_cells": {
+  "benign": 54,
+  "material": 36
+ },
+ "detectors": {
+  "code": {
+   "threshold": 5.208333333333333e-06,
+   "matched_storage": true,
+   "material": {
+    "episodes": 166,
+    "cells": 20,
+    "rate": 1.0,
+    "ci_cluster": [
+     1.0,
+     1.0
+    ],
+    "ci_wilson": [
+     0.9773812776139649,
+     0.9999999999999999
+    ],
+    "input_rate": 0.529355421686747
+   },
+   "benign": {
+    "episodes": 170,
+    "cells": 30,
+    "rate": 0.0,
+    "ci_cluster": [
+     0.0,
+     0.0
+    ],
+    "ci_wilson": [
+     0.0,
+     0.022098277972591136
+    ],
+    "input_rate": 0.0
+   },
+   "material_by_condition": {
+    "bf16": 1.0,
+    "fp16": 1.0,
+    "int8": 1.0,
+    "tf32": 1.0
+   }
+  },
+  "sha256": {
+   "threshold": 1.0,
+   "matched_storage": true,
+   "material": {
+    "episodes": 166,
+    "cells": 20,
+    "rate": 0.0,
+    "ci_cluster": [
+     0.0,
+     0.0
+    ],
+    "ci_wilson": [
+     1.734723475976807e-18,
+     0.022618722386034983
+    ],
+    "input_rate": 0.0
+   },
+   "benign": {
+    "episodes": 170,
+    "cells": 30,
+    "rate": 0.0,
+    "ci_cluster": [
+     0.0,
+     0.0
+    ],
+    "ci_wilson": [
+     0.0,
+     0.022098277972591136
+    ],
+    "input_rate": 0.0
+   },
+   "material_by_condition": {
+    "bf16": 0.0,
+    "fp16": 0.0,
+    "int8": 0.0,
+    "tf32": 0.0
+   }
+  },
+  "blocks": {
+   "threshold": 1.0,
+   "matched_storage": true,
+   "material": {
+    "episodes": 166,
+    "cells": 20,
+    "rate": 0.0,
+    "ci_cluster": [
+     0.0,
+     0.0
+    ],
+    "ci_wilson": [
+     1.734723475976807e-18,
+     0.022618722386034983
+    ],
+    "input_rate": 0.0
+   },
+   "benign": {
+    "episodes": 170,
+    "cells": 30,
+    "rate": 0.0,
+    "ci_cluster": [
+     0.0,
+     0.0
+    ],
+    "ci_wilson": [
+     0.0,
+     0.022098277972591136
+    ],
+    "input_rate": 0.0
+   },
+   "material_by_condition": {
+    "bf16": 0.0,
+    "fp16": 0.0,
+    "int8": 0.0,
+    "tf32": 0.0
+   }
+  },
+  "fp16_prefix": {
+   "threshold": 4.5940744541894674e-08,
+   "matched_storage": true,
+   "material": {
+    "episodes": 166,
+    "cells": 20,
+    "rate": 1.0,
+    "ci_cluster": [
+     1.0,
+     1.0
+    ],
+    "ci_wilson": [
+     0.9773812776139649,
+     0.9999999999999999
+    ],
+    "input_rate": 1.0
+   },
+   "benign": {
+    "episodes": 170,
+    "cells": 30,
+    "rate": 0.07058823529411765,
+    "ci_cluster": [
+     0.0,
+     0.17647058823529413
+    ],
+    "ci_wilson": [
+     0.04083701362587083,
+     0.11931797804470742
+    ],
+    "input_rate": 0.00010588235294117647
+   },
+   "material_by_condition": {
+    "bf16": 1.0,
+    "fp16": 1.0,
+    "int8": 1.0,
+    "tf32": 1.0
+   }
+  },
+  "sketch": {
+   "threshold": 1.959520798988491e-06,
+   "matched_storage": true,
+   "material": {
+    "episodes": 166,
+    "cells": 20,
+    "rate": 1.0,
+    "ci_cluster": [
+     1.0,
+     1.0
+    ],
+    "ci_wilson": [
+     0.9773812776139649,
+     0.9999999999999999
+    ],
+    "input_rate": 1.0
+   },
+   "benign": {
+    "episodes": 170,
+    "cells": 30,
+    "rate": 0.03529411764705882,
+    "ci_cluster": [
+     0.0,
+     0.10714285714285714
+    ],
+    "ci_wilson": [
+     0.016273926504342204,
+     0.0748527083172425
+    ],
+    "input_rate": 0.00017058823529411766
+   },
+   "material_by_condition": {
+    "bf16": 1.0,
+    "fp16": 1.0,
+    "int8": 1.0,
+    "tf32": 1.0
+   }
+  },
+  "cosine_full": {
+   "threshold": 2.074719396283342e-12,
+   "matched_storage": false,
+   "material": {
+    "episodes": 166,
+    "cells": 20,
+    "rate": 1.0,
+    "ci_cluster": [
+     1.0,
+     1.0
+    ],
+    "ci_wilson": [
+     0.9773812776139649,
+     0.9999999999999999
+    ],
+    "input_rate": 1.0
+   },
+   "benign": {
+    "episodes": 170,
+    "cells": 30,
+    "rate": 0.10588235294117647,
+    "ci_cluster": [
+     0.0,
+     0.2413793103448276
+    ],
+    "ci_wilson": [
+     0.0680306976225958,
+     0.161152650896976
+    ],
+    "input_rate": 0.00015294117647058822
+   },
+   "material_by_condition": {
+    "bf16": 1.0,
+    "fp16": 1.0,
+    "int8": 1.0,
+    "tf32": 1.0
+   }
+  }
+ },
+ "claim_supported": true
+}
