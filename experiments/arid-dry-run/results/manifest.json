@@ -593,6 +593,28 @@
       "prompt_content_hash": "af5b1a2bb35b9fa5f8d4e8f05b85a98f495a3edeb93e95da9c9ced6d783e0d6f",
       "reconnects": 0,
       "wall_s": 1597.4
+    },
+    {
+      "transcript": "gemini_same_v02t1.jsonl.gz",
+      "sha256": "f196ee75fc59a642ae5d0f1ca554e675472d56894b52b27df16492b08061f9b6",
+      "calls": 800,
+      "scope": "full",
+      "subject": "gemini",
+      "class": "vendor",
+      "model": "gemini-3.6-flash",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+      "condition": "same",
+      "k": 8,
+      "burst": null,
+      "params": {
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "seed": 20260831
+      },
+      "prompt_content_hash": "af5b1a2bb35b9fa5f8d4e8f05b85a98f495a3edeb93e95da9c9ced6d783e0d6f",
+      "reconnects": 0,
+      "wall_s": 1196.3
     }
   ]
 }

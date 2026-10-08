@@ -15,6 +15,13 @@ if [ ! -x "$VG/python" ]; then
     || { echo "ERROR: gemma stack install failed"; exit 1; }
 fi
 VIRTUAL_ENV=$HOME/venvgemma "$HOME/.local/bin/uv" pip install -q -e ".[data]" "semq==1.0.0"
+# Copy finished results to S3 every 5 minutes; an earlier run lost everything to its timer
+# because it published only at the end.
+( while sleep 300; do
+    cp experiments/regime-discrimination/results/regime_matrix_*_b2.json "$OUT/" 2>/dev/null
+    aws s3 sync --quiet --region us-east-2 "$OUT" "$BUCKET/$LABEL/"
+  done ) &
+SYNC_PID=$!
 for ds in scifact nfcorpus arguana; do
   for enc in sentence-transformers/all-MiniLM-L6-v2 BAAI/bge-large-en-v1.5 intfloat/multilingual-e5-large google/embeddinggemma-2; do
     py=$VP/python; [ "$enc" = "google/embeddinggemma-2" ] && py=$VG/python
@@ -24,4 +31,5 @@ for ds in scifact nfcorpus arguana; do
 done
 step "copy retrieval" bash -c "cp experiments/regime-discrimination/results/regime_matrix_*_b2.json '$OUT/'"
 step "lib default dtype" bash -c "$VG/python experiments/lib-default-dtype/run.py --device cuda --out '$OUT/lib_default_dtype.json' 2>&1 | tee '$OUT/lib.log'; exit \${PIPESTATUS[0]}"
+kill "$SYNC_PID" 2>/dev/null
 publish

@@ -10,7 +10,10 @@ source "$(dirname "$0")/common.sh"
 VG=$HOME/venvgemma/bin
 if [ ! -x "$VG/python" ]; then
   "$HOME/.local/bin/uv" venv -q -p 3.12 "$HOME/venvgemma"
+  # CPU-only wheels: the CUDA build (~10 GB with its libraries) filled this host's disk.
   VIRTUAL_ENV=$HOME/venvgemma "$HOME/.local/bin/uv" pip install -q "torch==2.14.1" "torchvision==0.29.1" \
+    --index-url https://download.pytorch.org/whl/cpu || { echo "ERROR: gemma torch install failed"; exit 1; }
+  VIRTUAL_ENV=$HOME/venvgemma "$HOME/.local/bin/uv" pip install -q \
     "transformers==5.19.0" "sentence-transformers==6.1.0" pillow sentencepiece protobuf pip \
     || { echo "ERROR: gemma stack install failed"; exit 1; }
 fi
