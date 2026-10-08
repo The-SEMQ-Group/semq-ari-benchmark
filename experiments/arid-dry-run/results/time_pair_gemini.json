@@ -1,0 +1,25 @@
+{
+  "condition": "time",
+  "batches": [
+    "gemini_same_v02t1.jsonl.gz",
+    "gemini_same_v02t2.jsonl.gz"
+  ],
+  "cross_pairs_per_prompt": "k x k",
+  "exact_generation": {
+    "mean": 0.5938,
+    "ci": [
+      0.5589,
+      0.6327
+    ]
+  },
+  "first_divergence": {
+    "mean": 0.6838,
+    "ci": [
+      0.6444,
+      0.7202
+    ]
+  },
+  "fingerprints_batch_a": [],
+  "fingerprints_batch_b": [],
+  "fingerprints_shared": 0
+}
