@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Copyright (c) 2026 The SEMQ Group.
+# Licensed under the Apache License, Version 2.0. See LICENSE for terms.
+#
+# The case-study runs the first box lost to its timer on Oct 8: EmbeddingGemma 2 on
+# ArguAna and SciFact, and the `lib` condition. Same steps as casestudies.sh; results
+# land in the same S3 prefix. Powers off (terminating the instance) when done.
+export LABEL=${LABEL:-casestudies_rest}
+source "$(dirname "$0")/common.sh"
+VG=$HOME/venvgemma/bin
+if [ ! -x "$VG/python" ]; then
+  "$HOME/.local/bin/uv" venv -q -p 3.12 "$HOME/venvgemma"
+  VIRTUAL_ENV=$HOME/venvgemma "$HOME/.local/bin/uv" pip install -q "torch==2.14.1" "torchvision==0.29.1" \
+    "transformers==5.19.0" "sentence-transformers==6.1.0" pillow sentencepiece protobuf datasets pip \
+    || { echo "ERROR: gemma stack install failed"; exit 1; }
+fi
+VIRTUAL_ENV=$HOME/venvgemma "$HOME/.local/bin/uv" pip install -q -e ".[data]" "semq==1.0.0"
+# Copy finished results to S3 every 5 minutes; an earlier run lost everything to its timer
+# because it published only at the end.
+( while sleep 300; do
+    cp experiments/regime-discrimination/results/regime_matrix_*_b2.json "$OUT/" 2>/dev/null
+    aws s3 sync --quiet --region us-east-2 "$OUT" "$BUCKET/$LABEL/"
+  done ) &
+SYNC_PID=$!
+for ds in arguana scifact; do
+  enc=google/embeddinggemma-2; py=$VG/python
+  step "retrieval $ds $enc" bash -c "cd experiments/regime-discrimination && ARI_R_DATASET=$ds ARI_R_ENCODER=$enc ARI_R_BINS=2 \
+    ARI_R_CONDITIONS=reference,gpu_tf32_off,gpu_tf32_on,gpu_bf16,fp16 $py -u run_matrix.py 2>&1 | tee -a '$OUT/retrieval_rest.log'; exit \${PIPESTATUS[0]}"
+done
+step "copy retrieval" bash -c "cp experiments/regime-discrimination/results/regime_matrix_*_b2.json '$OUT/'"
+step "lib default dtype" bash -c "$VG/python experiments/lib-default-dtype/run.py --device cuda --out '$OUT/lib_default_dtype.json' 2>&1 | tee '$OUT/lib.log'; exit \${PIPESTATUS[0]}"
+kill "$SYNC_PID" 2>/dev/null
+publish
+sudo shutdown -h +5
