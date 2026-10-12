@@ -96,4 +96,4 @@ If the continuous detectors' benign alarms were specific to bge-m3 moving across
 
 ## Amendments
 
-None.
+- **2026-10-12, before any capture: GPU regions.** us-east-1 had no g5.xlarge or g6.xlarge capacity at launch. The A10G runs in us-west-2 and the L4 in us-east-2; the T4 and both CPU hosts are in us-east-1. Instance types, software and analysis are unchanged.
