@@ -30,6 +30,18 @@ Episode-level Wilson intervals for the material rate: [0.977, 1.000] for the cod
 
 **Against the continuous detectors: no claim, as pre-registered.** All catch every material episode. Their benign alarm rates (0.035–0.106) have intervals that include 0, so the code's 0.000 is not distinguishable from them at this sample size.
 
+> **Note added 2026-10-12, after publication of these results (no change to the analysis).**
+> The code's benign interval above, [0.000, 0.000], understates the uncertainty. A cluster
+> bootstrap of 30 cells that are all zero can only return zero. For 0 alarming cells out of
+> 30, the 95% Wilson upper bound is 0.114, which overlaps the continuous detectors' intervals.
+> Their benign alarms come from 1 cell (sketch), 2 cells (fp16 prefix) and 3 cells (full cosine).
+> In a paired comparison on the same test cells, every disagreement favours the code: 1, 2
+> and 3 cells. An exact sign test gives p = 1.0, 0.5 and 0.25 (two-sided), so none is
+> significant. The episode-level Wilson intervals reported in `results.json` (for example
+> [0.016, 0.075] for the sketch) treat duplicate episodes of one cell as independent, so they
+> are too narrow. The cell is the unit of inference. A follow-up pre-registered study with
+> more benign cells tests the comparison directly.
+
 **Input-level unit (secondary).** At the per-input threshold, the code flags 0.529 of material inputs and 0.000 of benign inputs. The continuous detectors flag 1.000 of material inputs and 0.0001–0.0002 of benign inputs. The code is a threshold detector: it catches every material run, not every changed vector.
 
 ## Deviations (operational, no change to the analysis)
