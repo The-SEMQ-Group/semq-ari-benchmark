@@ -53,10 +53,10 @@ LEADERBOARD = REPO / "leaderboard" / "leaderboard.json"
 SUBMISSIONS = REPO / "leaderboard" / "submissions"
 SCORER = REPO / "leaderboard" / "scoring" / "score.py"
 API = DEFAULT_API_MODELS
-CALM_WORKERS, BURST_WORKERS = 2, 48
+CALM_WORKERS, BURST_WORKERS = 2, 64
 # mistral rate-limits hard; keep its burst gentle and cap every mistral encode's concurrency
 # so a 1000-item batch doesn't 429 (the SDK already retries 5x on top of this).
-BURST_OVERRIDE = {"mistral": 8}
+BURST_OVERRIDE = {"mistral": 16}
 WORKERS_CAP = {"mistral": 4}
 
 
