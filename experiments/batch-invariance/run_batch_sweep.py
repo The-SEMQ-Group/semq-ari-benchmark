@@ -34,12 +34,10 @@ S = (  # v0.2 probe: the range is 2/sqrt(dim), so no per-model scale
     "Snowflake/snowflake-arctic-embed-l",
 )
 DEFAULT_MODELS = ["sentence-transformers/all-MiniLM-L6-v2", "BAAI/bge-large-en-v1.5"]
-# BAAI/bge-m3 ships pytorch_model.bin and no safetensors. transformers 5.x
-# refuses to torch.load a .bin under torch < 2.6 (CVE-2025-32434), and the
-# bootstrap pins torch 2.5.1 for cu121. Upgrading torch to reach one model
-# would change the kernels for every other model in the table, which is the
-# quantity this experiment measures, so the model is left out instead.
-NO_SAFETENSORS = {"BAAI/bge-m3"}
+# BAAI/bge-m3 ships pytorch_model.bin and no safetensors, which transformers refuses to
+# torch.load under torch < 2.6 (CVE-2025-32434). The v0.2 stack pins torch 2.6.0 for
+# every model, so nothing is excluded any more.
+NO_SAFETENSORS: set[str] = set()
 
 BATCHES = [1, 8, 32, 128, 512]
 REFERENCE_BATCH = 32
