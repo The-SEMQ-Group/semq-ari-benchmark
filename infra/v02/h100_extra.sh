@@ -23,7 +23,8 @@ sync_out() { aws s3 sync --quiet --region us-east-2 "$OUT" "$BUCKET/$LABEL/"; }
 mkdir -p "$OUT/lib"
 for m in Qwen/Qwen3-Embedding-0.6B ibm-granite/granite-embedding-small-english-r2 mixedbread-ai/mxbai-embed-large-v1 \
          intfloat/multilingual-e5-large-instruct Alibaba-NLP/gte-multilingual-base thenlper/gte-small google/embeddinggemma-2; do
-  step "lib $m" bash -c "$VG/python experiments/lib-default-dtype/run.py --device cuda --models '$m' \
+  # env -u LD_LIBRARY_PATH: the DLAMI's system CUDA libraries shadow torch 2.14.1's bundled cuDNN (fails on Hopper).
+  step "lib $m" bash -c "env -u LD_LIBRARY_PATH $VG/python experiments/lib-default-dtype/run.py --device cuda --models '$m' \
     --out '$OUT/lib/${m//\//_}.json' 2>&1 | tee -a '$OUT/lib.log'; exit \${PIPESTATUS[0]}"
 done
 sync_out
