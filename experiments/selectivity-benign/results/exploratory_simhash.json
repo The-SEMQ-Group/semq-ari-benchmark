@@ -1,0 +1,59 @@
+{
+ "status": "exploratory, not pre-registered",
+ "simhash_threshold": 1.3020833333333333e-06,
+ "study1_test": {
+  "code": {
+   "material": 1.0,
+   "benign": 0.0
+  },
+  "sha256": {
+   "material": 0.0,
+   "benign": 0.0
+  },
+  "blocks": {
+   "material": 0.0,
+   "benign": 0.0
+  },
+  "fp16_prefix": {
+   "material": 1.0,
+   "benign": 0.07058823529411765
+  },
+  "sketch": {
+   "material": 1.0,
+   "benign": 0.03529411764705882
+  },
+  "cosine_full": {
+   "material": 1.0,
+   "benign": 0.10588235294117647
+  },
+  "simhash": {
+   "material": 1.0,
+   "benign": 0.03529411764705882
+  }
+ },
+ "study1_thresholds_reproduce": {
+  "code": true,
+  "sha256": true,
+  "blocks": true,
+  "fp16_prefix": true,
+  "sketch": true,
+  "cosine_full": true
+ },
+ "study2": {
+  "benign_cells": 336,
+  "material_cells": 48,
+  "code_benign_alarms": 0,
+  "simhash_benign_alarms": 4,
+  "code_material_caught": 48,
+  "simhash_material_caught": 48,
+  "only_simhash": 4,
+  "only_code": 0,
+  "p_one_sided_code_fewer": 0.0625,
+  "simhash_benign_alarm_cells": [
+   "cpu_vs_a10g-03",
+   "cpu_vs_t4-03",
+   "batch8_gpu-13",
+   "batch512_gpu-13"
+  ]
+ }
+}
