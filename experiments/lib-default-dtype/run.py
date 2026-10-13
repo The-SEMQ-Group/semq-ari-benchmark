@@ -13,6 +13,10 @@ encodes the frozen inputs twice under transformers 5 — once in an explicit fp3
 once with the library default — and reports HER and rho between the two.
 
     python run.py --device cuda --out results/lib_default_dtype.json
+    python run.py --device cuda --models thenlper/gte-small --out gte_small.json
+
+Run one model per process where you can: a CUDA device-side assert in one model leaves the
+context unusable, and every later model in the same process then fails.
 """
 from __future__ import annotations
 
@@ -44,6 +48,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--models", default=",".join(MODELS), help="comma list; default the seven below")
     a = ap.parse_args()
 
     import torch
@@ -57,7 +62,7 @@ def main() -> int:
 
     texts = load_ari_bench(REPO / "data" / "ari-bench-v0.1.jsonl").texts
     rows = []
-    for mid in MODELS:
+    for mid in [m.strip() for m in a.models.split(",") if m.strip()]:
         try:
             explicit = load_sentence_transformer(mid, device=a.device, dtype="fp32", trust_remote_code=True)
             v32 = explicit.encode(texts, batch_size=32, normalize_embeddings=True, convert_to_numpy=True)
