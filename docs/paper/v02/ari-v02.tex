@@ -121,7 +121,7 @@ condition & varies & where & label \\
   \begin{equation}
     Q_{d,b}(\hat a)_j \;=\; b\cdot\mathbb 1[\hat a_j \ge 0] \;+\; \min\!\Big(\Big\lfloor \tfrac{b\,|\hat a_j|}{s_d}\Big\rfloor,\; b-1\Big),\qquad Q_{d,b}(\hat a)_j\in\{0,\dots,2b-1\}.
   \end{equation}
-  \todo{confirm the sign of exact zero and the clip above $s_d$ against the SDK spec; edges at multiples of $s_d/b$ verified empirically}
+  \item Edges sit at multiples of $s_d/b$; magnitudes $|\hat a_j|\ge s_d$ saturate into the top bin. The bin index is computed in binary32 (round-to-nearest-even, no fused multiply-add), so every backend gives the same symbol (SDK \texttt{semq\_quant\_bin\_of\_magnitude}).
   \item ARI-R uses $b=2$ (2 bits per coordinate, $d/4$ bytes per vector). The logit probe uses $b=8$.
   \item Deterministic and bit-exact across platforms (SDK conformance vectors); the probe adds no disagreement of its own.
   \item \textbf{Why a fixed range:} the v0.1 probe calibrated $s$ on a data sample. Recalibrating on a different sample moved $s$ by 0.3--3.6\% and rewrote 60--100\% of codes for \emph{identical} vectors (\S\ref{sec:valid}).
