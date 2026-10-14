@@ -272,7 +272,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "rho: mean over inputs of the fraction of coordinates whose code symbol changed. Dimension-normalized under ARI-Canonical-v0.2, so comparable across models of different dimension. Added in v0.2."
+          "description": "rho: mean over inputs of the fraction of the encoder's dim coordinates whose code symbol changed (never padding coordinates). Under ARI-Canonical-v0.2 it does not fall with dimension the way HER does; it still depends on the model's coordinate distribution and the perturbation (spec/ari-canonical-v0.2.md). Added in v0.2."
         },
         "coordinate_change_rate_ci": {
           "type": "array",
