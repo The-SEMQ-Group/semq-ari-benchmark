@@ -12,8 +12,7 @@ Use a separate branch for each change. Keep unrelated generated files out of the
 5. Run `python -m build` when packaging changes.
 6. Describe the behavior change and verification results in the pull request.
 
-Report skipped tests. Some tests skip because they need private-SDK features that the public `semq` SDK does not have.
-Their skip reasons name the [port proposal](docs/proposals/public-sdk-port.md).
+No test should skip. Report any skipped test.
 
 ## Use the SEMQ operators through the SDK
 
