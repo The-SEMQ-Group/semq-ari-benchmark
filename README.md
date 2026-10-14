@@ -77,6 +77,6 @@ See the [condition specification](spec/condition-set.md) and [measurement scope]
 
 Code under `ari/` uses Apache-2.0. Specifications and benchmark selections use CC BY 4.0.
 Source documents retain their original licenses. See [LICENSE](LICENSE) and [dataset licensing](data/README.md).
-This version uses the SEMQ SDK, a separate library licensed under the PolyForm Noncommercial License 1.0.0 and patent pending.
-The SDK is not covered by the Apache License. See [NOTICE](NOTICE).
+This version uses the SEMQ SDK, a separate library licensed under the PolyForm Noncommercial License 1.0.0.
+The SDK is not covered by the Apache License.
 Use [CITATION.cff](CITATION.cff) for citation metadata.
