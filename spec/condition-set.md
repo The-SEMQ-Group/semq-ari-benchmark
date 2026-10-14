@@ -68,7 +68,7 @@ The evidence check applies these rules:
 - For a `self_hosted` agent (or no `agent_class`), `model_revision` and `tokenizer_revision` must also be 40-character lowercase hex commit ids. Branches, tags, and short ids are rejected.
 - For a hosted agent (`api`, `vendor`, `rehosted`, `platform`), `model_revision` and `tokenizer_revision` may be a pinned snapshot id or `provider-internal`, but not a moving ref such as `main` or `unknown`.
 - `provider-internal` is allowed only for a hosted agent, and only in `model_revision`, `tokenizer_revision`, `precision`, and `hardware`.
-- When the report records `encoder_fingerprint.s`, `calibration_scale` must equal it within a relative tolerance of 1e-4. This covers rounding `s` to 6 decimals. It holds for a calibrated scale and for the fixed `2/sqrt(dim)` of ARI-Canonical-v0.2. A report without `encoder_fingerprint.s` skips this comparison.
+- `calibration_scale` must equal `encoder_fingerprint.s` within a relative tolerance of 1e-4. This covers rounding `s` to 6 decimals. It holds for a calibrated scale and for the fixed `2/sqrt(dim)` of ARI-Canonical-v0.2. A report with a `time` cell must record `encoder_fingerprint.s`; without it the check fails.
 
 `python -m ari.check_evidence <report>` rejects a `time` result that lacks the object, whose gap is 24 hours or less, or that breaks one of these rules.
 `python ari/verify_report.py <report>` checks the object when it is present and fails on a violation.

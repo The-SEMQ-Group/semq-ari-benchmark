@@ -268,12 +268,13 @@ def test_an_unusable_fingerprint_scale_is_reported(bad):
     assert any("calibration_scale: cannot be checked" in v for v in out), out
 
 
-def test_a_report_without_a_fingerprint_scale_skips_the_cross_check():
+def test_a_report_without_a_fingerprint_scale_fails_the_cross_check():
+    """Leaving out the fingerprint must not skip the scale check."""
     rep = _report()
     del rep["encoder_fingerprint"]
-    assert check_report(rep) == []
+    assert any("no encoder_fingerprint.s" in v for v in check_report(rep))
     rep["encoder_fingerprint"] = {"dim": 384}
-    assert check_report(rep) == []
+    assert any("no encoder_fingerprint.s" in v for v in check_report(rep))
 
 
 def test_block_must_describe_this_report():

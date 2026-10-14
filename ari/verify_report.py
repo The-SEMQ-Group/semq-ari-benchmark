@@ -186,9 +186,13 @@ def check_time_condition(report: dict) -> list[str]:
     fp_s = fp.get("s") if isinstance(fp, dict) else None
     if "calibration_scale" in ev and (not _finite_number(scale) or scale <= 0):
         out.append(f"{pre}.calibration_scale: {scale!r} is not a finite positive number")
-    elif "calibration_scale" in ev and fp_s is not None:
-        # Without a fingerprint scale there is nothing to compare against.
-        if not _finite_number(fp_s) or fp_s <= 0:
+    elif "calibration_scale" in ev:
+        # The scale must be checkable: a report cannot skip the check by leaving out
+        # its fingerprint.
+        if fp_s is None:
+            out.append(f"{pre}.calibration_scale: cannot be checked; the report has no "
+                       f"encoder_fingerprint.s")
+        elif not _finite_number(fp_s) or fp_s <= 0:
             out.append(f"{pre}.calibration_scale: cannot be checked; "
                        f"encoder_fingerprint.s {fp_s!r} is not a finite positive number")
         elif not math.isclose(scale, fp_s, rel_tol=CALIBRATION_SCALE_REL_TOL):
