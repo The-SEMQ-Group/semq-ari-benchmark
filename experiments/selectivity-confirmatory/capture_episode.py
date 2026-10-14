@@ -14,6 +14,7 @@ import argparse
 import hashlib
 import json
 import platform
+import re
 import socket
 import subprocess
 import sys
@@ -35,6 +36,26 @@ def _source_revision() -> str | None:
     except (OSError, subprocess.CalledProcessError):
         return None
     return rev + ("-dirty" if dirty else "")
+
+
+def _snapshot_revision(path) -> str | None:
+    """The Hugging Face commit a local snapshot directory belongs to, from its path
+    (``.../snapshots/<40-hex commit>/...``); None if the path is not a hub snapshot."""
+    m = re.search(r"/snapshots/([0-9a-f]{40})(?:/|$)", str(path or ""))
+    return m.group(1) if m else None
+
+
+def _revisions(model) -> dict:
+    """The model and tokenizer revisions actually loaded. Raises if they differ: the
+    study assumes both come from one snapshot."""
+    first = model[0]
+    model_rev = (_snapshot_revision(getattr(first.auto_model, "name_or_path", None))
+                 or getattr(first.auto_model.config, "_commit_hash", None))
+    tok_rev = (_snapshot_revision(getattr(first.tokenizer, "name_or_path", None))
+               or getattr(first.tokenizer, "init_kwargs", {}).get("_commit_hash"))
+    if model_rev and tok_rev and model_rev != tok_rev:
+        raise RuntimeError(f"model revision {model_rev} and tokenizer revision {tok_rev} differ")
+    return {"model_revision": model_rev, "tokenizer_revision": tok_rev}
 
 
 def main() -> int:
@@ -90,9 +111,10 @@ def main() -> int:
             "python": platform.python_version(), "torch": torch.__version__,
             "transformers": transformers.__version__, "sentence_transformers": sentence_transformers.__version__,
             "load_s": round(t1 - t0, 1), "encode_s": round(t2 - t1, 1),
-            # Provenance, recorded since 2026-10-14: the snapshot actually loaded (tokenizer and
-            # weights come from the same snapshot), the inputs, the vectors and the harness.
-            "model_revision": getattr(model[0].auto_model.config, "_commit_hash", None),
+            # Provenance, recorded since 2026-10-14: the model and tokenizer revisions actually
+            # loaded (checked to be one snapshot), the inputs, the vectors and the harness. A
+            # revision that cannot be resolved is recorded as null, not guessed.
+            **_revisions(model),
             "inputs_content_hash": inputs.content_hash,
             "vectors_sha256": hashlib.sha256(v.tobytes()).hexdigest(),
             "source_revision": _source_revision(),

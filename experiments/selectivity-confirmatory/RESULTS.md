@@ -13,7 +13,7 @@ Changed after publication (2026-10-14), with no change to any pre-registered out
 - 486 of 600 episodes exactly duplicate an earlier episode of the same cell, as expected for deterministic conditions. The unit of inference is the cell: 54 benign and 36 material cells, of which 30 benign and 20 material are in the test half. Repeated episodes add no independent cells.
 - [results/capture_manifest.json](results/capture_manifest.json) lists every capture with the SHA-256 of its archived `.npy` file, the archive prefix, the host and the library versions. The vectors are in the operator's private bucket (`infra/operator.env`, not committed).
 - [results/episode_scores.json](results/episode_scores.json) gives every episode's score for each detector, its cell and its half, so the thresholds and rates below can be checked without the vectors.
-- Not recorded at capture time: the resolved model and tokenizer revisions and the harness source revision. Models were loaded by id without a revision pin. `capture_episode.py` records all three for later captures.
+- Not recorded at capture time: the resolved model and tokenizer revisions and the harness source revision. Models were loaded by id without a revision pin. `capture_episode.py` records all three for later captures, and stops if the model and tokenizer revisions it resolves differ.
 
 ## Primary result
 

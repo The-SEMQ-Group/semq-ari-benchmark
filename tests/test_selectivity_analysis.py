@@ -65,3 +65,30 @@ def test_cell_wilson_counts_cells_against_the_detector():
     assert analyze.cell_wilson(by_cell, "benign")[0] == 2     # any alarm counts
     k, (lo, hi) = analyze.cell_wilson({c: np.zeros(3) for c in range(30)}, "benign")
     assert k == 0 and lo == 0.0 and hi == pytest.approx(0.1135, abs=1e-3)
+
+
+def _capture_module():
+    path = Path(__file__).resolve().parents[1] / "experiments/selectivity-confirmatory/capture_episode.py"
+    spec = importlib.util.spec_from_file_location("selectivity_capture", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_capture_records_model_and_tokenizer_revisions():
+    from types import SimpleNamespace as NS
+
+    cap = _capture_module()
+    a, b = "a" * 40, "b" * 40
+    snap = "/root/.cache/huggingface/hub/models--org--m/snapshots/{}"
+
+    def model(model_path, tok_path):
+        return [NS(auto_model=NS(name_or_path=model_path, config=NS()),
+                   tokenizer=NS(name_or_path=tok_path, init_kwargs={}))]
+
+    assert cap._revisions(model(snap.format(a), snap.format(a))) == {
+        "model_revision": a, "tokenizer_revision": a}
+    assert cap._revisions(model("org/m", "org/m")) == {
+        "model_revision": None, "tokenizer_revision": None}
+    with pytest.raises(RuntimeError, match="differ"):
+        cap._revisions(model(snap.format(a), snap.format(b)))
