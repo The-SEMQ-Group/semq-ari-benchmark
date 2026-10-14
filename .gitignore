@@ -26,7 +26,7 @@ leaderboard/submissions/attestation-repo/
 experiments/regime-discrimination/results/cache/
 experiments/decoding-reproducibility/results/cache/
 infra/.last-instance
-# Operator-only AWS coordinates (CodeArtifact domain/repo/account, buckets).
+# Operator-only AWS coordinates (account, buckets).
 infra/operator.env
 experiments/*/results/attestation-repo/
 
