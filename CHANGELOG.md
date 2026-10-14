@@ -58,7 +58,8 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
   
 ### CI says when the probe was not tested
-- A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
+- (Historical: superseded by the public SDK on PyPI, see above.) A new
+  `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
   install the SDK; with it set, the job installs `semq`, runs the suite and
   fails if any test still skips for want of it. The public `pytest` job
   prints how many SDK-gated modules skipped. A green check no longer looks
