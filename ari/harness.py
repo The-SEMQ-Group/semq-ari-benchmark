@@ -323,8 +323,7 @@ def harness_report(runs: Sequence[Trajectory], n_resamples: int = 1000,
             c_case = _per_case_agreement(cross_pairs, cases)
 
             # One vector, one estimand: per case, the 50/50 control minus the
-            # cross agreement. Both the effect and its interval come from this,
-            # which is what keeps the estimate inside its own interval.
+            # cross agreement. Both the effect and its interval come from this.
             ok = ~(np.isnan(s_each[0]) | np.isnan(s_each[1]) | np.isnan(c_case))
             s_case = (s_each[0] + s_each[1]) / 2.0
             d = s_case[ok] - c_case[ok]
