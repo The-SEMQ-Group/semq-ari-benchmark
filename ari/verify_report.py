@@ -28,6 +28,8 @@ import argparse
 import base64
 import hashlib
 import json
+import math
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -46,11 +48,36 @@ TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
     "model_revision", "tokenizer_revision", "precision", "hardware",
     "sdk_version", "source_commit",
 )
-# Fields that must name an immutable revision. Mirrors ari.hub.NON_PINS, which
-# this file cannot import.
-_PINNED_FIELDS = ("model_revision", "tokenizer_revision", "source_commit")
+# The harness commit, and a self-hosted model or tokenizer revision, must be a
+# full git commit id: 40 lowercase hex digits. A branch, a tag or a short id can
+# move or become ambiguous, so it does not pin what ran.
+_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+_COMMIT_FIELDS = ("source_commit",)
+_REVISION_FIELDS = ("model_revision", "tokenizer_revision")
+# agent_class values whose model someone else serves (spec/report-schema.json).
+# Only these may record PROVIDER_INTERNAL, and only in _PROVIDER_FIELDS; the
+# harness commit is always ours to record.
+HOSTED_CLASSES = frozenset({"api", "vendor", "rehosted", "platform"})
+PROVIDER_INTERNAL = "provider-internal"
+_PROVIDER_FIELDS = _REVISION_FIELDS + ("precision", "hardware")
+# A hosted model has no commit to record. Its revision is the pinned snapshot id
+# or PROVIDER_INTERNAL, never a moving ref. Mirrors ari.hub.NON_PINS, which this
+# file cannot import.
 _MOVING_REFS = frozenset({"", "unknown", "main", "master", "latest", "head"})
+# calibration_scale must equal encoder_fingerprint.s, when the report records
+# one, within this relative tolerance (math.isclose, relative to the larger of
+# the two). Reports round s to 6 decimals (ari/tools/run_report.py); for any
+# s above 0.005 that rounding is under 1e-4 relative. A scale from another
+# calibration differs by far more. Under ARI-Canonical-v0.2, s is the fixed
+# 2/sqrt(dim), and the same check applies.
+CALIBRATION_SCALE_REL_TOL = 1e-4
 _TS_FORMATS = ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def _finite_number(value) -> bool:
+    """True for an int or float that is not a bool, NaN or infinite."""
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value))
 
 
 def _parse_utc(value):
@@ -79,10 +106,13 @@ def check_time_condition(report: dict) -> list[str]:
 
     Empty when the report has no `time` result, or when the result carries a
     complete `time_evidence` block whose timestamps give a gap above
-    MIN_GAP_HOURS and agree with the recorded `gap_hours`. Cross-checks the
-    block against the report's own input hash, probe id and precision, so a
-    `time` cell measured on different inputs or at another precision is caught
-    even when the block itself is complete.
+    MIN_GAP_HOURS and agree with the recorded `gap_hours`. Numbers must be
+    finite. The harness commit, and a self-hosted model's revisions, must be
+    full commit ids; only a hosted agent_class may record PROVIDER_INTERNAL.
+    Cross-checks the block against the report's own input hash, probe id,
+    precision and fingerprint scale, so a `time` cell measured on different
+    inputs, at another precision or at another scale is caught even when the
+    block itself is complete.
     """
     rpc = report.get("results_per_condition")
     if not isinstance(rpc, dict) or "time" not in rpc:
@@ -119,28 +149,52 @@ def check_time_condition(report: dict) -> list[str]:
                        f"baseline_finished_at and comparison_started_at; the time "
                        f"condition requires more than {MIN_GAP_HOURS:g} h")
         recorded = ev.get("gap_hours")
-        if isinstance(recorded, (int, float)) and abs(recorded - gap) > 0.01:
+        if _finite_number(recorded) and abs(recorded - gap) > 0.01:
             out.append(f"{pre}.gap_hours: recorded {recorded} but the timestamps "
                        f"give {gap:.2f}")
 
     recorded = ev.get("gap_hours", None)
-    if "gap_hours" in ev and (not isinstance(recorded, (int, float))
-                              or isinstance(recorded, bool)
-                              or recorded <= MIN_GAP_HOURS):
-        out.append(f"{pre}.gap_hours: {recorded!r} is not greater than {MIN_GAP_HOURS:g}")
+    if "gap_hours" in ev:
+        if not _finite_number(recorded):
+            out.append(f"{pre}.gap_hours: {recorded!r} is not a finite number")
+        elif recorded <= MIN_GAP_HOURS:
+            out.append(f"{pre}.gap_hours: {recorded!r} is not greater than {MIN_GAP_HOURS:g}")
 
-    for f in _PINNED_FIELDS:
-        v = ev.get(f)
-        if f in ev and (not isinstance(v, str) or v.strip().lower() in _MOVING_REFS):
-            out.append(f"{pre}.{f}: {v!r} does not name an immutable revision")
+    hosted = report.get("agent_class", "self_hosted") in HOSTED_CLASSES
+    for f in _COMMIT_FIELDS + _REVISION_FIELDS:
+        if f not in ev:
+            continue
+        v = ev[f]
+        if hosted and f in _REVISION_FIELDS:
+            if not isinstance(v, str) or v.strip().lower() in _MOVING_REFS:
+                out.append(f"{pre}.{f}: {v!r} does not name an immutable revision")
+        elif not isinstance(v, str) or not _COMMIT_RE.match(v):
+            out.append(f"{pre}.{f}: {v!r} does not name an immutable revision; "
+                       f"expected a full 40-character lowercase hex commit id")
     for f in ("probe_calibration", "hardware", "sdk_version", "precision"):
         v = ev.get(f)
         if f in ev and (not isinstance(v, str) or not v.strip()):
             out.append(f"{pre}.{f}: {v!r} is empty")
+    if not hosted:
+        for f in _PROVIDER_FIELDS:
+            if ev.get(f) == PROVIDER_INTERNAL:
+                out.append(f"{pre}.{f}: {PROVIDER_INTERNAL!r} is reserved for a "
+                           f"hosted agent_class ({', '.join(sorted(HOSTED_CLASSES))})")
+
     scale = ev.get("calibration_scale")
-    if "calibration_scale" in ev and (not isinstance(scale, (int, float))
-                                      or isinstance(scale, bool) or scale <= 0):
-        out.append(f"{pre}.calibration_scale: {scale!r} is not a positive number")
+    fp = report.get("encoder_fingerprint")
+    fp_s = fp.get("s") if isinstance(fp, dict) else None
+    if "calibration_scale" in ev and (not _finite_number(scale) or scale <= 0):
+        out.append(f"{pre}.calibration_scale: {scale!r} is not a finite positive number")
+    elif "calibration_scale" in ev and fp_s is not None:
+        # Without a fingerprint scale there is nothing to compare against.
+        if not _finite_number(fp_s) or fp_s <= 0:
+            out.append(f"{pre}.calibration_scale: cannot be checked; "
+                       f"encoder_fingerprint.s {fp_s!r} is not a finite positive number")
+        elif not math.isclose(scale, fp_s, rel_tol=CALIBRATION_SCALE_REL_TOL):
+            out.append(f"{pre}.calibration_scale: {scale!r} differs from "
+                       f"encoder_fingerprint.s {fp_s!r} by more than "
+                       f"{CALIBRATION_SCALE_REL_TOL:g} relative")
 
     # The block must describe this report's measurement, not another one's.
     if "input_content_hash" in ev and ev["input_content_hash"] != report.get("input_content_hash"):

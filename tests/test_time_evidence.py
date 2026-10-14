@@ -26,7 +26,8 @@ pytest.importorskip("jsonschema")
 
 from ari import metrics, report, run  # noqa: E402
 from ari.check_evidence import check_report, schema_violations  # noqa: E402
-from ari.verify_report import (TIME_EVIDENCE_FIELDS, canonical_json,  # noqa: E402
+from ari.verify_report import (CALIBRATION_SCALE_REL_TOL,  # noqa: E402
+                               TIME_EVIDENCE_FIELDS, canonical_json,
                                check_time_condition, verify)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +80,7 @@ def _report(gap_hours=30.0):
         "input_set": "ARI-Bench-v0.1",
         "input_content_hash": HASH,
         "agent_class": "self_hosted",
+        "encoder_fingerprint": {"dim": 384, "s": 0.0731},
         "environment": {"blas": "torch-default", "threads": 1, "hardware": "arm64",
                         "precision": "fp32", "library_versions": {"torch": "2.4.0"}},
         "results_per_condition": {"same": _semq_cell(), "proc": _semq_cell(),
@@ -143,11 +145,134 @@ def test_moving_refs_are_not_revisions(field, moving):
     assert any("immutable revision" in v for v in out), out
 
 
+@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit"])
+@pytest.mark.parametrize("ref", ["refs/heads/dev", "release-v1", "c9745ed",
+                                 "C9745ED1D9F207416BE6D2E6F8DE32D1F16199BF",
+                                 "provider-internal", None])
+def test_self_hosted_revisions_must_be_full_commit_ids(field, ref):
+    """A branch, a tag, a short id or a sentinel is not a commit a reader can fetch."""
+    rep = _report()
+    rep["results_per_condition"]["time"]["time_evidence"][field] = ref
+    out = _violations_naming(rep, field)
+    assert any("40-character lowercase hex" in v for v in out), out
+
+
+def test_named_refs_and_a_sentinel_commit_are_rejected():
+    """The review's reproduction: each of the three fields is named."""
+    rep = _report()
+    rep["results_per_condition"]["time"]["time_evidence"].update(
+        model_revision="refs/heads/dev", tokenizer_revision="release-v1",
+        source_commit="provider-internal")
+    out = check_report(rep)
+    for field in ("model_revision", "tokenizer_revision", "source_commit"):
+        assert any(f"time_evidence.{field}:" in v for v in out), out
+
+
+def _hosted_report():
+    rep = _report()
+    rep["agent_class"] = "api"
+    rep["environment"]["precision"] = "provider-internal"
+    rep["results_per_condition"]["time"]["time_evidence"].update(
+        model_revision="pinned", tokenizer_revision="provider-internal",
+        precision="provider-internal", hardware="provider-internal")
+    return rep
+
+
+@pytest.mark.parametrize("agent_class", ["api", "vendor", "rehosted", "platform"])
+def test_a_hosted_agent_may_record_provider_internal(agent_class):
+    """A hosted API exposes no commit; the snapshot id or the sentinel stands in."""
+    rep = _hosted_report()
+    rep["agent_class"] = agent_class
+    assert check_report(rep) == []
+
+
 @pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision"])
-def test_provider_internal_is_an_accepted_revision(field):
-    """A hosted API exposes no commit; the spec's placeholder is a valid pin."""
+@pytest.mark.parametrize("moving", ["main", "unknown", "latest", "HEAD", ""])
+def test_a_hosted_revision_is_not_a_moving_ref(field, moving):
+    rep = _hosted_report()
+    rep["results_per_condition"]["time"]["time_evidence"][field] = moving
+    out = _violations_naming(rep, field)
+    assert any("immutable revision" in v for v in out), out
+
+
+def test_a_hosted_agent_still_records_the_harness_commit():
+    rep = _hosted_report()
+    rep["results_per_condition"]["time"]["time_evidence"]["source_commit"] = "provider-internal"
+    _violations_naming(rep, "source_commit")
+
+
+@pytest.mark.parametrize("field", ["hardware", "precision"])
+def test_a_self_hosted_agent_cannot_record_provider_internal(field):
     rep = _report()
     rep["results_per_condition"]["time"]["time_evidence"][field] = "provider-internal"
+    out = _violations_naming(rep, field)
+    assert any("reserved for a hosted agent_class" in v for v in out), out
+
+
+@pytest.mark.parametrize("field", ["gap_hours", "calibration_scale"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf"), True, "30"])
+def test_numbers_must_be_finite(field, value):
+    rep = _report()
+    rep["results_per_condition"]["time"]["time_evidence"][field] = value
+    out = _violations_naming(rep, field)
+    assert any("finite" in v for v in out), out
+
+
+def test_nan_gap_and_scale_are_both_named():
+    """The review's reproduction: NaN compares false, so it passed every range check."""
+    rep = _report()
+    ev = rep["results_per_condition"]["time"]["time_evidence"]
+    ev["gap_hours"] = ev["calibration_scale"] = float("nan")
+    out = check_report(rep)
+    assert any("gap_hours: nan is not a finite number" in v for v in out), out
+    assert any("calibration_scale: nan is not a finite positive number" in v for v in out), out
+
+
+def test_scale_must_match_the_fingerprint():
+    """The review's reproduction: a scale of 999 against a fingerprint s of 0.0731."""
+    rep = _report()
+    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = 999.0
+    out = _violations_naming(rep, "calibration_scale")
+    assert any("differs from encoder_fingerprint.s 0.0731" in v for v in out), out
+    assert any("differs from encoder_fingerprint.s" in v for v in check_report(rep))
+
+
+def test_scale_tolerance_covers_rounding_the_fingerprint_and_no_more():
+    """The fingerprint rounds s to 6 decimals; another calibration is far off."""
+    s = 0.07314159265
+    rep = _report()
+    rep["encoder_fingerprint"]["s"] = round(s, 6)
+    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = s
+    assert check_report(rep) == []
+    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = (
+        round(s, 6) * (1 + 2 * CALIBRATION_SCALE_REL_TOL))
+    _violations_naming(rep, "calibration_scale")
+
+
+def test_v02_fixed_scale_is_checked_the_same_way():
+    """ARI-Canonical-v0.2 fixes s at 2/sqrt(dim); the check compares to whatever s is."""
+    dim = 768
+    rep = _report()
+    rep["encoder_fingerprint"] = {"dim": dim, "s": round(2 / dim ** 0.5, 6)}
+    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = 2 / dim ** 0.5
+    assert check_report(rep) == []
+    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = 0.0731
+    _violations_naming(rep, "calibration_scale")
+
+
+@pytest.mark.parametrize("bad", [0.0, -1.0, float("nan"), "0.07"])
+def test_an_unusable_fingerprint_scale_is_reported(bad):
+    rep = _report()
+    rep["encoder_fingerprint"]["s"] = bad
+    out = check_time_condition(rep)
+    assert any("calibration_scale: cannot be checked" in v for v in out), out
+
+
+def test_a_report_without_a_fingerprint_scale_skips_the_cross_check():
+    rep = _report()
+    del rep["encoder_fingerprint"]
+    assert check_report(rep) == []
+    rep["encoder_fingerprint"] = {"dim": 384}
     assert check_report(rep) == []
 
 
@@ -301,8 +426,8 @@ def test_verifier_check_is_standard_library_only():
         elif isinstance(node, ast.ImportFrom) and node.module:
             modules.add(node.module.split(".")[0])
     assert "ari" not in modules and "semq" not in modules, sorted(modules)
-    assert modules <= {"argparse", "base64", "hashlib", "json", "sys", "pathlib",
-                       "datetime", "cryptography", "__future__"}, sorted(modules)
+    assert modules <= {"argparse", "base64", "hashlib", "json", "math", "re", "sys",
+                       "pathlib", "datetime", "cryptography", "__future__"}, sorted(modules)
 
 
 def test_check_is_the_same_function_in_both_places():

@@ -208,7 +208,7 @@ def main(argv=None) -> int:
         where = args.out
     else:
         payload = {"results_per_condition": {"time": cell}, "audit_hashes": {"time": digest}}
-        checked = {"results_per_condition": {"time": cell},
+        checked = {"results_per_condition": {"time": cell}, "agent_class": agent_class,
                    "input_content_hash": inputs.content_hash,
                    "probe_calibration": cell["time_evidence"]["probe_calibration"],
                    "environment": {"precision": current["precision"]}}
