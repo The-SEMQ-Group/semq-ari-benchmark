@@ -44,7 +44,7 @@ python -c "import semq; print(semq.__version__, semq.build_info().build_id)"
 ```
 
 The harness is pinned to `semq` 1.0.0, so every capture uses the same build; any other version fails at import.
-Pre-release private builds (1.2–1.5) expose a different interface and are not supported.
+Earlier pre-release builds (1.2–1.5, historical) expose a different interface and are not supported.
 Record the SDK version and build id with each capture; `ari.run` writes the version into the report environment.
 
 The SDK is licensed under the PolyForm Noncommercial License 1.0.0; it is not covered by this repository's Apache License.
