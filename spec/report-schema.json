@@ -514,16 +514,16 @@
     },
     "timeEvidence": {
       "type": "object",
-      "description": "Evidence that a 'time' result was measured after the gap spec/condition-set.md requires. Both captures are timestamped in UTC; gap_hours is comparison_started_at minus baseline_finished_at, the shortest interval between the two encodes, and must exceed 24. The settings that the time condition holds fixed are recorded on the cell so a reader can check them against the baseline manifest without another file. Optional in the schema so reports signed before 2026-09-16 still validate; ari/check_evidence.py and ari/verify_report.py reject a 'time' result that lacks it.",
+      "description": "Evidence that a 'time' result compares two captures more than 24 hours apart with everything else held fixed (spec/condition-set.md, Time evidence). Both captures are timestamped in UTC, and the timestamps decide the gap. The held-fixed settings are recorded once, since both captures share them, and must match the report's own. Optional in the schema so reports signed before it existed still validate; python -m ari.check_evidence rejects a 'time' result that lacks it, and ari/verify_report.py warns.",
       "required": [
         "baseline_started_at",
         "baseline_finished_at",
         "comparison_started_at",
         "comparison_finished_at",
         "gap_hours",
-        "probe_calibration",
-        "calibration_scale",
+        "agent_id",
         "input_content_hash",
+        "probe_calibration",
         "model_revision",
         "tokenizer_revision",
         "precision",
@@ -555,26 +555,26 @@
         "gap_hours": {
           "type": "number",
           "exclusiveMinimum": 24,
-          "description": "(comparison_started_at - baseline_finished_at) in hours. Must be finite; the evidence check rejects NaN and infinity, which JSON Schema cannot."
+          "description": "(comparison_started_at - baseline_finished_at) in hours, rounded up to 0.01 so that it exceeds 24 exactly when the timestamps do. Must be finite and agree with the timestamps within 0.01; the evidence check rejects NaN and infinity, which JSON Schema cannot."
         },
-        "probe_calibration": {
+        "agent_id": {
           "type": "string",
-          "description": "Canonical probe id both captures used; must equal the report's probe_calibration."
-        },
-        "calibration_scale": {
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "description": "The QBIN scale s frozen at the baseline and reused, not recalibrated, for the comparison. Must be finite. When the report records encoder_fingerprint.s, the evidence check requires the two to agree within a relative tolerance of 1e-4 (CALIBRATION_SCALE_REL_TOL in ari/verify_report.py), which covers rounding s to 6 decimals."
+          "minLength": 1,
+          "description": "Agent both captures encoded; must equal the report's agent_id."
         },
         "input_content_hash": {
           "type": "string",
           "pattern": "^[a-f0-9]{64}$",
           "description": "Content hash of the inputs both captures encoded; must equal the report's input_content_hash."
         },
+        "probe_calibration": {
+          "type": "string",
+          "description": "Canonical probe id both captures used; must equal the report's probe_calibration. Under ARI-Canonical-v0.2 the scale is 2/sqrt(dim), so the evidence check also requires encoder_fingerprint.dim and an encoder_fingerprint.s equal to 2/sqrt(dim) to 6 decimals."
+        },
         "model_revision": {
           "type": "string",
           "minLength": 1,
-          "description": "Immutable model revision loaded by both captures. For agent_class self_hosted (or absent), a full 40-character lowercase hex Hub commit id. For a hosted agent_class (api, vendor, rehosted, platform), the pinned snapshot id or 'provider-internal'. The evidence check rejects branches, tags, short ids and, for a hosted model, moving refs such as 'main' or 'unknown'."
+          "description": "Immutable model revision loaded by both captures. For agent_class self_hosted (or absent), a full 40-character lowercase hex Hub commit id. For a hosted agent_class (api, vendor, rehosted, platform), the provider's model id, with its snapshot id when one exists, or 'provider-internal'. The evidence check rejects branches, tags, short ids and placeholders such as 'main', 'unknown', 'pinned' or 'floating'."
         },
         "tokenizer_revision": {
           "type": "string",
@@ -595,12 +595,12 @@
         "hardware": {
           "type": "string",
           "minLength": 1,
-          "description": "Hardware both captures ran on. 'provider-internal' only for a hosted agent_class."
+          "description": "Hardware both captures ran on; must equal environment.hardware. Self-hosted: architecture, CPU model and GPU names, not the hostname or OS version. 'provider-internal' only for a hosted agent_class."
         },
         "sdk_version": {
           "type": "string",
           "minLength": 1,
-          "description": "semq package version that encoded both captures."
+          "description": "semq package version that encoded both captures; must equal environment.library_versions.semq when the report records it. Never 'provider-internal'."
         },
         "source_commit": {
           "type": "string",
@@ -613,7 +613,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Differences from the intended procedure, one per entry (spec/condition-set.md asks for them). A baseline that recorded one timestamp instead of a start and end, or that did not record a setting the block now requires, is stated here. A cell with deviations is not a clean canonical capture."
+          "description": "Differences from the procedure, one per entry. A cell with deviations is not a clean canonical capture: python -m ari.check_evidence fails it and ari/verify_report.py warns. The capture tools never write it."
         }
       },
       "additionalProperties": false

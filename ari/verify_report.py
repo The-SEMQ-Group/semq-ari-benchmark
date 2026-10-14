@@ -44,7 +44,7 @@ TIME_EVIDENCE_TIMESTAMPS = (
     "comparison_started_at", "comparison_finished_at",
 )
 TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
-    "gap_hours", "probe_calibration", "calibration_scale", "input_content_hash",
+    "gap_hours", "agent_id", "input_content_hash", "probe_calibration",
     "model_revision", "tokenizer_revision", "precision", "hardware",
     "sdk_version", "source_commit",
 )
@@ -52,25 +52,20 @@ TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
 # full git commit id: 40 lowercase hex digits. A branch, a tag or a short id can
 # move or become ambiguous, so it does not pin what ran.
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
-_COMMIT_FIELDS = ("source_commit",)
 _REVISION_FIELDS = ("model_revision", "tokenizer_revision")
 # agent_class values whose model someone else serves (spec/report-schema.json).
-# Only these may record PROVIDER_INTERNAL, and only in _PROVIDER_FIELDS; the
-# harness commit is always ours to record.
+# Only these may record PROVIDER_INTERNAL, and only in _PROVIDER_FIELDS.
 HOSTED_CLASSES = frozenset({"api", "vendor", "rehosted", "platform"})
 PROVIDER_INTERNAL = "provider-internal"
 _PROVIDER_FIELDS = _REVISION_FIELDS + ("precision", "hardware")
-# A hosted model has no commit to record. Its revision is the pinned snapshot id
-# or PROVIDER_INTERNAL, never a moving ref. Mirrors ari.hub.NON_PINS, which this
-# file cannot import.
-_MOVING_REFS = frozenset({"", "unknown", "main", "master", "latest", "head"})
-# calibration_scale must equal encoder_fingerprint.s, when the report records
-# one, within this relative tolerance (math.isclose, relative to the larger of
-# the two). Reports round s to 6 decimals (ari/tools/run_report.py); for any
-# s above 0.005 that rounding is under 1e-4 relative. A scale from another
-# calibration differs by far more. Under ARI-Canonical-v0.2, s is the fixed
-# 2/sqrt(dim), and the same check applies.
-CALIBRATION_SCALE_REL_TOL = 1e-4
+# Strings that identify nothing: moving refs, and the placeholders capture code
+# writes when it does not know a value. Compared after strip() and lower().
+# Extends ari.hub.NON_PINS, which this file cannot import.
+NON_IDENTIFYING = frozenset({"", "unknown", "main", "master", "latest", "head",
+                             "pinned", "floating", "none", "null", "n/a", "unavailable"})
+# Under this probe the scale is 2/sqrt(dim), with no calibration
+# (spec/ari-canonical-v0.2.md). Reports round s to 6 decimals.
+FIXED_RANGE_PROBE = "ARI-Canonical-v0.2"
 _TS_FORMATS = ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%fZ")
 
 
@@ -91,6 +86,34 @@ def _parse_utc(value):
     return None
 
 
+def identity_problem(field: str, value, hosted: bool) -> str | None:
+    """Why `value` does not identify `field` of a capture, or None when it does.
+
+    ari/time_evidence.py calls this at capture time, so a bad pin is refused
+    before the 24-hour wait rather than after it.
+    """
+    if not isinstance(value, str) or value.strip().lower() in NON_IDENTIFYING:
+        return f"{value!r} does not identify what ran"
+    if value == PROVIDER_INTERNAL:
+        if hosted and field in _PROVIDER_FIELDS:
+            return None
+        return (f"{PROVIDER_INTERNAL!r} is allowed only in {', '.join(_PROVIDER_FIELDS)} "
+                f"of a hosted agent_class ({', '.join(sorted(HOSTED_CLASSES))})")
+    if field == "source_commit" or (field in _REVISION_FIELDS and not hosted):
+        if not _COMMIT_RE.match(value):
+            return (f"{value!r} does not name an immutable revision; expected a full "
+                    f"40-character lowercase hex commit id")
+    return None
+
+
+def time_deviations(report: dict) -> list:
+    """The `deviations` list of the `time` cell's evidence, or []."""
+    cell = (report.get("results_per_condition") or {}).get("time")
+    ev = cell.get("time_evidence") if isinstance(cell, dict) else None
+    devs = ev.get("deviations") if isinstance(ev, dict) else None
+    return devs if isinstance(devs, list) else []
+
+
 def time_cell_without_evidence(report: dict) -> bool:
     """True when the `time` result is an object that carries no `time_evidence` key.
 
@@ -101,18 +124,17 @@ def time_cell_without_evidence(report: dict) -> bool:
     return isinstance(cell, dict) and "time_evidence" not in cell
 
 
-def check_time_condition(report: dict) -> list[str]:
+def check_time_condition(report: dict, allow_deviations: bool = False) -> list[str]:
     """Violations in a report's `time` result, each naming the field at fault.
 
     Empty when the report has no `time` result, or when the result carries a
     complete `time_evidence` block whose timestamps give a gap above
-    MIN_GAP_HOURS and agree with the recorded `gap_hours`. Numbers must be
-    finite. The harness commit, and a self-hosted model's revisions, must be
-    full commit ids; only a hosted agent_class may record PROVIDER_INTERNAL.
-    Cross-checks the block against the report's own input hash, probe id,
-    precision and fingerprint scale, so a `time` cell measured on different
-    inputs, at another precision or at another scale is caught even when the
-    block itself is complete.
+    MIN_GAP_HOURS, whose `gap_hours` agrees with them within 0.01, whose
+    identities pass identity_problem, and which describes this report: the
+    same agent, inputs, probe, precision, hardware and SDK version. Under
+    FIXED_RANGE_PROBE the report's encoder_fingerprint.s must be 2/sqrt(dim).
+    A non-empty `deviations` list is a violation unless `allow_deviations`:
+    such a cell is not a clean canonical capture.
     """
     rpc = report.get("results_per_condition")
     if not isinstance(rpc, dict) or "time" not in rpc:
@@ -137,80 +159,62 @@ def check_time_condition(report: dict) -> list[str]:
                            f"of the form YYYY-MM-DDTHH:MM:SSZ")
             else:
                 stamps[f] = dt
+    recorded = ev.get("gap_hours")
+    if "gap_hours" in ev and not _finite_number(recorded):
+        out.append(f"{pre}.gap_hours: {recorded!r} is not a finite number")
     if len(stamps) == len(TIME_EVIDENCE_TIMESTAMPS):
         if stamps["baseline_finished_at"] < stamps["baseline_started_at"]:
             out.append(f"{pre}.baseline_finished_at: earlier than baseline_started_at")
         if stamps["comparison_finished_at"] < stamps["comparison_started_at"]:
             out.append(f"{pre}.comparison_finished_at: earlier than comparison_started_at")
+        # The timestamps decide; gap_hours is a convenience that must agree.
         gap = ((stamps["comparison_started_at"] - stamps["baseline_finished_at"])
                .total_seconds() / 3600.0)
         if gap <= MIN_GAP_HOURS:
             out.append(f"{pre}.gap_hours: timestamps give {gap:.2f} h between "
                        f"baseline_finished_at and comparison_started_at; the time "
                        f"condition requires more than {MIN_GAP_HOURS:g} h")
-        recorded = ev.get("gap_hours")
-        if _finite_number(recorded) and abs(recorded - gap) > 0.01:
+        if _finite_number(recorded) and abs(recorded - gap) > 0.01 + 1e-9:
             out.append(f"{pre}.gap_hours: recorded {recorded} but the timestamps "
-                       f"give {gap:.2f}")
-
-    recorded = ev.get("gap_hours", None)
-    if "gap_hours" in ev:
-        if not _finite_number(recorded):
-            out.append(f"{pre}.gap_hours: {recorded!r} is not a finite number")
-        elif recorded <= MIN_GAP_HOURS:
-            out.append(f"{pre}.gap_hours: {recorded!r} is not greater than {MIN_GAP_HOURS:g}")
+                       f"give {gap:.4f}")
 
     hosted = report.get("agent_class", "self_hosted") in HOSTED_CLASSES
-    for f in _COMMIT_FIELDS + _REVISION_FIELDS:
-        if f not in ev:
-            continue
-        v = ev[f]
-        if hosted and f in _REVISION_FIELDS:
-            if not isinstance(v, str) or v.strip().lower() in _MOVING_REFS:
-                out.append(f"{pre}.{f}: {v!r} does not name an immutable revision")
-        elif not isinstance(v, str) or not _COMMIT_RE.match(v):
-            out.append(f"{pre}.{f}: {v!r} does not name an immutable revision; "
-                       f"expected a full 40-character lowercase hex commit id")
-    for f in ("probe_calibration", "hardware", "sdk_version", "precision"):
-        v = ev.get(f)
-        if f in ev and (not isinstance(v, str) or not v.strip()):
-            out.append(f"{pre}.{f}: {v!r} is empty")
-    if not hosted:
-        for f in _PROVIDER_FIELDS:
-            if ev.get(f) == PROVIDER_INTERNAL:
-                out.append(f"{pre}.{f}: {PROVIDER_INTERNAL!r} is reserved for a "
-                           f"hosted agent_class ({', '.join(sorted(HOSTED_CLASSES))})")
-
-    scale = ev.get("calibration_scale")
-    fp = report.get("encoder_fingerprint")
-    fp_s = fp.get("s") if isinstance(fp, dict) else None
-    if "calibration_scale" in ev and (not _finite_number(scale) or scale <= 0):
-        out.append(f"{pre}.calibration_scale: {scale!r} is not a finite positive number")
-    elif "calibration_scale" in ev:
-        # The scale must be checkable: a report cannot skip the check by leaving out
-        # its fingerprint.
-        if fp_s is None:
-            out.append(f"{pre}.calibration_scale: cannot be checked; the report has no "
-                       f"encoder_fingerprint.s")
-        elif not _finite_number(fp_s) or fp_s <= 0:
-            out.append(f"{pre}.calibration_scale: cannot be checked; "
-                       f"encoder_fingerprint.s {fp_s!r} is not a finite positive number")
-        elif not math.isclose(scale, fp_s, rel_tol=CALIBRATION_SCALE_REL_TOL):
-            out.append(f"{pre}.calibration_scale: {scale!r} differs from "
-                       f"encoder_fingerprint.s {fp_s!r} by more than "
-                       f"{CALIBRATION_SCALE_REL_TOL:g} relative")
+    for f in ("agent_id",) + _REVISION_FIELDS + ("precision", "hardware",
+                                                 "sdk_version", "source_commit"):
+        if f in ev:
+            problem = identity_problem(f, ev[f], hosted)
+            if problem:
+                out.append(f"{pre}.{f}: {problem}")
 
     # The block must describe this report's measurement, not another one's.
-    if "input_content_hash" in ev and ev["input_content_hash"] != report.get("input_content_hash"):
-        out.append(f"{pre}.input_content_hash: {ev['input_content_hash']!r} differs "
-                   f"from the report's input_content_hash")
-    if "probe_calibration" in ev and ev["probe_calibration"] != report.get("probe_calibration"):
-        out.append(f"{pre}.probe_calibration: {ev['probe_calibration']!r} differs "
-                   f"from the report's probe_calibration")
-    env_prec = (report.get("environment") or {}).get("precision")
-    if "precision" in ev and ev["precision"] != env_prec:
-        out.append(f"{pre}.precision: {ev['precision']!r} differs from "
-                   f"environment.precision {env_prec!r}")
+    env = report.get("environment") if isinstance(report.get("environment"), dict) else {}
+    libs = env.get("library_versions") if isinstance(env.get("library_versions"), dict) else {}
+    against = [("agent_id", report.get("agent_id"), "agent_id"),
+               ("input_content_hash", report.get("input_content_hash"), "input_content_hash"),
+               ("probe_calibration", report.get("probe_calibration"), "probe_calibration"),
+               ("precision", env.get("precision"), "environment.precision"),
+               ("hardware", env.get("hardware"), "environment.hardware")]
+    if "semq" in libs:
+        against.append(("sdk_version", libs["semq"], "environment.library_versions.semq"))
+    for f, theirs, where in against:
+        if f in ev and ev[f] != theirs:
+            out.append(f"{pre}.{f}: {ev[f]!r} differs from the report's {where} {theirs!r}")
+
+    if report.get("probe_calibration") == FIXED_RANGE_PROBE:
+        fp = report.get("encoder_fingerprint")
+        fp = fp if isinstance(fp, dict) else {}
+        dim, s = fp.get("dim"), fp.get("s")
+        if not isinstance(dim, int) or isinstance(dim, bool) or dim < 1:
+            out.append(f"encoder_fingerprint.dim: {dim!r}; {FIXED_RANGE_PROBE} needs "
+                       f"the dimension to check the scale")
+        elif not _finite_number(s) or abs(s - 2 / math.sqrt(dim)) > 5.1e-7:
+            out.append(f"encoder_fingerprint.s: {s!r} is not 2/sqrt({dim}) = "
+                       f"{2 / math.sqrt(dim):.6f}, the fixed scale of {FIXED_RANGE_PROBE}")
+
+    devs = ev.get("deviations")
+    if devs and not allow_deviations:
+        out.append(f"{pre}.deviations: {len(devs)} recorded; a cell with deviations "
+                   f"is not a clean canonical capture")
     return out
 
 
@@ -328,8 +332,9 @@ def verify(report_path: Path, search_dir: Path | None = None,
     #    that are not ARI reports (a harness-effect summary, say) have no such
     #    cell and skip this. A cell without the block predates it and was not
     #    re-signed (spec/condition-set.md), so it warns unless the caller asks
-    #    for the block. The check is stdlib-only and duplicated nowhere else:
-    #    ari/check_evidence.py imports it from here.
+    #    for the block. A cell with `deviations` passes here with a warning;
+    #    the conformance gate (ari/check_evidence.py) fails it. The check is
+    #    stdlib-only and duplicated nowhere else: check_evidence imports it.
     try:
         report = json.loads(report_path.read_text())
     except ValueError:
@@ -339,7 +344,9 @@ def verify(report_path: Path, search_dir: Path | None = None,
             warn("time cell carries no capture evidence; conformance to the "
                  ">24 h rule is unverified")
         else:
-            violations = check_time_condition(report)
+            violations = check_time_condition(report, allow_deviations=True)
+            for dev in time_deviations(report):
+                warn("time cell deviates from the procedure", dev)
             check(results, "time result carries its evidence", not violations,
                   "; ".join(violations) if violations else
                   f"gap {report['results_per_condition']['time']['time_evidence']['gap_hours']} h")

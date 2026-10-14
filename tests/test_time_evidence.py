@@ -5,8 +5,8 @@
 The audit found self-hosted captures that called an immediate repeat `time`.
 A schema cannot stop that: the report is well formed either way. These tests
 pin the check that can: a `time` cell with an incomplete `time_evidence` block,
-or with a gap of 24 hours or less, is rejected, and the rejection names the
-field. A cell with no block at all predates the block and was not re-signed:
+with a gap of 24 hours or less, or that does not describe its report, is
+rejected, and the rejection names the field. A cell with no block at all predates the block and was not re-signed:
 `ari.check_evidence` rejects it by default, `ari.verify_report` warns and
 passes. A report with no `time` cell is untouched.
 """
@@ -14,7 +14,6 @@ passes. A report with no `time` cell is untouched.
 from __future__ import annotations
 
 import ast
-import copy
 import json
 import subprocess
 import sys
@@ -26,8 +25,7 @@ pytest.importorskip("jsonschema")
 
 from ari import metrics, report, run  # noqa: E402
 from ari.check_evidence import check_report, schema_violations  # noqa: E402
-from ari.verify_report import (CALIBRATION_SCALE_REL_TOL,  # noqa: E402
-                               TIME_EVIDENCE_FIELDS, canonical_json,
+from ari.verify_report import (TIME_EVIDENCE_FIELDS, canonical_json,  # noqa: E402
                                check_time_condition, verify)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +33,10 @@ VERIFIER = REPO_ROOT / "ari" / "verify_report.py"
 HASH = "e9ec8b01c62635dee9fbbbdf8127cde5cac094aba66368ee8de306acc3afbe1d"
 DIGEST = "0" * 64
 COMMIT = "73139c8f0e1d2c3b4a5968778695a4b3c2d1e0f9"
+REVISION = "c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
+AGENT = "sentence-transformers/all-MiniLM-L6-v2"
+HARDWARE = "arm64 | Apple M2"
+DIM = 384
 
 
 def _semq_cell(her=1.0):
@@ -58,36 +60,42 @@ def _evidence(gap_hours=30.0):
         "comparison_started_at": c_start.strftime(fmt),
         "comparison_finished_at": c_end.strftime(fmt),
         "gap_hours": gap_hours,
-        "probe_calibration": "ARI-Canonical-v0.1",
-        "calibration_scale": 0.0731,
+        "agent_id": AGENT,
         "input_content_hash": HASH,
-        "model_revision": "c9745ed1d9f207416be6d2e6f8de32d1f16199bf",
-        "tokenizer_revision": "c9745ed1d9f207416be6d2e6f8de32d1f16199bf",
+        "probe_calibration": "ARI-Canonical-v0.2",
+        "model_revision": REVISION,
+        "tokenizer_revision": REVISION,
         "precision": "fp32",
-        "hardware": "arm64 macOS-15.5-arm64-arm-64bit",
-        "sdk_version": "1.4.1",
+        "hardware": HARDWARE,
+        "sdk_version": "1.0.0",
         "source_commit": COMMIT,
     }
 
 
 def _report(gap_hours=30.0):
+    """A v0.2 self-hosted report whose time cell carries conformant evidence."""
     time_cell = _semq_cell()
     time_cell["time_evidence"] = _evidence(gap_hours)
     return {
-        "agent_id": "sentence-transformers/all-MiniLM-L6-v2",
+        "agent_id": AGENT,
         "ari_version": "0.1",
-        "probe_calibration": "ARI-Canonical-v0.1",
+        "probe_calibration": "ARI-Canonical-v0.2",
         "input_set": "ARI-Bench-v0.1",
         "input_content_hash": HASH,
         "agent_class": "self_hosted",
-        "encoder_fingerprint": {"dim": 384, "s": 0.0731},
-        "environment": {"blas": "torch-default", "threads": 1, "hardware": "arm64",
-                        "precision": "fp32", "library_versions": {"torch": "2.4.0"}},
+        "encoder_fingerprint": {"dim": DIM, "s": round(2 / DIM ** 0.5, 6)},
+        "environment": {"blas": "torch-default", "threads": 1, "hardware": HARDWARE,
+                        "precision": "fp32",
+                        "library_versions": {"torch": "2.4.0", "semq": "1.0.0"}},
         "results_per_condition": {"same": _semq_cell(), "proc": _semq_cell(),
-                                  "time": time_cell},
+                                  "conc": _semq_cell(), "time": time_cell},
         "ARI": 1.0,
-        "audit_hashes": {"same": DIGEST, "proc": DIGEST, "time": DIGEST},
+        "audit_hashes": {"same": DIGEST, "proc": DIGEST, "conc": DIGEST, "time": DIGEST},
     }
+
+
+def _ev(rep):
+    return rep["results_per_condition"]["time"]["time_evidence"]
 
 
 def _violations_naming(report, field):
@@ -104,7 +112,7 @@ def test_conformant_report_passes_schema_and_check():
 @pytest.mark.parametrize("field", TIME_EVIDENCE_FIELDS)
 def test_each_missing_field_is_named(field):
     rep = _report()
-    del rep["results_per_condition"]["time"]["time_evidence"][field]
+    del _ev(rep)[field]
     out = _violations_naming(rep, field)
     assert any(v.endswith(f"{field}: missing") for v in out), out
     # The schema requires the field too, so a jsonschema-only validator agrees.
@@ -122,172 +130,137 @@ def test_exactly_24_hours_is_not_more_than_24():
     _violations_naming(_report(gap_hours=24.0), "gap_hours")
 
 
-def test_gap_hours_must_agree_with_the_timestamps():
-    rep = _report(gap_hours=30.0)
-    rep["results_per_condition"]["time"]["time_evidence"]["gap_hours"] = 76.0
+def test_the_timestamps_decide_and_gap_hours_must_agree():
+    """A7: 24 h 00 m 15 s is a valid gap. Recorded rounded up (24.01) it passes;
+    the timestamps, not the recorded number, decide."""
+    rep = _report(gap_hours=24 + 15 / 3600)
+    _ev(rep)["gap_hours"] = 24.01
+    assert check_report(rep) == []
+    _ev(rep)["gap_hours"] = 76.0
     out = _violations_naming(rep, "gap_hours")
     assert any("recorded 76.0" in v for v in out), out
 
 
 def test_a_timestamp_without_utc_marker_is_rejected():
     rep = _report()
-    ev = rep["results_per_condition"]["time"]["time_evidence"]
-    ev["comparison_started_at"] = ev["comparison_started_at"].rstrip("Z")
+    _ev(rep)["comparison_started_at"] = _ev(rep)["comparison_started_at"].rstrip("Z")
     _violations_naming(rep, "comparison_started_at")
 
 
-@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit"])
-@pytest.mark.parametrize("moving", ["main", "unknown", "latest", "HEAD", ""])
-def test_moving_refs_are_not_revisions(field, moving):
+SENTINELS = ["main", "unknown", "UNKNOWN ", "latest", "HEAD", "", "pinned", "floating",
+             "none", "unavailable", None]
+
+
+@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit",
+                                   "hardware", "sdk_version", "agent_id"])
+@pytest.mark.parametrize("sentinel", SENTINELS)
+def test_placeholders_identify_nothing(field, sentinel):
     rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"][field] = moving
-    out = _violations_naming(rep, field)
-    assert any("immutable revision" in v for v in out), out
+    _ev(rep)[field] = sentinel
+    _violations_naming(rep, field)
 
 
 @pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit"])
-@pytest.mark.parametrize("ref", ["refs/heads/dev", "release-v1", "c9745ed",
-                                 "C9745ED1D9F207416BE6D2E6F8DE32D1F16199BF",
-                                 "provider-internal", None])
+@pytest.mark.parametrize("ref", ["refs/heads/dev", "release-v1", "v1.0", "c9745ed", "abc1234",
+                                 "C9745ED1D9F207416BE6D2E6F8DE32D1F16199BF"])
 def test_self_hosted_revisions_must_be_full_commit_ids(field, ref):
-    """A branch, a tag, a short id or a sentinel is not a commit a reader can fetch."""
+    """A branch, a tag or a short id is not a commit a reader can fetch."""
     rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"][field] = ref
+    _ev(rep)[field] = ref
     out = _violations_naming(rep, field)
     assert any("40-character lowercase hex" in v for v in out), out
 
 
-def test_named_refs_and_a_sentinel_commit_are_rejected():
-    """The review's reproduction: each of the three fields is named."""
-    rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"].update(
-        model_revision="refs/heads/dev", tokenizer_revision="release-v1",
-        source_commit="provider-internal")
-    out = check_report(rep)
-    for field in ("model_revision", "tokenizer_revision", "source_commit"):
-        assert any(f"time_evidence.{field}:" in v for v in out), out
-
-
 def _hosted_report():
     rep = _report()
+    rep["agent_id"] = "openai/text-embedding-3-large"
     rep["agent_class"] = "api"
-    rep["environment"]["precision"] = "provider-internal"
-    rep["results_per_condition"]["time"]["time_evidence"].update(
-        model_revision="pinned", tokenizer_revision="provider-internal",
-        precision="provider-internal", hardware="provider-internal")
+    rep["environment"].update(precision="provider-internal", hardware="provider-internal")
+    _ev(rep).update(agent_id=rep["agent_id"], model_revision="text-embedding-3-large",
+                    tokenizer_revision="provider-internal", precision="provider-internal",
+                    hardware="provider-internal")
     return rep
 
 
 @pytest.mark.parametrize("agent_class", ["api", "vendor", "rehosted", "platform"])
 def test_a_hosted_agent_may_record_provider_internal(agent_class):
-    """A hosted API exposes no commit; the snapshot id or the sentinel stands in."""
+    """A hosted API exposes no commit; the model id or the sentinel stands in."""
     rep = _hosted_report()
     rep["agent_class"] = agent_class
     assert check_report(rep) == []
+    _ev(rep)["model_revision"] = "provider-internal"
+    assert check_report(rep) == []
 
 
-@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision"])
-@pytest.mark.parametrize("moving", ["main", "unknown", "latest", "HEAD", ""])
-def test_a_hosted_revision_is_not_a_moving_ref(field, moving):
+@pytest.mark.parametrize("sentinel", ["pinned", "floating", "none", "main", "UNKNOWN "])
+def test_a_hosted_revision_is_not_a_placeholder(sentinel):
+    """A3: every API agent's snapshot attribute is the literal 'pinned'."""
     rep = _hosted_report()
-    rep["results_per_condition"]["time"]["time_evidence"][field] = moving
+    _ev(rep)["model_revision"] = sentinel
+    _violations_naming(rep, "model_revision")
+
+
+@pytest.mark.parametrize("field", ["sdk_version", "source_commit", "agent_id"])
+def test_provider_internal_only_in_the_four_provider_fields(field):
+    """A4: a hosted agent may not hide the SDK version, the harness commit or itself."""
+    rep = _hosted_report()
+    _ev(rep)[field] = "provider-internal"
     out = _violations_naming(rep, field)
-    assert any("immutable revision" in v for v in out), out
+    assert any("allowed only in" in v for v in out), out
 
 
-def test_a_hosted_agent_still_records_the_harness_commit():
-    rep = _hosted_report()
-    rep["results_per_condition"]["time"]["time_evidence"]["source_commit"] = "provider-internal"
-    _violations_naming(rep, "source_commit")
-
-
-@pytest.mark.parametrize("field", ["hardware", "precision"])
+@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "hardware",
+                                   "precision"])
 def test_a_self_hosted_agent_cannot_record_provider_internal(field):
     rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"][field] = "provider-internal"
+    _ev(rep)[field] = "provider-internal"
     out = _violations_naming(rep, field)
-    assert any("reserved for a hosted agent_class" in v for v in out), out
+    assert any("hosted agent_class" in v for v in out), out
 
 
-@pytest.mark.parametrize("field", ["gap_hours", "calibration_scale"])
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf"), True, "30"])
-def test_numbers_must_be_finite(field, value):
+def test_gap_hours_must_be_finite(value):
     rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"][field] = value
-    out = _violations_naming(rep, field)
+    _ev(rep)["gap_hours"] = value
+    out = _violations_naming(rep, "gap_hours")
     assert any("finite" in v for v in out), out
 
 
-def test_nan_gap_and_scale_are_both_named():
-    """The review's reproduction: NaN compares false, so it passed every range check."""
+def test_v02_scale_must_be_two_over_sqrt_dim():
+    """A5: under ARI-Canonical-v0.2 s carries nothing beyond dim, so it is checked
+    against 2/sqrt(dim) rather than against a recorded scale."""
     rep = _report()
-    ev = rep["results_per_condition"]["time"]["time_evidence"]
-    ev["gap_hours"] = ev["calibration_scale"] = float("nan")
+    rep["encoder_fingerprint"]["s"] = 0.0731
     out = check_report(rep)
-    assert any("gap_hours: nan is not a finite number" in v for v in out), out
-    assert any("calibration_scale: nan is not a finite positive number" in v for v in out), out
-
-
-def test_scale_must_match_the_fingerprint():
-    """The review's reproduction: a scale of 999 against a fingerprint s of 0.0731."""
-    rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = 999.0
-    out = _violations_naming(rep, "calibration_scale")
-    assert any("differs from encoder_fingerprint.s 0.0731" in v for v in out), out
-    assert any("differs from encoder_fingerprint.s" in v for v in check_report(rep))
-
-
-def test_scale_tolerance_covers_rounding_the_fingerprint_and_no_more():
-    """The fingerprint rounds s to 6 decimals; another calibration is far off."""
-    s = 0.07314159265
-    rep = _report()
-    rep["encoder_fingerprint"]["s"] = round(s, 6)
-    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = s
-    assert check_report(rep) == []
-    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = (
-        round(s, 6) * (1 + 2 * CALIBRATION_SCALE_REL_TOL))
-    _violations_naming(rep, "calibration_scale")
-
-
-def test_v02_fixed_scale_is_checked_the_same_way():
-    """ARI-Canonical-v0.2 fixes s at 2/sqrt(dim); the check compares to whatever s is."""
-    dim = 768
-    rep = _report()
-    rep["encoder_fingerprint"] = {"dim": dim, "s": round(2 / dim ** 0.5, 6)}
-    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = 2 / dim ** 0.5
-    assert check_report(rep) == []
-    rep["results_per_condition"]["time"]["time_evidence"]["calibration_scale"] = 0.0731
-    _violations_naming(rep, "calibration_scale")
-
-
-@pytest.mark.parametrize("bad", [0.0, -1.0, float("nan"), "0.07"])
-def test_an_unusable_fingerprint_scale_is_reported(bad):
-    rep = _report()
-    rep["encoder_fingerprint"]["s"] = bad
-    out = check_time_condition(rep)
-    assert any("calibration_scale: cannot be checked" in v for v in out), out
-
-
-def test_a_report_without_a_fingerprint_scale_fails_the_cross_check():
-    """Leaving out the fingerprint must not skip the scale check."""
-    rep = _report()
+    assert any(v.startswith("encoder_fingerprint.s: 0.0731 is not 2/sqrt(384)") for v in out), out
+    rep["encoder_fingerprint"] = {"dim": DIM}
+    assert any(v.startswith("encoder_fingerprint.s: None") for v in check_report(rep))
     del rep["encoder_fingerprint"]
-    assert any("no encoder_fingerprint.s" in v for v in check_report(rep))
-    rep["encoder_fingerprint"] = {"dim": 384}
-    assert any("no encoder_fingerprint.s" in v for v in check_report(rep))
+    assert any(v.startswith("encoder_fingerprint.dim") for v in check_report(rep))
 
 
-def test_block_must_describe_this_report():
+def test_calibration_scale_is_gone():
     rep = _report()
-    ev = rep["results_per_condition"]["time"]["time_evidence"]
-    ev["input_content_hash"] = "f" * 64
-    _violations_naming(rep, "input_content_hash")
+    _ev(rep)["calibration_scale"] = 0.102062
+    assert any("calibration_scale" in v for v in schema_violations(rep))
+
+
+@pytest.mark.parametrize("field,value", [
+    ("agent_id", "other/model"), ("input_content_hash", "f" * 64),
+    ("probe_calibration", "ARI-Canonical-v0.1"), ("precision", "bf16"),
+    ("hardware", "x86_64 | Intel Xeon"), ("sdk_version", "1.0.1")])
+def test_block_must_describe_this_report(field, value):
+    """A1: the block is cross-checked against the report it sits in."""
     rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"]["precision"] = "bf16"
-    _violations_naming(rep, "precision")
+    _ev(rep)[field] = value
+    out = _violations_naming(rep, field)
+    assert any("differs from the report's" in v for v in out), out
+
+
+def test_sdk_version_is_checked_only_when_the_report_records_semq():
     rep = _report()
-    rep["results_per_condition"]["time"]["time_evidence"]["probe_calibration"] = "other"
-    _violations_naming(rep, "probe_calibration")
+    del rep["environment"]["library_versions"]["semq"]
+    assert check_report(rep) == []
 
 
 def test_legacy_flat_cell_with_evidence_validates():
@@ -436,10 +409,19 @@ def test_check_is_the_same_function_in_both_places():
     assert check_time_condition is vr.check_time_condition
 
 
-def test_deviations_are_allowed_but_nothing_else_is():
+def test_deviations_fail_the_gate_and_warn_in_the_verifier(tmp_path, capsys):
+    """A cell with deviations is not a clean canonical capture."""
     rep = _report()
-    ev = rep["results_per_condition"]["time"]["time_evidence"]
-    ev["deviations"] = ["baseline recorded one timestamp after its encode"]
-    assert check_report(rep) == []
-    ev["note"] = "x"
+    _ev(rep)["deviations"] = ["baseline recorded one timestamp after its encode"]
+    assert schema_violations(rep) == []
+    assert any("deviations: 1 recorded" in v for v in check_report(rep))
+    assert check_time_condition(rep, allow_deviations=True) == []
+    pytest.importorskip("cryptography")
+    assert verify(_sign(tmp_path, rep)) is True
+    assert "[WARN] time cell deviates from the procedure" in capsys.readouterr().out
+
+
+def test_unknown_fields_are_rejected():
+    rep = _report()
+    _ev(rep)["note"] = "x"
     assert any("note" in v for v in schema_violations(rep))
