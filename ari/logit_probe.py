@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """The ARI-D white-box logit probe, v0.2 (spec/arid-logit-probe-v0.2.md).
 
 A logit vector is not an embedding: it is not unit-norm, it carries an offset

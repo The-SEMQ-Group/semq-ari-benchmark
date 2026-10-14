@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """Self-hosted contrast — a model *you* control, measured with the same SEMQ probe as the
 API panel, to show the governance point: self-hosted is reproducible, the API is not.
 
@@ -81,7 +80,7 @@ def main(argv=None) -> int:
     for kind, enc in (("same", encode_inproc), ("proc", encode_subproc)):
         hers, hbars = [], []
         for _ in range(args.resamples):
-            m = metrics.aggregate(base_codes, probe.encode(enc(inputs.texts)))
+            m = metrics.aggregate(base_codes, probe.encode(enc(inputs.texts)), dim=int(base.shape[1]))
             hers.append(m.HER); hbars.append(m.Hbar)
         conditions[kind] = {"HER_mean": round(st.mean(hers), 6),
                             "HER_min": round(min(hers), 6),

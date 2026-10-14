@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """GPU-determinism capture/compare for the self-hosted condition matrix.
 
 Encodes a SentenceTransformer model under a controlled (device, dtype, TF32, deterministic)
@@ -96,12 +95,23 @@ def _worker_src():
         "import json,sys,numpy as np,torch\n"
         "from sentence_transformers import SentenceTransformer\n"
         "p=json.load(open(sys.argv[1]))\n"
+        # The worker must run under the parent's numerics. Before 2026-10-13 it did not set these,
+        # so a `proc` capture with --tf32 on compared TF32 on against PyTorch's default (off).
+        "torch.backends.cuda.matmul.allow_tf32=p['tf32']; torch.backends.cudnn.allow_tf32=p['tf32']\n"
+        "if p['deterministic']: torch.use_deterministic_algorithms(True, warn_only=True)\n"
         "d=p['dtype']; mk={'fp32':torch.float32,'fp16':torch.float16,'bf16':torch.bfloat16}\n"
         "m=SentenceTransformer(p['model'],device=p['device'],trust_remote_code=True,model_kwargs={'torch_dtype':mk[d]})\n"
         "assert next(m.parameters()).dtype==mk[d], (next(m.parameters()).dtype, mk[d])\n"
         "v=np.asarray(m.encode(p['texts'],normalize_embeddings=True,convert_to_numpy=True,batch_size=p.get('batch',32)),dtype=np.float32)\n"
         "np.save(p['out'],v)\n"
     )
+
+
+def _worker_payload(args, texts, out, batch):
+    # Everything the `proc` worker needs, including the parent's numerics flags.
+    return {"model": args.model, "texts": texts, "out": out,
+            "device": args.device, "dtype": args.dtype, "batch": batch,
+            "tf32": args.tf32 == "on", "deterministic": bool(args.deterministic)}
 
 
 def do_capture(args):
@@ -120,16 +130,15 @@ def do_capture(args):
     cond = {}
     if "same" in conditions:
         c2, _ = _codes(_encode(model, inputs.texts, bs), s, dim)
-        cond["same"] = _agg(base_codes, c2)
+        cond["same"] = _agg(base_codes, c2, dim)
     if "proc" in conditions:
         with tempfile.TemporaryDirectory() as d:
             out, pj, wk = f"{d}/v.npy", f"{d}/p.json", f"{d}/w.py"
             Path(wk).write_text(_worker_src())
-            json.dump({"model": args.model, "texts": inputs.texts, "out": out,
-                       "device": args.device, "dtype": args.dtype, "batch": bs}, open(pj, "w"))
+            json.dump(_worker_payload(args, inputs.texts, out, bs), open(pj, "w"))
             subprocess.run([sys.executable, wk, pj], check=True, env={**os.environ})
             c3, _ = _codes(np.load(out), s, dim)
-            cond["proc"] = _agg(base_codes, c3)
+            cond["proc"] = _agg(base_codes, c3, dim)
 
     out = Path(os.path.expanduser(args.outdir))
     out.mkdir(parents=True, exist_ok=True)
@@ -147,8 +156,8 @@ def do_capture(args):
     return 0
 
 
-def _agg(a, b):
-    m = metrics.aggregate(a, b)
+def _agg(a, b, dim):
+    m = metrics.aggregate(a, b, dim=dim)
     return {"HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
             "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)]}
 
@@ -163,7 +172,9 @@ def do_compare(args):
               "strictly comparable; pass --scale-s to fix it on both captures.")
     a = np.load(Path(os.path.expanduser(args.dir_a)) / "codes.npy")
     b = np.load(Path(os.path.expanduser(args.dir_b)) / "codes.npy")
-    r = _agg(a, b)
+    if ma["dim"] != mb["dim"]:
+        print(f"ERROR: the two captures have different dimensions ({ma['dim']} vs {mb['dim']})"); return 1
+    r = _agg(a, b, ma["dim"])
     print(f"mach HER = {r['HER']:.4f}  95% CI {r['HER_ci']}  H̄={r['Hbar']:.2f}\n"
           f"  A: {ma['tag']} [{ma['sm_arch']} {ma['dtype']} tf32={ma['tf32']}]\n"
           f"  B: {mb['tag']} [{mb['sm_arch']} {mb['dtype']} tf32={mb['tf32']}]")

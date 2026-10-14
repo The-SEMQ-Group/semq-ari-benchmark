@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """The `time` condition: capture an agent's SEMQ codes now, re-measure after a wall-clock
 gap (≥24h) to get the `time` HER — the most real-world drift axis (silent infra/snapshot
 updates over time). Also gives temporal replication of the drift rate.
@@ -90,7 +89,7 @@ def main(argv=None) -> int:
     # re-encode with the stored scale so codes are comparable to the baseline
     time_codes = fixed_scale_codes(agent.encode(inputs.texts), meta["scale_s"], meta["dim"])
 
-    m = metrics.aggregate(base_codes, time_codes)
+    m = metrics.aggregate(base_codes, time_codes, dim=meta["dim"])
     hours = (time.time() - meta["unix_ts"]) / 3600
     result = {"HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
               "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],

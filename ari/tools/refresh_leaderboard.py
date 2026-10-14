@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """Weekly re-measurement of the commercial-API rows, in one shot.
 
 Runs the full comparable core — `same`, `proc`, `conc`, `time` — for each black-box
@@ -137,17 +136,17 @@ def measure_agent(provider, model, inputs, base_dir, workers, now):
     burst = fs(make_agent(provider, model, bw).encode(inputs.texts))
     time_codes = fs(agent.encode(inputs.texts))    # vs the baseline captured a run ago
 
-    metrics_by = {"same": metrics.aggregate(base, same),
-                  "proc": metrics.aggregate(base, proc),
-                  "conc": metrics.aggregate(calm, burst),
-                  "time": metrics.aggregate(prior_codes, time_codes)}
+    metrics_by = {"same": metrics.aggregate(base, same, dim=dim),
+                  "proc": metrics.aggregate(base, proc, dim=dim),
+                  "conc": metrics.aggregate(calm, burst, dim=dim),
+                  "time": metrics.aggregate(prior_codes, time_codes, dim=dim)}
     codes_by = {"same": same, "proc": proc, "conc": burst, "time": time_codes}
     print(f"  [{slug}] time gap since last baseline: {round((now - prior_ts) / 3600, 1)}h")
 
     # batch (diagnostic, not folded into ARI): same texts sent in batches vs one-per-request.
     try:
         batched = fs(agent.encode_batched(inputs.texts))
-        metrics_by["batch"] = metrics.aggregate(base, batched)
+        metrics_by["batch"] = metrics.aggregate(base, batched, dim=dim)
         codes_by["batch"] = batched
     except NotImplementedError:
         pass                              # provider has no batched path (e.g. Gemini) — skip

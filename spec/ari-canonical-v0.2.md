@@ -23,10 +23,10 @@ Record the SDK version and build id with every capture.
 Report two numbers per condition, and one score:
 
 - `HER`: the fraction of inputs whose whole code matches the baseline. It answers whether a stored code, key or ID still matches. At equal per-coordinate noise it falls as the dimension grows, so do not compare it across models.
-- `rho` (`coordinate_change_rate`): the mean over inputs of the fraction of coordinates whose symbol changed. Because the range is `2 / sqrt(dim)`, the bin edges sit at the same position relative to a unit-norm vector's typical coordinate at every dimension, so `rho` is comparable across models.
-- `ARI-R = 1 - mean rho` over the core conditions `{proc, conc, time}`: the score for comparing models. The report keeps `ARI` as the mean core `HER`.
+- `rho` (`coordinate_change_rate`): the mean over inputs of the fraction of the `dim` coordinates whose symbol changed. The denominator is the encoder's true dimension, never the coordinate count the packed width could hold. Because the range is `2 / sqrt(dim)`, the bin edges sit at the same position relative to a unit-norm vector's typical coordinate at every dimension, so `rho` does not fall with dimension the way `HER` does. It does not make sensitivity model-independent: how often a symbol changes still depends on the model's coordinate distribution, the mass near bin edges, and the structure of the perturbation.
+- `ARI-R = 1 - mean rho` over the core conditions `{proc, conc, time}`: a summary for comparing models of different dimension, within the limits above. The report keeps `ARI` as the mean core `HER`.
 
-On the frozen inputs under equal relative noise, `HER` falls from 0.64 at 384 dimensions to 0.26–0.32 at 1,024 while `rho` stays within 1.1–1.4 × 10⁻³ (eight encoders). `tests/test_rho.py` checks the same property on synthetic unit vectors up to 3,072 dimensions.
+On the frozen inputs under equal relative noise, `HER` falls from 0.64 at 384 dimensions to 0.26–0.32 at 1,024 while `rho` stays within 1.1–1.4 × 10⁻³ (eight encoders). `tests/test_rho.py` checks the same property on synthetic unit vectors up to 3,072 dimensions. Both results hold for this noise model; other perturbations are untested.
 
 ## Changes from v0.1
 

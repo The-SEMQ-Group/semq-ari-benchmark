@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """The `conc` and `time` conditions for a self-hosted model — completing the comparable core.
 
   - `conc`: re-encode under a concurrent multi-threaded burst (8 workers, small batches) vs a
@@ -95,8 +94,9 @@ def main(argv=None) -> int:
         parts = list(ex.map(lambda idx: enc([texts[i] for i in idx], 8), shards))
     conc = probe.encode(np.vstack(parts))
 
-    cm = metrics.aggregate(calm, conc)
-    tm = metrics.aggregate(base, calm)
+    dim = meta["dim"]
+    cm = metrics.aggregate(calm, conc, dim=dim)
+    tm = metrics.aggregate(base, calm, dim=dim)
     result = {"model": args.model, "n": len(texts), "semq": probe.version, "s": probe.s,
               "time_gap_hours": round(gap_h, 2), "baseline_host": meta["host"],
               "measure_host": platform.node(),
