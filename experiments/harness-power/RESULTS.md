@@ -51,7 +51,7 @@ For a 0.10 gap, the maximum measured power was 0.18. A 0.05 gap is not detectabl
 At a 0.20 gap, a third repeat on one side (2/3) raises power over 2/2 at every case count. At 200 cases, a fifth repeat on one side (2/5) helps less than a third repeat on both sides (3/3).
 These results do not support small-effect claims from a small case set.
 
-The [Open-SWE-Traces analysis](../harness-effect/RESULTS.md) uses 3,779 to 12,195 cases with two or three repeats per side, outside this grid.
+The [Open-SWE-Traces analysis](../harness-effect/RESULTS.md) uses 3,779 to 9,597 eligible cases at the pinned revision `f967cba3` (10,674 to 12,195 at the archived revision `ad4805a5`), with two or three repeats per side, outside this grid.
 Its permutation null gives the false-positive check at that scale. Its data collection assumptions remain separate from this simulation.
 
 ## Comparison with the superseded output

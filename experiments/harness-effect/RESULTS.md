@@ -1,7 +1,7 @@
 # Harness-effect results
 
-**Status: rerun on 2026-09-16 with the current estimator and a pinned dataset revision.**
-The tables below supersede the output of 2026-08-07, which is kept in the [superseded section](#superseded-output-of-2026-08-07).
+**Status: rerun on 2026-09-16 with the current estimator at the pinned dataset revision `f967cba3`.**
+The pinned-revision tables below supersede the output of 2026-08-07, which is kept in the [superseded section](#superseded-output-of-2026-08-07).
 The estimator, the eligibility rule, and the pin are defined in [ARI-E-Bench v0.1](../../spec/ari-e-bench-v0.1.md).
 
 This experiment compares SWE-agent and OpenHands on two models in the Open-SWE-Traces dataset.
@@ -36,6 +36,7 @@ Both comparisons use the same estimator.
 
 ## Measured effects
 
+These rows, and the tables in the next three sections, are at revision `f967cba3`.
 Self-consistency is the mean of the two within-condition agreements. Intervals are case-bootstrap intervals with 2,000 resamples and seed 0.
 Each interval excludes zero.
 
@@ -46,7 +47,7 @@ Each interval excludes zero.
 | model, scaffold = SWE-agent | 4,038 | 0.886 | 0.847 | **+0.039** | [+0.032, +0.045] |
 | model, scaffold = OpenHands | 8,203 | 0.890 | 0.823 | **+0.067** | [+0.061, +0.072] |
 
-The same rows in LaTeX are in [arie_table.tex](results/arie_table.tex).
+The same rows in LaTeX are in [arie_table.tex](results/arie_table.tex), whose header names revision `f967cba3`.
 Pass rates on the eligible cases: SWE-agent 0.515 and OpenHands 0.358 with Qwen3.5-122B; SWE-agent 0.507 and OpenHands 0.455 with Minimax-M2.5; Qwen3.5-122B 0.531 and Minimax-M2.5 0.512 in SWE-agent; Qwen3.5-122B 0.354 and Minimax-M2.5 0.445 in OpenHands.
 
 ## Adjustment for self-disagreement
@@ -124,21 +125,23 @@ The effects at the pinned revision lie within 0.010 of the effects at the earlie
 
 At the pinned revision the mean scaffold effect is +0.075 and the mean model effect is +0.053.
 The scaffold effect for Qwen3.5-122B (+0.098) is larger than for Minimax-M2.5 (+0.052). The effect depends on the model-scaffold pair.
-The adjustment removed 57 to 74 percent of the unadjusted disagreement.
+At that revision the adjustment removed 57 to 74 percent of the unadjusted disagreement.
 
 The effect is an agreement gap on the eligible cases. Its population value under independent Bernoulli outcomes is in [section 6.1](../../spec/ari-e-bench-v0.1.md#61-population-value).
 It does not identify a cause and does not say which condition is better.
 
-About 23 percent of rows were ungraded and excluded. If grading failure depends on task difficulty, the eligible set is easier than the full set.
+About 23 percent of rows were ungraded and excluded (23.4 percent at `f967cba3`, 22.5 percent at `ad4805a5`). If grading failure depends on task difficulty, the eligible set is easier than the full set.
 The upstream removal of trajectories with git-hacking behavior was a selection on trajectory content. It changed the eligible case set and the pass rates. The pinned revision is the population these numbers describe.
 The dataset was not collected as a controlled experiment. Independence between rollouts is not established.
 Tool names differ between harnesses, so this report compares outcomes and not action sequences.
 
 ## Archived numbers
 
-The paper appendix (`app:arie`, `tab:arie`) carries the archived numbers. Their comparison with the rerun on the same data and with the pinned revision is in `docs/paper/CLAIM_TO_EVIDENCE.md`.
+The paper appendix (`app:arie`, `tab:arie`) carries the archived numbers: the 2026-08-07 output, computed with the archived estimator at revision `ad4805a5`. Their comparison with the rerun on the same data and with the pinned revision is in `docs/paper/CLAIM_TO_EVIDENCE.md`.
 Every archived number reproduces. The archived effects and agreements are recovered to within 0.002 on the archived revision.
-The paper table must cite one revision. The rows for the pinned revision are in [arie_table.tex](results/arie_table.tex); the rows for the archived revision are in [arie_table.ad4805a5aa7d.tex](results/arie_table.ad4805a5aa7d.tex).
+The two revisions are separate measurements. The paper table must cite one revision, name it, and not mix rows from the two.
+The rows for the pinned revision `f967cba3` are in [arie_table.tex](results/arie_table.tex).
+The rows for the archived revision `ad4805a5`, recomputed with the current estimator, are in [arie_table.ad4805a5aa7d.tex](results/arie_table.ad4805a5aa7d.tex). They are the rerun column of the same-data table above, not the archived numbers.
 
 ## Superseded output of 2026-08-07
 

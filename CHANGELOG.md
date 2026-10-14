@@ -15,9 +15,11 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   columns from the Parquet files at a pinned revision and writes a manifest.
   `run.py` reads that table offline, checks its digest, and adds a permutation
   null, repeat-shape coverage and a split-half check. The paper rows are
-  regenerated to `results/arie_table.tex`. The outcome table is fetched rather
-  than committed, and the 2026-08-07 output stays in git history at tag
-  `v0.1-preview` rather than in the tree.
+  regenerated per revision: `results/arie_table.tex` for `f967cba3` and
+  `results/arie_table.ad4805a5aa7d.tex` for the archived revision `ad4805a5`.
+  They are separate measurements, and each file names its revision. The
+  outcome table is fetched rather than committed, and the 2026-08-07 output
+  stays in git history at tag `v0.1-preview` rather than in the tree.
 - `experiments/harness-power/power.py` covers unequal repeats (2/3, 2/5) and
   records the estimator file digest.
 ### SciFact codes committed beside the results
