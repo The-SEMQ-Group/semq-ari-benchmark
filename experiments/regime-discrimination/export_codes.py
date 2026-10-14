@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """Write the packed SEMQ codes behind regime_matrix.json to results/codes/.
 
 Encoding needs the SEMQ SDK. Reading the codes back does not: every rate in

@@ -47,7 +47,7 @@ The harness needs `semq` 1.0.0 or newer within major version 1.
 Pre-release private builds (1.2–1.5) expose a different interface and fail at import.
 Record the SDK version and build id with each capture; `ari.run` writes the version into the report environment.
 
-The SDK is licensed under the PolyForm Noncommercial License 1.0.0 and is patent pending; it is not covered by this repository's Apache License.
+The SDK is licensed under the PolyForm Noncommercial License 1.0.0; it is not covered by this repository's Apache License.
 Production use by companies, and any other use that license does not permit, requires a separate license from The SEMQ Group Inc.
 
 The v0.2 probe has no calibration. QUANT bins magnitudes over the fixed range `2 / sqrt(dim)`, and the harness renormalizes every row to unit length before encoding.

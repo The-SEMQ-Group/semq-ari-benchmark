@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """How informative the movement bounds are, and against what denominator.
 
 The load-bearing case is the canonical probe, where the bounds turn out to say

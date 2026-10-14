@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """Pilot: score every detector on the legacy decoding cache.
 
 Pilot, not confirmatory. The arrays are TinyLlama-1.1B on CPU over 12 prompts

@@ -18,7 +18,7 @@ Their skip reasons name the [port proposal](docs/proposals/public-sdk-port.md).
 ## Use the SEMQ operators through the SDK
 
 The SEMQ Group Inc. distributes the SEMQ operators, including QUANT, only in the [`semq` package](https://github.com/The-SEMQ-Group/semq).
-That package is licensed under the PolyForm Noncommercial License 1.0.0 and is patent pending.
+That package is licensed under the PolyForm Noncommercial License 1.0.0.
 This repository does not contain them and must not contain them.
 
 - Do not add an implementation of a SEMQ operator to this repository.
