@@ -26,7 +26,11 @@ sudo -u ubuntu git clone --depth 1 \
   echo "clone failed (private repo?) -- copy the tree up with rsync instead"
 
 echo "--- python env ---"
-sudo -u ubuntu python3 -m venv /home/ubuntu/venv
+# semq needs Python >= 3.11 and the Deep Learning AMI ships 3.10, so the venv is
+# built with uv, which fetches a 3.12 interpreter. A python3 venv here installs
+# everything except semq, which fails with "Requires-Python >=3.11".
+sudo -u ubuntu bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh' >/dev/null 2>&1
+sudo -u ubuntu /home/ubuntu/.local/bin/uv venv -q -p 3.12 --seed /home/ubuntu/venv
 VP=/home/ubuntu/venv/bin
 sudo -u ubuntu $VP/pip install -q --upgrade pip wheel
 
@@ -35,37 +39,15 @@ sudo -u ubuntu $VP/pip install -q torch --index-url https://download.pytorch.org
 sudo -u ubuntu $VP/pip install -q \
   transformers sentence-transformers datasets scikit-learn accelerate peft einops
 
-# semq carries the QUANT probe, and ari/probe.py imports it to compute codes, so
-# an experiment that needs codes cannot run without it. It resolves from
-# CodeArtifact, never from PyPI, which needs an auth step. Without the login
-# below pip reports "No matching distribution found for semq". Because pip
-# fails a whole install command when one requirement is unresolvable, semq used
-# to take transformers down with it, and this script has no `set -e`, so the
-# box reached the GPU with no transformers and still logged "bootstrap
-# complete". Keep semq on its own line whatever happens to the login.
-# Filled in by launch.sh from infra/operator.env, which is not committed, so
-# the public tree names no account, domain or repository.
-CA_DOMAIN="__CA_DOMAIN__"
-CA_REPO="__CA_REPO__"
-CA_REGION="__CA_REGION__"
-CA_OWNER="__CA_OWNER__"
-if [ -z "$CA_DOMAIN" ] || [ -z "$CA_OWNER" ]; then
-  echo "WARNING: no CodeArtifact coordinates (infra/operator.env missing at launch);"
-  echo "         semq not installed and codes cannot be computed"
-elif CA_TOKEN=$(aws codeartifact get-authorization-token --domain "$CA_DOMAIN" \
-      --domain-owner "$CA_OWNER" --region "$CA_REGION" \
-      --query authorizationToken --output text 2>/dev/null) && [ -n "$CA_TOKEN" ]; then
-  CA_URL="https://aws:${CA_TOKEN}@${CA_DOMAIN}-${CA_OWNER}.d.codeartifact.${CA_REGION}.amazonaws.com/pypi/${CA_REPO}/simple/"
-  # --extra-index-url, not --index-url: the latter REPLACES PyPI, and this
-  # CodeArtifact repository serves only semq. semq depends on cffi, so an
-  # --index-url install resolves semq and then fails on "No matching
-  # distribution found for cffi".
-  sudo -u ubuntu $VP/pip install -q --extra-index-url "$CA_URL" semq \
-    && echo "semq installed from CodeArtifact" \
-    || echo "WARNING: semq install failed; anything computing codes will not run"
+# semq is the public SEMQ SDK and carries the QUANT probe; ari/probe.py imports
+# it to compute codes. It comes from PyPI like everything else. Keep it on its
+# own line: pip fails a whole install command when one requirement fails, and
+# this script has no `set -e`, so a shared line once took transformers down
+# with it while the box still logged "bootstrap complete".
+if sudo -u ubuntu $VP/pip install -q "semq==1.0.0"; then
+  sudo -u ubuntu $VP/python -c "import semq; print('semq', semq.__version__, semq.build_info().build_id)"
 else
-  echo "WARNING: no CodeArtifact token (instance role missing codeartifact"
-  echo "         permissions?); semq not installed and codes cannot be computed"
+  echo "ERROR: semq install failed; nothing that computes codes will run"
 fi
 # hf_transfer is the Rust download path. It matters only for the ARI-D
 # reference session, where the checkpoint is ~141 GB and the default
