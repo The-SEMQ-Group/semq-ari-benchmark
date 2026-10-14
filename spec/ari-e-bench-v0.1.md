@@ -7,7 +7,7 @@ The measured results are in [experiments/harness-effect/RESULTS.md](../experimen
 
 ARI-E measures the agreement of binary outcomes between repeated runs of an agent.
 It compares two conditions on the same cases. A condition is a harness or a model.
-It subtracts the agreement inside each condition from the agreement across the two conditions.
+It subtracts cross-condition agreement from mean within-condition agreement.
 The result is an agreement gap. It is not a success rate, and it is not a causal effect.
 
 ## 1. Inputs
@@ -95,7 +95,7 @@ Intervals are percentile bootstrap intervals over cases.
 
 The random generator is `numpy.random.default_rng(seed)`. The reference implementation uses `seed = 0`.
 $R$ is `n_resamples`. The default is 1000. The pinned run uses 2000.
-The point estimate and the interval come from the same per-case vector, so the estimate lies inside its interval.
+The point estimate and the interval come from the same per-case vector.
 $S_A$, $S_B$, and $X$ get intervals from their own per-case vectors by the same procedure.
 
 A contrast is marked `detected` when its interval for $E$ does not contain zero.
