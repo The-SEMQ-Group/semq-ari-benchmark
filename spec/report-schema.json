@@ -473,7 +473,14 @@
               "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md \u00a76). Recorded so a capped row is not read as if it ran at 64."
             },
             "time_evidence": {
-              "$ref": "#/$defs/timeEvidence"
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/timeEvidence"
+                },
+                {
+                  "$ref": "#/$defs/decodingTimeEvidence"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -505,7 +512,14 @@
               "description": "For the 'conc' condition when a provider's rate tier caps the burst below the panel-wide 64: the in-flight count actually sustained (spec/arid-bench-v0.1.md \u00a76). Recorded so a capped row is not read as if it ran at 64."
             },
             "time_evidence": {
-              "$ref": "#/$defs/timeEvidence"
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/timeEvidence"
+                },
+                {
+                  "$ref": "#/$defs/decodingTimeEvidence"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -514,7 +528,7 @@
     },
     "timeEvidence": {
       "type": "object",
-      "description": "Evidence that a 'time' result compares two captures more than 24 hours apart with everything else held fixed (spec/condition-set.md, Time evidence). Both captures are timestamped in UTC, and the timestamps decide the gap. The held-fixed settings are recorded once, since both captures share them, and must match the report's own. Optional in the schema so reports signed before it existed still validate; python -m ari.check_evidence rejects a 'time' result that lacks it, and ari/verify_report.py warns.",
+      "description": "Evidence that a 'time' result compares two captures more than 24 hours apart with everything else held fixed (spec/condition-set.md, Time evidence). This is the embedding form; a report with layer 'decoding' uses decodingTimeEvidence. Both captures are timestamped in UTC, and the timestamps decide the gap. The held-fixed settings are recorded once, since both captures share them, and must match the report's own. Optional in the schema so reports signed before it existed still validate; python -m ari.check_evidence rejects a 'time' result that lacks it, and ari/verify_report.py warns.",
       "required": [
         "baseline_started_at",
         "baseline_finished_at",
@@ -602,6 +616,129 @@
           "type": "string",
           "minLength": 1,
           "description": "semq package version that encoded both captures; must equal environment.library_versions.semq when the report records it. Never 'provider-internal'."
+        },
+        "baseline_source_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full 40-character lowercase hex git commit of the harness code that ran the baseline capture. Not held fixed: it may differ from source_commit. Never 'provider-internal': the harness is ours to record for every agent_class."
+        },
+        "source_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full 40-character lowercase hex git commit of the harness code that ran the comparison capture. Never 'provider-internal'."
+        },
+        "deviations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Differences from the procedure, one per entry. A cell with deviations is not a clean canonical capture: python -m ari.check_evidence fails it and ari/verify_report.py warns. The capture tools never write it."
+        }
+      },
+      "additionalProperties": false
+    },
+    "decodingTimeEvidence": {
+      "type": "object",
+      "description": "The decoding-layer form of timeEvidence, for a report with layer 'decoding' (spec/arid-bench-v0.1.md). Built from the two 'same' runs' manifest entries (experiments/arid-dry-run/run_dry.py). Holds fixed the requested model, the prompt set, the protocol id and the request; records each run's harness commit and provider-reported model versions without holding them fixed. ari/verify_report.py requires this form when the report's layer is 'decoding' and the embedding form otherwise.",
+      "required": [
+        "baseline_started_at",
+        "baseline_finished_at",
+        "comparison_started_at",
+        "comparison_finished_at",
+        "gap_hours",
+        "agent_id",
+        "input_content_hash",
+        "protocol",
+        "model",
+        "request_sha256",
+        "precision",
+        "hardware",
+        "baseline_model_versions",
+        "model_versions",
+        "baseline_source_commit",
+        "source_commit"
+      ],
+      "properties": {
+        "baseline_started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the baseline encode began."
+        },
+        "baseline_finished_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the baseline encode ended."
+        },
+        "comparison_started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the comparison encode began."
+        },
+        "comparison_finished_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+          "description": "UTC ISO-8601 instant the comparison encode ended."
+        },
+        "gap_hours": {
+          "type": "number",
+          "exclusiveMinimum": 24,
+          "description": "(comparison_started_at - baseline_finished_at) in hours, rounded up to 0.01 so that it exceeds 24 exactly when the timestamps do. Must be finite and agree with the timestamps within 0.01; the evidence check rejects NaN and infinity, which JSON Schema cannot."
+        },
+        "agent_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Agent both captures encoded; must equal the report's agent_id."
+        },
+        "input_content_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Content hash of the inputs both captures encoded; must equal the report's input_content_hash."
+        },
+        "protocol": {
+          "type": "string",
+          "minLength": 1,
+          "description": "ARI-D protocol id both runs followed (arid-bench-v0.1); must equal environment.library_versions.protocol when the report records it."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model id both runs requested; must equal environment.library_versions.model_requested when the report records it."
+        },
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 of the canonical JSON of the request template both runs sent (endpoint and body with the prompt as a placeholder: temperature, top_p, max_tokens, seed and the rest). The manifest keeps the template itself."
+        },
+        "precision": {
+          "type": "string",
+          "enum": [
+            "provider-internal"
+          ],
+          "description": "Always 'provider-internal' for a hosted decoding row; must equal environment.precision."
+        },
+        "hardware": {
+          "type": "string",
+          "enum": [
+            "provider-internal"
+          ],
+          "description": "Always 'provider-internal' for a hosted decoding row; must equal environment.hardware."
+        },
+        "baseline_model_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Model versions the provider reported for the baseline run (for example Gemini modelVersion, OpenAI model). Recorded, not held fixed: a backend change between runs is what the condition shows."
+        },
+        "model_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Model versions the provider reported for the comparison run."
         },
         "baseline_source_commit": {
           "type": "string",

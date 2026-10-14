@@ -9,9 +9,15 @@ for a local model, capture_time_baseline.py for one API agent) store a
 baseline_record next to the baseline codes, build a second record around the
 comparison encode, and call time_evidence(). It refuses, rather than notes, a
 baseline that lacks a held-fixed field or differs in one.
+
+The decoding layer (ARI-D) has its own form: experiments/arid-dry-run/run_dry.py
+records each run in its manifest, and build_arid_submission.py calls
+decoding_time_evidence() on two `same` runs.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import platform
 import subprocess
@@ -155,24 +161,84 @@ def check_baseline(baseline: dict, current: dict) -> None:
                                 + "; ".join(differ))
 
 
+def _gap_hours(baseline_finished_at: str, comparison_started_at: str) -> float:
+    """Hours from the baseline's end to the comparison's start, rounded up to
+    0.01 h, so the recorded value exceeds 24 exactly when the timestamps do."""
+    end = datetime.strptime(baseline_finished_at, TS_FMT)
+    start = datetime.strptime(comparison_started_at, TS_FMT)
+    seconds = int((start - end).total_seconds())
+    if seconds <= MIN_GAP_HOURS * 3600:
+        raise TimeEvidenceError(f"only {seconds / 3600:.2f} h since the baseline finished "
+                                f"at {baseline_finished_at}; the time condition needs "
+                                f"more than {MIN_GAP_HOURS:g} h")
+    return -(-seconds // 36) / 100
+
+
 def time_evidence(baseline: dict, comparison: dict) -> dict:
     """The `time_evidence` block for a comparison against `baseline`, both
     from baseline_record. The gap runs from the baseline's end to the
     comparison's start and is rounded up to 0.01 h, so the recorded value
     exceeds 24 exactly when the timestamps do."""
     check_baseline(baseline, comparison)
-    end = datetime.strptime(baseline["finished_at"], TS_FMT)
-    start = datetime.strptime(comparison["started_at"], TS_FMT)
-    seconds = int((start - end).total_seconds())
-    if seconds <= MIN_GAP_HOURS * 3600:
-        raise TimeEvidenceError(f"only {seconds / 3600:.2f} h since the baseline finished "
-                                f"at {baseline['finished_at']}; the time condition needs "
-                                f"more than {MIN_GAP_HOURS:g} h")
     return {"baseline_started_at": baseline["started_at"],
             "baseline_finished_at": baseline["finished_at"],
             "comparison_started_at": comparison["started_at"],
             "comparison_finished_at": comparison["finished_at"],
-            "gap_hours": -(-seconds // 36) / 100,
+            "gap_hours": _gap_hours(baseline["finished_at"], comparison["started_at"]),
             **{f: baseline[f] for f in EVIDENCE_FIELDS},
+            "baseline_source_commit": baseline["source_commit"],
+            "source_commit": comparison["source_commit"]}
+
+
+# --------------------------------------------------------------------- decoding layer
+# ARI-D (spec/arid-bench-v0.1.md). A capture is one run entry in
+# experiments/arid-dry-run/results/manifest.json, written by run_dry.py.
+DECODING_PROTOCOL = "arid-bench-v0.1"
+# Held fixed between the two runs. The request is held by digest: the manifest
+# keeps the full request template, and the digest is what the block carries.
+DECODING_HELD_FIXED = ("subject", "class", "model", "condition", "scope",
+                       "prompt_content_hash", "protocol", "request_sha256")
+# Recorded per run, not held fixed.
+DECODING_RECORDED = ("started_at", "finished_at", "source_commit", "model_versions")
+
+
+def request_digest(request: dict) -> str:
+    """SHA-256 of the canonical JSON of a request template."""
+    blob = json.dumps(request, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def decoding_time_evidence(baseline: dict, comparison: dict, *, agent_id: str) -> dict:
+    """The decoding-layer `time_evidence` block from two manifest run entries.
+    Refuses a run that lacks a field, two runs that differ in a held-fixed
+    field, a bad harness commit, or a gap of 24 h or less."""
+    for name, run in (("baseline", baseline), ("comparison", comparison)):
+        missing = [f for f in DECODING_HELD_FIXED + DECODING_RECORDED if f not in run]
+        if missing:
+            raise TimeEvidenceError(f"{name} run {run.get('transcript')!r} does not record "
+                                    f"{', '.join(missing)}; recapture it with run_dry.py")
+        if run["request_sha256"] != request_digest(run.get("request")):
+            raise TimeEvidenceError(f"{name} run: request_sha256 does not match its request")
+        problem = identity_problem("source_commit", run["source_commit"], True)
+        if problem:
+            raise TimeEvidenceError(f"{name} run source_commit: {problem}")
+    differ = [f"{f} {baseline[f]!r} -> {comparison[f]!r}" for f in DECODING_HELD_FIXED
+              if baseline[f] != comparison[f]]
+    if differ:
+        raise TimeEvidenceError("not a time comparison; the runs differ: " + "; ".join(differ))
+    return {"baseline_started_at": baseline["started_at"],
+            "baseline_finished_at": baseline["finished_at"],
+            "comparison_started_at": comparison["started_at"],
+            "comparison_finished_at": comparison["finished_at"],
+            "gap_hours": _gap_hours(baseline["finished_at"], comparison["started_at"]),
+            "agent_id": agent_id,
+            "input_content_hash": baseline["prompt_content_hash"],
+            "protocol": baseline["protocol"],
+            "model": baseline["model"],
+            "request_sha256": baseline["request_sha256"],
+            "precision": PROVIDER_INTERNAL,
+            "hardware": PROVIDER_INTERNAL,
+            "baseline_model_versions": baseline["model_versions"],
+            "model_versions": comparison["model_versions"],
             "baseline_source_commit": baseline["source_commit"],
             "source_commit": comparison["source_commit"]}

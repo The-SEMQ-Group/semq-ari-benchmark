@@ -49,6 +49,17 @@ TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
     "sdk_version", "baseline_source_commit", "source_commit",
 )
 _COMMIT_FIELDS = ("baseline_source_commit", "source_commit")
+# A decoding-layer report (layer "decoding", spec/arid-bench-v0.1.md) has no
+# probe, dimension or SDK. Its block holds fixed the requested model, the
+# protocol id and the request (by digest), and records the provider-reported
+# model versions of each capture without holding them fixed: a backend change
+# between the two runs is what the condition exists to show (§6).
+DECODING_TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
+    "gap_hours", "agent_id", "input_content_hash", "protocol", "model",
+    "request_sha256", "precision", "hardware", "baseline_model_versions",
+    "model_versions", "baseline_source_commit", "source_commit",
+)
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 # The harness commits, and a self-hosted model or tokenizer revision, must be a
 # full git commit id: 40 lowercase hex digits. A branch, a tag or a short id can
 # move or become ambiguous, so it does not pin what ran.
@@ -132,7 +143,9 @@ def check_time_condition(report: dict, allow_deviations: bool = False) -> list[s
     complete `time_evidence` block whose timestamps give a gap above
     MIN_GAP_HOURS, whose `gap_hours` agrees with them within 0.01, whose
     identities pass identity_problem, and which describes this report: the
-    same agent, inputs, probe, precision, hardware and SDK version. Under
+    same agent, inputs, probe, precision, hardware and SDK version (for a
+    decoding report: protocol and requested model instead of probe and SDK,
+    DECODING_TIME_EVIDENCE_FIELDS). Under
     FIXED_RANGE_PROBE the report's encoder_fingerprint.s must be 2/sqrt(dim).
     A non-empty `deviations` list is a violation unless `allow_deviations`:
     such a cell is not a clean canonical capture.
@@ -149,7 +162,9 @@ def check_time_condition(report: dict, allow_deviations: bool = False) -> list[s
         return [f"{pre}: missing; a time result must record both captures "
                 f"(spec/condition-set.md, $defs/timeEvidence)"]
 
-    out = [f"{pre}.{f}: missing" for f in TIME_EVIDENCE_FIELDS if f not in ev]
+    decoding = report.get("layer") == "decoding"
+    fields = DECODING_TIME_EVIDENCE_FIELDS if decoding else TIME_EVIDENCE_FIELDS
+    out = [f"{pre}.{f}: missing" for f in fields if f not in ev]
 
     stamps = {}
     for f in TIME_EVIDENCE_TIMESTAMPS:
@@ -180,28 +195,42 @@ def check_time_condition(report: dict, allow_deviations: bool = False) -> list[s
                        f"give {gap:.4f}")
 
     hosted = report.get("agent_class", "self_hosted") in HOSTED_CLASSES
-    for f in ("agent_id",) + _REVISION_FIELDS + ("precision", "hardware",
-                                                 "sdk_version") + _COMMIT_FIELDS:
+    identities = (("agent_id", "model", "protocol", "precision", "hardware") if decoding else
+                  ("agent_id",) + _REVISION_FIELDS + ("precision", "hardware", "sdk_version"))
+    for f in identities + _COMMIT_FIELDS:
         if f in ev:
             problem = identity_problem(f, ev[f], hosted)
             if problem:
                 out.append(f"{pre}.{f}: {problem}")
+    if decoding:
+        if "request_sha256" in ev and not (isinstance(ev["request_sha256"], str)
+                                           and _SHA256_RE.match(ev["request_sha256"])):
+            out.append(f"{pre}.request_sha256: {ev['request_sha256']!r} is not a "
+                       f"64-character lowercase hex SHA-256")
+        for f in ("baseline_model_versions", "model_versions"):
+            v = ev.get(f, [])
+            if not isinstance(v, list) or any(identity_problem(f, x, hosted) for x in v):
+                out.append(f"{pre}.{f}: {v!r} is not a list of reported model versions")
 
     # The block must describe this report's measurement, not another one's.
     env = report.get("environment") if isinstance(report.get("environment"), dict) else {}
     libs = env.get("library_versions") if isinstance(env.get("library_versions"), dict) else {}
     against = [("agent_id", report.get("agent_id"), "agent_id"),
                ("input_content_hash", report.get("input_content_hash"), "input_content_hash"),
-               ("probe_calibration", report.get("probe_calibration"), "probe_calibration"),
                ("precision", env.get("precision"), "environment.precision"),
                ("hardware", env.get("hardware"), "environment.hardware")]
-    if "semq" in libs:
-        against.append(("sdk_version", libs["semq"], "environment.library_versions.semq"))
+    if not decoding:
+        against.append(("probe_calibration", report.get("probe_calibration"),
+                        "probe_calibration"))
+    for f, lib in (("sdk_version", "semq"),) if not decoding else (
+            ("protocol", "protocol"), ("model", "model_requested")):
+        if lib in libs:
+            against.append((f, libs[lib], f"environment.library_versions.{lib}"))
     for f, theirs, where in against:
         if f in ev and ev[f] != theirs:
             out.append(f"{pre}.{f}: {ev[f]!r} differs from the report's {where} {theirs!r}")
 
-    if report.get("probe_calibration") == FIXED_RANGE_PROBE:
+    if not decoding and report.get("probe_calibration") == FIXED_RANGE_PROBE:
         fp = report.get("encoder_fingerprint")
         fp = fp if isinstance(fp, dict) else {}
         dim, s = fp.get("dim"), fp.get("s")
