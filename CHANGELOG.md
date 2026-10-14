@@ -9,36 +9,43 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 ### The time condition carries its evidence
 - `spec/report-schema.json` gains an optional `time_evidence` object on a
   condition result (`$defs/timeEvidence`): UTC start and end of the baseline
-  and comparison encodes, `gap_hours` (greater than 24), the probe id and
-  frozen scale, the input hash, model and tokenizer revisions, precision,
-  hardware, SDK version, harness commit, and a `deviations` list. Optional, so
-  reports signed before it existed still validate; `ari_version` stays `0.1`.
+  and comparison encodes, `gap_hours`, the agent id, input hash, probe id,
+  model and tokenizer revisions, precision, hardware, SDK version, harness
+  commit, and an optional `deviations` list. Optional, so reports signed
+  before it existed still validate; `ari_version` stays `0.1`.
 - `ari.verify_report.check_time_condition` rejects a `time` result without the
-  block, with a gap of 24 hours or less, with a `gap_hours` that disagrees with
-  its timestamps, with a non-finite `gap_hours` or `calibration_scale`, or whose
-  block differs from the report's own input hash, probe id, precision or
-  `encoder_fingerprint.s` (relative tolerance 1e-4). `source_commit`, and a
-  self-hosted model's `model_revision` and `tokenizer_revision`, must be full
-  40-character lowercase hex commit ids; a hosted agent may record a snapshot
-  id or `provider-internal` for its revisions, precision and hardware, never
-  for `source_commit` and never a moving ref (`main`, `unknown`). Each
-  violation names the field. `python -m ari.check_evidence <report>` runs schema
-  validation and the same function; it is the conformance gate, so a `time`
-  cell without the block fails unless `--no-require-time-evidence` is passed.
-  The standalone verifier checks a block that is present and fails on a
-  violation; a cell without the block prints a warning and passes, so reports
-  signed before the block existed still verify without re-signing.
-  `--require-time-evidence` turns that warning into a failure.
-- `ari/tools/capture_time_baseline.py` records the block's baseline half in
-  `meta.json`, refuses a comparison whose revision, precision, SDK version or hardware
-  differs from the baseline, builds the `time` cell with `time_evidence`, and
-  with `--report`/`--out` merges it into an existing report and recomputes ARI.
-  `--agent st` captures a local sentence-transformers model on CPU with pinned
-  threads. A baseline holding only the pre-existing `unix_ts` is accepted with
-  a recorded deviation. Precision is read back and recorded, never changed.
-- `ari.report.semq_condition_entry` and `ari.report.core_ari` are factored out
-  of `build_report` so a tool can build one cell and recompute the aggregate.
-- `SentenceTransformerAgent` accepts a `revision` and reports its `precision()`.
+  block, whose timestamps give a gap of 24 hours or less, whose `gap_hours`
+  disagrees with them by more than 0.01, or whose block differs from the
+  report's agent id, input hash, probe id, `environment.precision`,
+  `environment.hardware` or `environment.library_versions.semq`. Under
+  ARI-Canonical-v0.2 the report's `encoder_fingerprint.s` must be
+  `2/sqrt(dim)`. `source_commit`, and a self-hosted model's revisions, must be
+  full 40-character lowercase hex commit ids. Placeholders (`main`, `unknown`,
+  `pinned`, `floating`, `none`) are rejected in every identity field.
+  `provider-internal` is accepted only from a hosted agent_class, and only in
+  the revisions, precision and hardware. Each violation names the field.
+- `python -m ari.check_evidence <report>` runs schema validation and the same
+  function. It is the conformance gate: a `time` cell without the block, or
+  with `deviations`, fails. `ari/verify_report.py` fails on a bad block and
+  warns on a missing block or on deviations, so reports signed before the
+  block existed still verify without re-signing; `--require-time-evidence`
+  turns the missing-block warning into a failure.
+- `ari/time_evidence.py` builds the baseline record and the block. It refuses
+  a bad pin when the baseline is captured, and a comparison whose baseline
+  lacks a held-fixed setting or records a different one. `gap_hours` is
+  rounded up to 0.01 h. Self-hosted hardware is the architecture, CPU model
+  and GPU names, not the hostname or OS version; `run_report.py` records the
+  same id. An API agent's model revision is its model id, not `pinned`.
+- `refresh_leaderboard.py` (API panel) and `selfhosted_conc_time.py`
+  (self-hosted) emit `time_evidence`. A baseline written before this change is
+  recaptured by `refresh_leaderboard.py` and refused by
+  `selfhosted_conc_time.py`. `selfhosted_conc_time.py` gains `--revision`,
+  hashes only the `--n` inputs it encodes, and drops `--min-gap-hours`.
+- `capture_time_baseline.py` captures and compares one API agent; its
+  `--report` merge refuses a report for another agent, inputs or dimension and
+  recomputes ARI and ARI-R. Self-hosted models use `selfhosted_conc_time.py`.
+- `ari.report.semq_condition_entry`, `core_ari` and `core_ari_r` are factored
+  out of `build_report` so a tool can build one cell and recompute the scores.
 
 ### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
 - The harness uses the public SEMQ SDK from PyPI, pinned to `semq==1.0.0`
