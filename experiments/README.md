@@ -17,12 +17,10 @@ Experiment scripts can overwrite their result files. Use a separate checkout to 
 | ARI-D power | Statistical power of the hosted-output protocol. | [Simulation](arid-power-sim/RESULTS.md). |
 | ARI-D dry run | Hosted API captures and protocol calibration. | [Procedure](arid-dry-run/README.md), [results](arid-dry-run/RESULTS.md). |
 | ARI-D references | Output from published weights at fixed precision. | [Procedure](arid-fp32-refs/README.md). |
-| Harness effect | Within-harness and cross-harness agreement. | [Results](harness-effect/RESULTS.md). |
-| Harness power | Case counts and repeated runs for harness comparisons. | [Simulation](harness-power/RESULTS.md). |
 
 ## Dependencies
 
-The two power simulations use the base package dependencies.
+The ARI-D power simulation uses the base package dependencies.
 Model experiments require their model libraries, data, and sometimes the separate SEMQ SDK.
 Use the [harness guide](../ari/README.md) for SDK access and [infrastructure guide](../infra/README.md) for GPU runs.
 Hosted captures require provider credentials and incur API charges.

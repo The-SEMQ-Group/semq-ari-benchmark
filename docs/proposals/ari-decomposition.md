@@ -1,6 +1,7 @@
-# Measurement scope: representation, decoding, and harness effects
+# Measurement scope: representation and decoding
 
-This document records the three measurement scopes proposed in August 2026.
+This document records the measurement scopes proposed in August 2026.
+A third scope, ARI-E (harness effects on agent outcomes), was proposed here and later removed; see the [changelog](../../CHANGELOG.md).
 The implemented specifications and report schema define current behavior.
 This record does not rename schema fields or create a combined score.
 
@@ -8,7 +9,6 @@ This record does not rename schema fields or create a combined score.
 | --- | --- | --- |
 | ARI-R | Code agreement for model representations under deployment changes. | [Embedding specification](../../spec/ari-canonical-v0.1.md) and [panel results](../../experiments/deployed-agent-panel/RESULTS.md). |
 | ARI-D | Agreement of generated output under repeated requests and changed conditions. | [Decoding specification](../../spec/arid-bench-v0.1.md) and [API dry run](../../experiments/arid-dry-run/RESULTS.md). |
-| ARI-E | Difference between within-harness and cross-harness outcome agreement. | [Harness implementation](../../ari/harness.py) and [results](../../experiments/harness-effect/RESULTS.md). |
 
 ## Representation scope
 
@@ -23,16 +23,8 @@ Their Hamming measurements are distinct from the public-output detectors in ARI-
 Use the detector name, unit, and reference condition when reporting either measurement.
 A changed logit code does not imply a changed output token.
 
-## Harness scope
-
-ARI-E adjusts cross-harness agreement by measured self-consistency.
-It requires repeated runs per case and harness.
-The implementation accepts trajectories in JSON Lines format and does not require model-state checkpoints or `semq.kv`.
-The public dataset result does not establish that harness effects dominate for every model or task.
-
 ## Remaining work
 
-Keep the three scopes separate in comparisons.
+Keep the two scopes separate in comparisons.
 A combined report format or aggregate score requires a specification change.
-Controlled harness comparisons need adequate case counts, repeated runs, and auditable grading.
 See [findings](../findings.md) for current evidence limits.

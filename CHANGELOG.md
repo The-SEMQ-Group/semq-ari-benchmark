@@ -6,6 +6,16 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### ARI-E removed
+- ARI-E (harness effect on agent outcomes) is removed: `ari/harness.py`,
+  `experiments/harness-effect/`, `experiments/harness-power/`, their tests,
+  and the ARI-E rows and slides in the docs and decks.
+- It is outside the v0.2 scope, and the ARI-E results on main could not be
+  reproduced: the dataset revision was not pinned, and the committed trajectory
+  sample contains no eligible cases.
+- The pinned v0.1 ARI-E spec and its rerun are archived at tag
+  `arie-v0.1-f967cba3`.
+
 ### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
 - The harness uses the public SEMQ SDK from PyPI, pinned to `semq==1.0.0`
   and checked at import. The private 1.2–1.5 builds are no longer supported. Python 3.11
