@@ -11,9 +11,11 @@ pre-registered detector can be computed offline.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import socket
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -21,6 +23,18 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(REPO))
+
+
+def _source_revision() -> str | None:
+    """The harness commit, with "-dirty" if the tree has changes; None without git."""
+    try:
+        rev = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True,
+                             text=True, check=True).stdout.strip()
+        dirty = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain"], capture_output=True,
+                               text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return rev + ("-dirty" if dirty else "")
 
 
 def main() -> int:
@@ -47,10 +61,14 @@ def main() -> int:
     from ari.inputs import load_ari_bench
     from ari.st_load import load_sentence_transformer
 
-    texts = load_ari_bench(REPO / plan["inputs"]).texts[: plan["n_inputs"]]
+    from ari.inputs import InputSet
+
+    full = load_ari_bench(REPO / plan["inputs"])
+    inputs = InputSet(full.name, full.ids[: plan["n_inputs"]], full.texts[: plan["n_inputs"]])
+    texts = inputs.texts
     t0 = time.time()
     model = load_sentence_transformer(spec["model"], device=spec["device"], dtype=spec.get("dtype", "fp32"),
-                                      trust_remote_code=True)
+                                      trust_remote_code=True, revision=spec.get("revision"))
     if spec.get("int8"):
         torch.backends.quantized.engine = ("qnnpack" if "qnnpack" in torch.backends.quantized.supported_engines
                                            else "fbgemm")
@@ -72,6 +90,12 @@ def main() -> int:
             "python": platform.python_version(), "torch": torch.__version__,
             "transformers": transformers.__version__, "sentence_transformers": sentence_transformers.__version__,
             "load_s": round(t1 - t0, 1), "encode_s": round(t2 - t1, 1),
+            # Provenance, recorded since 2026-10-14: the snapshot actually loaded (tokenizer and
+            # weights come from the same snapshot), the inputs, the vectors and the harness.
+            "model_revision": getattr(model[0].auto_model.config, "_commit_hash", None),
+            "inputs_content_hash": inputs.content_hash,
+            "vectors_sha256": hashlib.sha256(v.tobytes()).hexdigest(),
+            "source_revision": _source_revision(),
             "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     (args.out / f"{args.id}.json").write_text(json.dumps(meta, indent=1))
     print(f"{args.id} {spec['model']} {spec.get('condition', spec.get('reference'))} {v.shape} "
