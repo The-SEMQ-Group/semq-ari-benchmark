@@ -15,8 +15,13 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   reports signed before it existed still validate; `ari_version` stays `0.1`.
 - `ari.verify_report.check_time_condition` rejects a `time` result without the
   block, with a gap of 24 hours or less, with a `gap_hours` that disagrees with
-  its timestamps, with a moving ref (`main`, `unknown`) as a revision, or whose
-  block differs from the report's own input hash, probe id or precision. Each
+  its timestamps, with a non-finite `gap_hours` or `calibration_scale`, or whose
+  block differs from the report's own input hash, probe id, precision or
+  `encoder_fingerprint.s` (relative tolerance 1e-4). `source_commit`, and a
+  self-hosted model's `model_revision` and `tokenizer_revision`, must be full
+  40-character lowercase hex commit ids; a hosted agent may record a snapshot
+  id or `provider-internal` for its revisions, precision and hardware, never
+  for `source_commit` and never a moving ref (`main`, `unknown`). Each
   violation names the field. `python -m ari.check_evidence <report>` runs schema
   validation and the same function; it is the conformance gate, so a `time`
   cell without the block fails unless `--no-require-time-evidence` is passed.

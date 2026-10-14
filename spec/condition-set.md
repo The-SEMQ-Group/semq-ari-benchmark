@@ -61,7 +61,16 @@ Record the probe id, the frozen calibration scale, the input content hash, the m
 Both captures must use the same values for these settings. A change in one of them is a different condition.
 Record a difference from this procedure in `deviations`.
 
-`python -m ari.check_evidence <report>` rejects a `time` result that lacks the object or whose gap is 24 hours or less.
+The evidence check applies these rules:
+
+- `gap_hours` and `calibration_scale` must be finite numbers. NaN and infinity are rejected.
+- `source_commit` must be a full git commit id: 40 lowercase hex characters.
+- For a `self_hosted` agent (or no `agent_class`), `model_revision` and `tokenizer_revision` must also be 40-character lowercase hex commit ids. Branches, tags, and short ids are rejected.
+- For a hosted agent (`api`, `vendor`, `rehosted`, `platform`), `model_revision` and `tokenizer_revision` may be a pinned snapshot id or `provider-internal`, but not a moving ref such as `main` or `unknown`.
+- `provider-internal` is allowed only for a hosted agent, and only in `model_revision`, `tokenizer_revision`, `precision`, and `hardware`.
+- When the report records `encoder_fingerprint.s`, `calibration_scale` must equal it within a relative tolerance of 1e-4. This covers rounding `s` to 6 decimals. It holds for a calibrated scale and for the fixed `2/sqrt(dim)` of ARI-Canonical-v0.2. A report without `encoder_fingerprint.s` skips this comparison.
+
+`python -m ari.check_evidence <report>` rejects a `time` result that lacks the object, whose gap is 24 hours or less, or that breaks one of these rules.
 `python ari/verify_report.py <report>` checks the object when it is present and fails on a violation.
 When the object is absent, the verifier prints a warning and passes; `--require-time-evidence` makes the absence a failure.
 The object is optional in the schema. Reports signed before it existed do not carry it and were not re-signed.

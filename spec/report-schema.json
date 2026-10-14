@@ -536,7 +536,7 @@
         "gap_hours": {
           "type": "number",
           "exclusiveMinimum": 24,
-          "description": "(comparison_started_at - baseline_finished_at) in hours."
+          "description": "(comparison_started_at - baseline_finished_at) in hours. Must be finite; the evidence check rejects NaN and infinity, which JSON Schema cannot."
         },
         "probe_calibration": {
           "type": "string",
@@ -545,7 +545,7 @@
         "calibration_scale": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "The QBIN scale s frozen at the baseline and reused, not recalibrated, for the comparison."
+          "description": "The QBIN scale s frozen at the baseline and reused, not recalibrated, for the comparison. Must be finite. When the report records encoder_fingerprint.s, the evidence check requires the two to agree within a relative tolerance of 1e-4 (CALIBRATION_SCALE_REL_TOL in ari/verify_report.py), which covers rounding s to 6 decimals."
         },
         "input_content_hash": {
           "type": "string",
@@ -555,12 +555,12 @@
         "model_revision": {
           "type": "string",
           "minLength": 1,
-          "description": "Immutable model revision loaded by both captures (a Hub commit for a self-hosted model; the pinned snapshot id or 'provider-internal' for an API). Moving refs such as 'main' or 'unknown' are rejected by the evidence check."
+          "description": "Immutable model revision loaded by both captures. For agent_class self_hosted (or absent), a full 40-character lowercase hex Hub commit id. For a hosted agent_class (api, vendor, rehosted, platform), the pinned snapshot id or 'provider-internal'. The evidence check rejects branches, tags, short ids and, for a hosted model, moving refs such as 'main' or 'unknown'."
         },
         "tokenizer_revision": {
           "type": "string",
           "minLength": 1,
-          "description": "Immutable tokenizer revision; equals model_revision when the tokenizer ships in the model repository."
+          "description": "Immutable tokenizer revision; equals model_revision when the tokenizer ships in the model repository. The same rules as model_revision apply."
         },
         "precision": {
           "type": "string",
@@ -571,12 +571,12 @@
             "mixed",
             "provider-internal"
           ],
-          "description": "Numeric precision of both captures; must equal environment.precision."
+          "description": "Numeric precision of both captures; must equal environment.precision. 'provider-internal' only for a hosted agent_class."
         },
         "hardware": {
           "type": "string",
           "minLength": 1,
-          "description": "Hardware both captures ran on."
+          "description": "Hardware both captures ran on. 'provider-internal' only for a hosted agent_class."
         },
         "sdk_version": {
           "type": "string",
@@ -585,8 +585,8 @@
         },
         "source_commit": {
           "type": "string",
-          "minLength": 1,
-          "description": "Git commit of the harness code that ran both captures."
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full 40-character lowercase hex git commit of the harness code that ran both captures. Never 'provider-internal': the harness is ours to record for every agent_class."
         },
         "deviations": {
           "type": "array",

@@ -134,7 +134,8 @@ Prerequisites: the `semq` SDK, `python -m pip install -e ".[selfhosted]"`, a git
    `--report` names the existing report for the same agent, inputs, and precision.
    The command re-encodes at the stored scale, adds the `time` cell with its `time_evidence`, recomputes ARI, and writes the merged report to `--out`.
    Without `--report`, it writes `time_cell.json` next to the baseline.
-   The command exits with status 1 and writes nothing when the revision, precision, or SDK version differs from the baseline, or when the gap is 24 hours or less.
+   The command exits with status 1 and writes nothing when the revision, precision, or SDK version differs from the baseline, when the gap is 24 hours or less, or when the evidence breaks another [evidence rule](../spec/condition-set.md#time-evidence).
+   For example, the checkout must resolve to a full commit id, and the stored scale must match the `encoder_fingerprint.s` of the `--report` file.
 
 3. Check the merged report:
 
