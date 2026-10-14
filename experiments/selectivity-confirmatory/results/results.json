@@ -22,7 +22,12 @@
      0.9773812776139649,
      0.9999999999999999
     ],
-    "input_rate": 0.529355421686747
+    "input_rate": 0.529355421686747,
+    "cells_counted": 20,
+    "ci_cell_wilson": [
+     0.8388698745050667,
+     1.0
+    ]
    },
    "benign": {
     "episodes": 170,
@@ -36,7 +41,12 @@
      0.0,
      0.022098277972591136
     ],
-    "input_rate": 0.0
+    "input_rate": 0.0,
+    "cells_counted": 0,
+    "ci_cell_wilson": [
+     0.0,
+     0.113517091390478
+    ]
    },
    "material_by_condition": {
     "bf16": 1.0,
@@ -60,7 +70,12 @@
      1.734723475976807e-18,
      0.022618722386034983
     ],
-    "input_rate": 0.0
+    "input_rate": 0.0,
+    "cells_counted": 0,
+    "ci_cell_wilson": [
+     0.0,
+     0.16113012549493322
+    ]
    },
    "benign": {
     "episodes": 170,
@@ -74,7 +89,12 @@
      0.0,
      0.022098277972591136
     ],
-    "input_rate": 0.0
+    "input_rate": 0.0,
+    "cells_counted": 0,
+    "ci_cell_wilson": [
+     0.0,
+     0.113517091390478
+    ]
    },
    "material_by_condition": {
     "bf16": 0.0,
@@ -98,7 +118,12 @@
      1.734723475976807e-18,
      0.022618722386034983
     ],
-    "input_rate": 0.0
+    "input_rate": 0.0,
+    "cells_counted": 0,
+    "ci_cell_wilson": [
+     0.0,
+     0.16113012549493322
+    ]
    },
    "benign": {
     "episodes": 170,
@@ -112,7 +137,12 @@
      0.0,
      0.022098277972591136
     ],
-    "input_rate": 0.0
+    "input_rate": 0.0,
+    "cells_counted": 0,
+    "ci_cell_wilson": [
+     0.0,
+     0.113517091390478
+    ]
    },
    "material_by_condition": {
     "bf16": 0.0,
@@ -136,7 +166,12 @@
      0.9773812776139649,
      0.9999999999999999
     ],
-    "input_rate": 1.0
+    "input_rate": 1.0,
+    "cells_counted": 20,
+    "ci_cell_wilson": [
+     0.8388698745050667,
+     1.0
+    ]
    },
    "benign": {
     "episodes": 170,
@@ -150,7 +185,12 @@
      0.04083701362587083,
      0.11931797804470742
     ],
-    "input_rate": 0.00010588235294117647
+    "input_rate": 0.00010588235294117647,
+    "cells_counted": 2,
+    "ci_cell_wilson": [
+     0.01847663532769335,
+     0.21323817721072091
+    ]
    },
    "material_by_condition": {
     "bf16": 1.0,
@@ -174,7 +214,12 @@
      0.9773812776139649,
      0.9999999999999999
     ],
-    "input_rate": 1.0
+    "input_rate": 1.0,
+    "cells_counted": 20,
+    "ci_cell_wilson": [
+     0.8388698745050667,
+     1.0
+    ]
    },
    "benign": {
     "episodes": 170,
@@ -188,7 +233,12 @@
      0.016273926504342204,
      0.0748527083172425
     ],
-    "input_rate": 0.00017058823529411766
+    "input_rate": 0.00017058823529411766,
+    "cells_counted": 1,
+    "ci_cell_wilson": [
+     0.0059084379948573795,
+     0.16670751396958874
+    ]
    },
    "material_by_condition": {
     "bf16": 1.0,
@@ -212,7 +262,12 @@
      0.9773812776139649,
      0.9999999999999999
     ],
-    "input_rate": 1.0
+    "input_rate": 1.0,
+    "cells_counted": 20,
+    "ci_cell_wilson": [
+     0.8388698745050667,
+     1.0
+    ]
    },
    "benign": {
     "episodes": 170,
@@ -226,7 +281,12 @@
      0.0680306976225958,
      0.161152650896976
     ],
-    "input_rate": 0.00015294117647058822
+    "input_rate": 0.00015294117647058822,
+    "cells_counted": 3,
+    "ci_cell_wilson": [
+     0.03459925995971615,
+     0.25621441315266624
+    ]
    },
    "material_by_condition": {
     "bf16": 1.0,
@@ -236,5 +296,11 @@
    }
   }
  },
- "claim_supported": true
+ "claim_supported": true,
+ "claim_supported_cell_wilson": true,
+ "not_preregistered": [
+  "cells_counted",
+  "ci_cell_wilson",
+  "claim_supported_cell_wilson"
+ ]
 }

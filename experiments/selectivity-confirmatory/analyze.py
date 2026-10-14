@@ -2,14 +2,24 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """The pre-registered analysis of the selectivity study (PREREGISTRATION.md).
 
 Written and committed before any episode was captured. Reads the vectors that
 capture_episode.py wrote and episodes.json, and writes results.json.
 
-    python analyze.py --vectors DIR [--out results.json]
+    python analyze.py --vectors DIR [--out results.json] [--scores episode_scores.json] [--allow-missing]
+
+Two changes were made on 2026-10-14, after the results were published. Neither
+changes a pre-registered output on the complete data:
+- The calibration/test split is derived from the complete plan, not from the
+  episodes that happen to be present, and a missing capture stops the analysis
+  unless --allow-missing is given. With --allow-missing, missing episodes are
+  dropped and the split is unchanged.
+- Each rate also gets a cell-level Wilson interval, ``ci_cell_wilson``, and the
+  claim is re-checked with it (``claim_supported_cell_wilson``). These are
+  labelled as not pre-registered. The pre-registered cluster bootstrap returns
+  a zero-width interval whenever every test cell has the same outcome.
 """
 from __future__ import annotations
 
@@ -99,6 +109,20 @@ def cluster_ci(flags_by_cell, rng, boot=BOOT):
     return tuple(float(x) for x in np.quantile(stats, [0.025, 0.975]))
 
 
+def cell_wilson(by_cell, label):
+    """Wilson interval over cells, the unit of inference (not pre-registered).
+
+    Each cell counts once, scored against the detector: a benign cell alarms if
+    any of its episodes alarmed, and a material cell is detected only if every
+    episode was flagged.
+    """
+    if label == "benign":
+        k = sum(bool(f.any()) for f in by_cell.values())
+    else:
+        k = sum(bool(f.all()) for f in by_cell.values())
+    return k, wilson(k, len(by_cell))
+
+
 def split_cells(cells_by_condition):
     """Half the cells of each condition to calibration, half to test (fixed seed)."""
     rng = np.random.default_rng(SPLIT_SEED)
@@ -111,7 +135,7 @@ def split_cells(cells_by_condition):
     return calib, test
 
 
-def analyze(plan, vec_dir: Path) -> dict:
+def analyze(plan, vec_dir: Path, allow_missing: bool = False) -> dict:
     refs = {r["id"]: r for r in plan["references"]}
     loaded = {}
 
@@ -123,7 +147,13 @@ def analyze(plan, vec_dir: Path) -> dict:
     rows, missing, digests = [], [], {}
     for e in plan["episodes"]:
         if not (vec_dir / f"{e['id']}.npy").exists() or not (vec_dir / f"{e['reference']}.npy").exists():
-            missing.append(e["id"]); continue
+            missing.append(e["id"])
+    if missing and not allow_missing:
+        raise SystemExit(f"{len(missing)} planned captures are missing (first: {missing[0]}); "
+                         "pass --allow-missing to drop them without changing the split")
+    for e in plan["episodes"]:
+        if e["id"] in missing:
+            continue
         ref, cur = vec(e["reference"]), vec(e["id"])
         cell = (e["model"], e["condition"])
         h = hashlib.sha256(cur.tobytes()).hexdigest()
@@ -134,9 +164,11 @@ def analyze(plan, vec_dir: Path) -> dict:
                      "per_input": per_input})
         loaded.pop(e["id"], None)
 
+    # The split comes from the complete plan, so a missing capture cannot move a cell
+    # between calibration and test.
     cells_by_condition = {}
-    for r in rows:
-        cells_by_condition.setdefault(r["condition"], set()).add(r["cell"])
+    for e in plan["episodes"]:
+        cells_by_condition.setdefault(e["condition"], set()).add((e["model"], e["condition"]))
     calib, test = split_cells(cells_by_condition)
     rng = np.random.default_rng(SPLIT_SEED + 1)
 
@@ -158,9 +190,11 @@ def analyze(plan, vec_dir: Path) -> dict:
                 by_cell.setdefault(r["cell"], []).append(f)
             by_cell = {c: np.array(v) for c, v in by_cell.items()}
             inputs = np.concatenate([r["per_input"][k] > thr_in for r in tr]) if tr else np.array([])
+            k_cells, ci_cells = cell_wilson(by_cell, label)
             res[label] = {"episodes": len(tr), "cells": len(by_cell), "rate": float(flags.mean()) if len(tr) else None,
                           "ci_cluster": cluster_ci(by_cell, rng), "ci_wilson": wilson(int(flags.sum()), len(tr)),
-                          "input_rate": float(inputs.mean()) if inputs.size else None}
+                          "input_rate": float(inputs.mean()) if inputs.size else None,
+                          "cells_counted": k_cells, "ci_cell_wilson": ci_cells}
         res["material_by_condition"] = {}
         for cond in sorted({r["condition"] for r in rows if r["label"] == "material"}):
             tr = [r for r in rows if r["cell"] in test and r["condition"] == cond]
@@ -169,6 +203,13 @@ def analyze(plan, vec_dir: Path) -> dict:
 
     c = out["detectors"]["code"]["material"]["ci_cluster"]
     out["claim_supported"] = all(c[0] > out["detectors"][h]["material"]["ci_cluster"][1] for h in ("sha256", "blocks"))
+    c = out["detectors"]["code"]["material"]["ci_cell_wilson"]
+    out["claim_supported_cell_wilson"] = all(
+        c[0] > out["detectors"][h]["material"]["ci_cell_wilson"][1] for h in ("sha256", "blocks"))
+    out["not_preregistered"] = ["cells_counted", "ci_cell_wilson", "claim_supported_cell_wilson"]
+    out["episode_scores"] = [{"id": r["id"], "model": r["cell"][0], "condition": r["condition"],
+                              "label": r["label"], "half": "calibration" if r["cell"] in calib else "test",
+                              "duplicate": r["duplicate"], "score": r["score"]} for r in rows]
     return out
 
 
@@ -176,9 +217,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--vectors", type=Path, required=True)
     ap.add_argument("--plan", type=Path, default=HERE / "episodes.json")
-    ap.add_argument("--out", type=Path, default=HERE / "results.json")
+    ap.add_argument("--out", type=Path, default=HERE / "results" / "results.json")
+    ap.add_argument("--scores", type=Path, default=HERE / "results" / "episode_scores.json")
+    ap.add_argument("--allow-missing", action="store_true")
     a = ap.parse_args()
-    res = analyze(json.loads(a.plan.read_text()), a.vectors)
+    res = analyze(json.loads(a.plan.read_text()), a.vectors, a.allow_missing)
+    # Every episode's score per detector, so the thresholds and rates can be checked
+    # without the vectors.
+    scores = res.pop("episode_scores")
+    a.scores.write_text("[\n" + ",\n".join(json.dumps(s) for s in scores) + "\n]\n")
     a.out.write_text(json.dumps(res, indent=1, default=float) + "\n")
     for k, v in res["detectors"].items():
         m, b = v["material"], v["benign"]
