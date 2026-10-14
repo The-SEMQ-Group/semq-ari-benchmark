@@ -26,7 +26,10 @@ baseline, and the upsert.
 The `time` axis is a rolling comparison: this run's re-encode vs the baseline captured
 >=1 run ago. Order matters — we compare against the OLD baseline, then recapture a fresh
 one. So the leaderboard's `time` reflects the gap since the last run (weekly cadence -> ~7d
-gap, comfortably past the canonical 76h).
+gap, comfortably past the canonical 76h). The `time` cell carries `time_evidence`
+(ari/time_evidence.py). A baseline whose meta.json lacks a held-fixed field, or differs in
+one (harness commit, SDK version, ...), is recaptured like a first run; a gap of 24 h or
+less fails the agent and keeps the baseline.
 """
 from __future__ import annotations
 
@@ -44,6 +47,7 @@ REPO = PKG.parent
 sys.path.insert(0, str(REPO))
 
 from ari import metrics, report                                   # noqa: E402
+from ari import time_evidence as te                               # noqa: E402
 from ari.agents import DEFAULT_API_MODELS                         # noqa: E402
 from ari.inputs import InputSet, load_ari_bench, sample_inputs    # noqa: E402
 from ari.probe import load_probe, fixed_scale_codes              # noqa: E402
@@ -79,69 +83,94 @@ def _slug(provider, agent):
     return f"{provider}_{agent.agent_id.replace('/', '_')}"
 
 
-def load_baseline(base_dir, slug, content_hash):
-    """Return (codes, scale_s, dim, unix_ts) for a usable prior baseline, else None."""
+def load_baseline(base_dir, slug, current):
+    """Return (codes, record) for a usable prior baseline, else None. A baseline
+    that lacks a held-fixed field or differs from `current` in one is not usable
+    for `time` (ari/time_evidence.py); the caller recaptures it."""
     d = base_dir / slug
     cp, mp = d / "codes.npy", d / "meta.json"
     if not (cp.exists() and mp.exists()):
         return None
     meta = json.loads(mp.read_text())
-    if meta.get("content_hash") != content_hash:
-        print(f"  [{slug}] baseline inputs differ (hash) — ignoring, will recapture")
+    try:
+        te.check_baseline(meta, current)
+    except te.TimeEvidenceError as e:
+        print(f"  [{slug}] prior baseline not usable ({e}) — will recapture")
         return None
-    return np.load(cp), meta["scale_s"], meta["dim"], meta["unix_ts"]
+    return np.load(cp), meta
 
 
-def save_baseline(base_dir, slug, codes, scale_s, dim, content_hash, n, now):
+def save_baseline(base_dir, slug, codes, record, n):
     d = base_dir / slug
     d.mkdir(parents=True, exist_ok=True)
     np.save(d / "codes.npy", codes)
-    (d / "meta.json").write_text(json.dumps(
-        {"unix_ts": now, "scale_s": float(scale_s), "dim": int(dim),
-         "content_hash": content_hash, "n": int(n)}, indent=2))
+    (d / "meta.json").write_text(json.dumps({**record, "n": int(n)}, indent=2) + "\n")
+
+
+def timed_encode(encode, texts):
+    """(vectors, started_at, finished_at) for one encode."""
+    started_at = te.utc_now()
+    vecs = encode(texts)
+    return vecs, started_at, te.utc_now()
 
 
 # --------------------------------------------------------------------------- measure
-def measure_agent(provider, model, inputs, base_dir, workers, now):
+def measure_agent(provider, model, inputs, base_dir, workers):
     """Measure the full core for one API and return its report — or None on a bootstrap run
     (no prior baseline yet), which only seeds the baseline and leaves the row untouched."""
     workers = min(workers, WORKERS_CAP.get(provider, workers))   # rate-limit-friendly per provider
     agent = make_agent(provider, model, workers)
     slug = _slug(provider, agent)
     ch = inputs.content_hash
-    prior = load_baseline(base_dir, slug, ch)
+    agent_id = f"{provider}/{agent.agent_id}"
+    env = te.hosted_environment(agent)
+    te.check_identities(agent_id, "api", env)
+
+    def record(vecs, started_at, finished_at):
+        return te.baseline_record(agent_id=agent_id, agent_class="api", input_content_hash=ch,
+                                  dim=vecs.shape[1], started_at=started_at,
+                                  finished_at=finished_at, environment=env)
+
+    current = {"agent_id": agent_id, "agent_class": "api", "input_content_hash": ch,
+               "probe_calibration": te.PROBE_CALIBRATION, **env}
+    prior = load_baseline(base_dir, slug, current)
     q = fixed_scale_codes
 
     if prior is None:
         # bootstrap: capture the baseline (one encode + calibration) and stop — no row change,
         # no PR. Next run measures a real `time` against this and publishes the full row.
-        v0 = agent.encode(inputs.texts)
+        v0, t0, t1 = timed_encode(agent.encode, inputs.texts)
         probe = load_probe(v0)
         s, dim = float(probe.s), int(v0.shape[1])
         # save via the same path the comparison uses next run, so the baseline and future `time`
         # codes are guaranteed shape/scale-consistent.
-        save_baseline(base_dir, slug, q(v0, s, dim), s, dim, ch, len(inputs), now)
+        save_baseline(base_dir, slug, q(v0, s, dim), record(v0, t0, t1), len(inputs))
         print(f"  [{slug}] bootstrap — baseline seeded, row unchanged (time next run)")
         return None, slug
 
     # reuse the prior baseline's calibration scale so every condition (incl. time) is
     # comparable to it.
-    prior_codes, s, dim, prior_ts = prior
+    prior_codes, prior_meta = prior
+    dim = int(prior_meta["dim"])
+    s = load_probe(np.empty((0, dim))).s          # v0.2: fixed by dim
     fs = lambda vecs: q(vecs, s, dim)
-    base = fs(agent.encode(inputs.texts))          # E0 (this run)
+    base_vecs, b0, b1 = timed_encode(agent.encode, inputs.texts)
+    base = fs(base_vecs)                           # E0 (this run)
     same = fs(agent.encode(inputs.texts))          # within-session re-encode
     proc = fs(agent.encode_fresh(inputs.texts))    # fresh client/connection
     calm = fs(make_agent(provider, model, CALM_WORKERS).encode(inputs.texts))
     bw = BURST_OVERRIDE.get(provider, BURST_WORKERS)
     burst = fs(make_agent(provider, model, bw).encode(inputs.texts))
-    time_codes = fs(agent.encode(inputs.texts))    # vs the baseline captured a run ago
+    time_vecs, c0, c1 = timed_encode(agent.encode, inputs.texts)
+    time_codes = fs(time_vecs)                     # vs the baseline captured a run ago
+    evidence = te.time_evidence(prior_meta, record(time_vecs, c0, c1))
 
     metrics_by = {"same": metrics.aggregate(base, same, dim=dim),
                   "proc": metrics.aggregate(base, proc, dim=dim),
                   "conc": metrics.aggregate(calm, burst, dim=dim),
                   "time": metrics.aggregate(prior_codes, time_codes, dim=dim)}
     codes_by = {"same": same, "proc": proc, "conc": burst, "time": time_codes}
-    print(f"  [{slug}] time gap since last baseline: {round((now - prior_ts) / 3600, 1)}h")
+    print(f"  [{slug}] time gap since last baseline: {evidence['gap_hours']}h")
 
     # batch (diagnostic, not folded into ARI): same texts sent in batches vs one-per-request.
     try:
@@ -162,13 +191,14 @@ def measure_agent(provider, model, inputs, base_dir, workers, now):
     # false). measured_at is leaderboard *display* metadata, attached to the row at upsert,
     # not baked into the cryptographic report.
     rep = report.build_report(
-        agent_id=f"{provider}/{agent.agent_id}", input_set=inputs.name,
+        agent_id=agent_id, input_set=inputs.name,
         input_content_hash=ch, environment=environment,
         metrics_by_condition=metrics_by, codes_by_condition=codes_by, agent_class="api",
         fingerprint={"dim": dim, "s": round(float(s), 6)})
+    rep["results_per_condition"]["time"]["time_evidence"] = evidence
 
     # recapture a fresh baseline for next run (AFTER the time comparison above)
-    save_baseline(base_dir, slug, base, s, dim, ch, len(inputs), now)
+    save_baseline(base_dir, slug, base, record(base_vecs, b0, b1), len(inputs))
     return rep, slug
 
 
@@ -223,7 +253,7 @@ def main(argv=None) -> int:
         print(f"[{provider}] measuring same/proc/conc/time ...")
         try:
             rep, slug = measure_agent(provider, None, inputs, args.baseline_dir,
-                                      args.max_workers, now)
+                                      args.max_workers)
         except Exception as e:                       # one provider failing must not sink the run
             print(f"  [{provider}] FAILED: {e}"); failures.append(provider); continue
 

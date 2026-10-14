@@ -28,6 +28,8 @@ from ari import time_evidence as te  # noqa: E402
 from ari.check_evidence import check_report  # noqa: E402
 from ari.inputs import InputSet, load_ari_bench  # noqa: E402
 from ari.tools import capture_time_baseline as ctb  # noqa: E402
+from ari.tools import refresh_leaderboard as rl  # noqa: E402
+from ari.tools import selfhosted_conc_time as sct  # noqa: E402
 
 INPUTS = Path(__file__).resolve().parents[1] / "data" / "ari-bench-v0.1.jsonl"
 REVISION = "c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
@@ -180,6 +182,111 @@ def test_a_held_fixed_field_that_differs_is_refused(field):
     comp[field] = 999 if field == "dim" else comp[field] + "-other"
     with pytest.raises(te.TimeEvidenceError, match=f"{field} "):
         te.time_evidence(_record(), comp)
+
+
+# --------------------------------------------------------------------- refresh_leaderboard
+@pytest.fixture
+def api(monkeypatch):
+    agents = []
+
+    def make_agent(provider, model, workers):
+        agents.append(_APIAgent())
+        return agents[-1]
+
+    monkeypatch.setattr(rl, "make_agent", make_agent)
+    return agents
+
+
+def test_refresh_emits_evidence_that_passes_the_gate(api, tmp_path):
+    inputs = _inputs()
+    rep, slug = rl.measure_agent("openai", None, inputs, tmp_path, 4)
+    assert rep is None                                  # bootstrap
+    meta = _age(tmp_path / slug / "meta.json")
+    assert meta["agent_id"] == "openai/stub-embed" and meta["model_revision"] == "stub-embed"
+    rep, _ = rl.measure_agent("openai", None, inputs, tmp_path, 4)
+    assert check_report(rep) == []
+    ev = rep["results_per_condition"]["time"]["time_evidence"]
+    assert ev["baseline_finished_at"] == meta["finished_at"] and ev["gap_hours"] > 24
+    # The next baseline is a full record too.
+    assert set(te.HELD_FIXED) <= set(json.loads((tmp_path / slug / "meta.json").read_text()))
+
+
+def test_refresh_recaptures_a_minimal_legacy_baseline(api, tmp_path):
+    """A2: the meta refresh_leaderboard used to write is not evidence; it is
+    replaced by a full baseline and the row is left unchanged."""
+    inputs = _inputs()
+    d = tmp_path / "openai_stub-embed"
+    d.mkdir()
+    np.save(d / "codes.npy", np.zeros((20, 16), dtype=np.uint8))
+    (d / "meta.json").write_text(json.dumps({"unix_ts": 0, "scale_s": 0.25, "dim": DIM,
+                                             "content_hash": inputs.content_hash, "n": 20}))
+    rep, _ = rl.measure_agent("openai", None, inputs, tmp_path, 4)
+    assert rep is None
+    assert set(te.HELD_FIXED) <= set(json.loads((d / "meta.json").read_text()))
+
+
+def test_refresh_refuses_a_short_gap_and_keeps_the_baseline(api, tmp_path):
+    inputs = _inputs()
+    _, slug = rl.measure_agent("openai", None, inputs, tmp_path, 4)
+    meta = _age(tmp_path / slug / "meta.json", hours=2)
+    with pytest.raises(te.TimeEvidenceError, match="more than 24"):
+        rl.measure_agent("openai", None, inputs, tmp_path, 4)
+    assert json.loads((tmp_path / slug / "meta.json").read_text()) == meta
+
+
+def test_refresh_refuses_a_bad_pin_before_encoding(api, tmp_path, monkeypatch):
+    """A8."""
+    monkeypatch.setattr(te, "source_commit", lambda: "unknown")
+    with pytest.raises(te.TimeEvidenceError, match="source_commit"):
+        rl.measure_agent("openai", None, _inputs(), tmp_path, 4)
+    assert api[0].calls == 0
+
+
+# --------------------------------------------------------------------- selfhosted_conc_time
+def test_selfhosted_emits_evidence_that_passes_the_gate(monkeypatch, tmp_path):
+    import ari.st_load
+    monkeypatch.setattr(ari.st_load, "load_sentence_transformer", lambda *a, **k: _Model())
+    monkeypatch.setattr(sct, "STORE", tmp_path)
+    argv = ["--model", "org/model", "--inputs", str(INPUTS), "--n", "20",
+            "--burst-workers", "2", "--revision", REVISION]
+    assert sct.main(["--mode", "baseline", *argv]) == 0
+    d = tmp_path / "org_model"
+    assert sct.main(["--mode", "measure", *argv]) == 1     # under 24 h
+    _age(d / "baseline_meta.json")
+    assert sct.main(["--mode", "measure", *argv]) == 0
+    result = json.loads((d / "conc_time_result.json").read_text())
+    ev = result["time"]["time_evidence"]
+    assert result["time_gap_hours"] == ev["gap_hours"] > 24
+
+    # The report a submitter assembles from run_report's environment and this result.
+    inputs = _inputs()
+    codes = np.zeros((20, 16), dtype=np.uint8)
+    m = metrics.aggregate(codes, codes, dim=DIM)
+    rep = report.build_report(
+        agent_id="org/model", input_set=inputs.name, input_content_hash=inputs.content_hash,
+        environment={"blas": "torch-default", "threads": 1, "hardware": te.hardware_id(),
+                     "precision": "fp32", "library_versions": {"semq": "1.0.0"}},
+        metrics_by_condition={c: m for c in ("same", "proc", "conc", "time")},
+        codes_by_condition={"time": codes}, fingerprint={"dim": DIM, "s": round(2 / DIM ** 0.5, 6)})
+    rep["results_per_condition"]["time"]["time_evidence"] = ev
+    assert check_report(rep) == []
+
+
+def test_selfhosted_refuses_a_legacy_baseline(monkeypatch, tmp_path, capsys):
+    import ari.st_load
+    monkeypatch.setattr(ari.st_load, "load_sentence_transformer", lambda *a, **k: _Model())
+    monkeypatch.setattr(sct, "STORE", tmp_path)
+    inputs = _inputs()
+    d = tmp_path / "org_model"
+    d.mkdir()
+    np.save(d / "baseline_codes.npy", np.zeros((20, 16), dtype=np.uint8))
+    (d / "baseline_meta.json").write_text(json.dumps({
+        "model": "org/model", "n": 20, "dim": DIM, "content_hash": inputs.content_hash,
+        "host": "h", "unix_ts": 0}))
+    assert sct.main(["--mode", "measure", "--model", "org/model", "--inputs", str(INPUTS),
+                     "--n", "20", "--revision", REVISION]) == 1
+    assert "does not record" in capsys.readouterr().out
+    assert not (d / "conc_time_result.json").exists()
 
 
 # --------------------------------------------------------------------- capture_time_baseline
