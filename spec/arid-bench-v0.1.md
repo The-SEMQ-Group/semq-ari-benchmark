@@ -185,7 +185,12 @@ inventing a same-day proxy — and the row publishes as a draft without an
 ARI-D value until it resolves (§7's headline rule). Every `time` comparison records both runs' version
 metadata (`system_fingerprint` and its equivalents), so a reader can tell drift
 under a disclosed backend change from drift under a silent one — which is half
-the point of the condition.
+the point of the condition. The `time` cell carries `time_evidence` in the
+decoding form ([condition set](condition-set.md#decoding-layer)): both runs'
+UTC start and end from the harness clock, the gap, both harness commits, and
+the reported model versions, with the model, prompt set, protocol id and
+request held fixed. `time` cells captured before the run manifest recorded
+these fields carry no evidence and fail the conformance gate until recaptured.
 
 Headline core is `{proc, conc, time}`; `same` is the control every condition is
 read against, using the CI-overlap classification the Matrix already uses — a

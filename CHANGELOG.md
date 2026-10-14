@@ -42,6 +42,17 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   recaptured by `refresh_leaderboard.py` and refused by
   `selfhosted_conc_time.py`. `selfhosted_conc_time.py` gains `--revision`,
   hashes only the `--n` inputs it encodes, and drops `--min-gap-hours`.
+- ARI-D: `experiments/arid-dry-run/run_dry.py` records in each manifest
+  run its UTC start and end, the harness commit (an unresolved one is refused
+  before any request), the protocol id `arid-bench-v0.1`, the request template
+  and its SHA-256, and the model versions the provider reported.
+  `build_arid_submission.py` builds the `time` cell's evidence in the new
+  decoding form (`$defs/decodingTimeEvidence`), and the verifier selects the
+  form by the report's `layer`. The form holds fixed the requested model,
+  prompt set, protocol and request, and records the reported model versions
+  and harness commits. ARI-D `time` cells captured before this change carry no
+  evidence and fail the gate until recaptured; `build_arid_submission.py`
+  refuses to build from them.
 - `capture_time_baseline.py` captures and compares one API agent; its
   `--report` merge refuses a report for another agent, inputs or dimension and
   recomputes ARI and ARI-R. Self-hosted models use `selfhosted_conc_time.py`.

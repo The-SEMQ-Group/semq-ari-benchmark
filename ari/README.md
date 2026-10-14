@@ -151,6 +151,11 @@ It shares the baseline store under `~/ari_time_baseline/` with `refresh_leaderbo
 `--report` must be a report for the same agent, inputs, and dimension. The command adds the `time` cell, recomputes ARI and ARI-R, and writes the result to `--out`.
 Without `--report`, it writes `time_cell.json` next to the baseline.
 
+For a decoding-layer (ARI-D) row, `experiments/arid-dry-run/run_dry.py` records each run's start and end, harness commit, protocol id, request template and digest, and reported model versions in `results/manifest.json`.
+Run the `same` condition twice, more than 24 hours apart, with `--label t2` on the second run.
+`tools/build_arid_submission.py` builds the `time` cell's `time_evidence` from the two runs.
+It exits with an error when either run lacks these fields. Runs captured before this change lack them and must be recaptured.
+
 Check the report:
 
 ```bash

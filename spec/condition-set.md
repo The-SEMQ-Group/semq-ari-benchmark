@@ -87,6 +87,25 @@ The object is optional in the schema. Reports signed before it existed do not ca
 Those reports verify with the warning. Their `time` results are unverified against the 24-hour rule.
 Read the `time` results of those reports with their panel documentation.
 
+### Decoding layer
+
+A report with `layer: "decoding"` ([ARI-D-Bench](arid-bench-v0.1.md)) carries the decoding form, `$defs/decodingTimeEvidence`.
+The verifier selects the form by the report's `layer`. A decoding report needs the decoding fields, and every other report needs the fields above.
+The timestamps, the gap rules, both harness commits, and `deviations` work as above.
+Instead of a probe, a dimension, and an SDK version, the decoding form holds fixed:
+
+- the requested model (`model`), which equals `environment.library_versions.model_requested` when the report records it;
+- the prompt set (`input_content_hash`);
+- the protocol id (`protocol`, `arid-bench-v0.1`), which equals `environment.library_versions.protocol` when the report records it;
+- the request (`request_sha256`): the SHA-256 of the request template both runs sent, that is, the endpoint and the body with the prompt as a placeholder. The run manifest keeps the template.
+
+`precision` and `hardware` are `provider-internal`.
+The model versions the provider reported for each run are recorded in `baseline_model_versions` and `model_versions` and are not held fixed.
+A backend change between the two runs is what the condition shows ([§6](arid-bench-v0.1.md#6-conditions)).
+
+ARI-D `time` cells captured before run manifests recorded these fields carry no evidence. They fail the conformance gate until the two runs are recaptured.
+Provider `Date` headers are not used to backfill them.
+
 ## Environment record
 
 Record baseline and condition settings: BLAS implementation, thread count, hardware, precision, and library versions.
