@@ -22,6 +22,41 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   stays in git history at tag `v0.1-preview` rather than in the tree.
 - `experiments/harness-power/power.py` covers unequal repeats (2/3, 2/5) and
   records the estimator file digest.
+
+### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
+- The harness uses the public SEMQ SDK from PyPI, pinned to `semq==1.0.0`
+  and checked at import. The private 1.2–1.5 builds are no longer supported. Python 3.11
+  or later is required, the SDK's floor.
+- The probe changes: QUANT bins over the fixed range `2 / sqrt(dim)` instead
+  of a 99th-percentile calibration, and rows are rescaled to unit norm first.
+  v0.1 and v0.2 codes are not comparable; `fixed_scale_codes` refuses a v0.1
+  baseline scale. The packed layout is unchanged.
+- Evidence and open decisions are in `docs/proposals/public-sdk-port.md`.
+  Calibrating on a different subset of the frozen inputs changed 60–100% of
+  v0.1 codes for identical vectors. Against ground truth from raw vectors the
+  fixed range detected changes at least as often in most conditions.
+- Attestation no longer uses SEMQ: `ari/attest.py` writes the `NTRY` sidecar
+  directly, for a local key or the KMS key. The 10 committed reports, signed
+  with a demo key outside `spec/signers.json`, are re-signed with
+  `alias/semq-ari-attestation`; their manifests are unchanged.
+- `ari.change_profile` and `ari.bound_quality` are retired; they needed
+  `quant_regions`. The schema keeps the optional block, marked retired.
+- ARI-D-Logit-v0.2 (`spec/arid-logit-probe-v0.2.md`, `ari/logit_probe.py`)
+  replaces the calibrated logit probe: rows centred over the vocabulary,
+  fixed 65,536-wide chunks, each encoded by the public SDK. The decoding,
+  baselines, drift-rank-profile and matched-budget code uses it.
+- CI installs `semq` from PyPI in one job; the CodeArtifact job is removed.
+- The SDK is licensed under the PolyForm Noncommercial License 1.0.0. NOTICE,
+  README, CONTRIBUTING and source headers say so.
+
+### Paper revision
+- The paper leads with the measurement protocol, adds Figures 2 and 3 (hosted
+  decoding panel, batch invariance) with the scripts that draw them, and
+  states in its reproducibility section that computing a code requires the
+  SDK, which is commercially licensed, and what can be regenerated without it.
+  Figure 1 reads the trajectory curves from the archived L3_09 bundle, which
+  is fetched from the research archive and hash-checked, not committed.
+
 ### SciFact codes committed beside the results
 - `experiments/regime-discrimination/results/codes/` holds the packed QUANT
   codes for the reference and the six CPU conditions, with the calibration

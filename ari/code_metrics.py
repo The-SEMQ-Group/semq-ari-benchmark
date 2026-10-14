@@ -15,10 +15,9 @@ divided out of a number that was already published.
 Each quantity here carries its own denominator, and the byte rate is
 kept under a name that says bytes so earlier results stay reproducible.
 
-SEMQ 1.6 exposes this as ``Context.compare_codes``. This module repeats
-the unpacking because the benchmark runs against whichever wheel
-CodeArtifact serves, including builds that predate that method. The
-layout is pinned against the SDK in
+The public SEMQ SDK has no code comparison, so this module unpacks the
+packed rows itself (the layout is part of the SDK's published file
+format). The layout is pinned against the SDK in
 ``tests/test_code_metrics.py::test_unpacking_matches_the_sdk``, so a
 change to the C packing fails a test here rather than silently shifting
 a published rate.

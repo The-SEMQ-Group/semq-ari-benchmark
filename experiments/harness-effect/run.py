@@ -36,7 +36,6 @@ import csv
 import gzip
 import hashlib
 import json
-import os
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -361,24 +360,16 @@ def _git_head() -> str:
 
 
 def sign_report(report: Path, revision: str) -> None:
-    """Attest the report when a signing key is available.
+    """Attest the report when a signing key is configured.
 
-    The key is read from ARI_SIGNING_KEY, a path to a PEM private key. The
-    dataset reference binds the revision the outcome table was read from, not
-    whatever the Hub serves as ``main`` at signing time.
+    The key comes from ARI_KMS_KEY_ID or ARI_SIGNING_KEY, as in
+    ``ari.attest.sign_if_configured``. The dataset reference binds the revision
+    the outcome table was read from, not whatever the Hub serves as ``main`` at
+    signing time.
     """
-    key_path = os.environ.get("ARI_SIGNING_KEY")
-    if not key_path:
-        print("\nnot signed: set ARI_SIGNING_KEY to a PEM Ed25519 private key")
-        return
+    from ari.attest import (build_references, code_ref, config_ref,
+                            dataset_ref, sign_if_configured)
 
-    from cryptography.hazmat.primitives import serialization
-
-    from ari.attest import (attest, build_references, code_ref, config_ref,
-                            dataset_ref)
-
-    key = serialization.load_pem_private_key(
-        Path(key_path).read_bytes(), password=None)
     references = build_references(
         datasets=[dataset_ref(DATASET, revision, config="v1.0", split=h)
                   for h in HARNESSES],
@@ -389,16 +380,13 @@ def sign_report(report: Path, revision: str) -> None:
         }),
         code=code_ref(packages=["numpy"]),
     )
-    outcomes = report.parent / f"outcomes.{revision[:12]}.csv.gz"
-    att = attest(metric="ARI-E", report_path=report,
-                 input_paths=[outcomes, report.parent / f"outcomes.{revision[:12]}.manifest.json"],
-                 references=references,
-                 repo_path=report.parent / "attestation-repo", signing_key=key,
-                 signer_identity=os.environ.get("ARI_SIGNER", "unnamed"),
-                 extra={"dataset": DATASET, "revision": revision})
-    print(f"signed: {att.manifest_path.name}, {att.sidecar_path.name}")
-    print(f"  verify with: python ari/verify_report.py {report}")
-
+    tag = revision[:12]
+    sign_if_configured(
+        metric="ARI-E", report_path=report,
+        input_paths=[report.parent / f"outcomes.{tag}.csv.gz",
+                     report.parent / f"outcomes.{tag}.manifest.json"],
+        references=references,
+        extra={"dataset": DATASET, "revision": revision})
 
 if __name__ == "__main__":
     main()
