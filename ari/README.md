@@ -113,10 +113,10 @@ Two tools produce `time` cells with their `time_evidence`:
 - `tools/refresh_leaderboard.py` for the API panel. Each run compares against the baseline from the previous run and then records a new one.
 
 Both store a baseline record next to the baseline codes: the encode's UTC start and end, the agent, the input hash, the dimension, the probe id, the model and tokenizer revisions, the precision, the hardware, the SDK version, and the harness commit.
+The harness commit is recorded for each capture, not held fixed.
 They refuse a revision or harness commit that does not pin what ran when the baseline is captured, not after the wait.
 They refuse a comparison whose baseline lacks one of these settings or records a different value.
 `refresh_leaderboard.py` then records a new baseline and leaves the row unchanged, as on a first run.
-Run the comparison from the same harness commit as the baseline.
 
 For a self-hosted model:
 

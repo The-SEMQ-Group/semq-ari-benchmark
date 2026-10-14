@@ -59,9 +59,10 @@ It shows that the result compares two captures more than 24 hours apart with eve
 Record the UTC start and end of the baseline encode and of the comparison encode.
 The gap is the comparison start minus the baseline end, and it must be greater than 24 hours. The timestamps decide the gap.
 `gap_hours` records it rounded up to 0.01 h and must agree with the timestamps within 0.01.
-Record the agent id, the input content hash, the probe id, the model and tokenizer revisions, the precision, the hardware, the SDK version, and the harness commit.
+Record the agent id, the input content hash, the probe id, the model and tokenizer revisions, the precision, the hardware, and the SDK version.
 Both captures must use the same values for these settings, and the dimension must match. A change in one of them is a different condition.
 The capture tools refuse a comparison whose baseline does not record one of these settings or records a different value.
+Record the harness commit of each capture in `baseline_source_commit` and `source_commit`. The harness commit is not held fixed, so the two may differ.
 
 Hardware for a self-hosted model is the architecture, the CPU model, and the GPU names.
 The hostname and the operating system version are not part of it: two machines of the same type are the same hardware, and an operating system update is not a hardware change.
@@ -70,7 +71,7 @@ For a hosted model, hardware is `provider-internal`.
 The evidence check applies these rules:
 
 - `gap_hours` must be a finite number. NaN and infinity are rejected.
-- `source_commit` must be a full git commit id: 40 lowercase hex characters.
+- `baseline_source_commit` and `source_commit` must be full git commit ids: 40 lowercase hex characters.
 - For a `self_hosted` agent (or no `agent_class`), `model_revision` and `tokenizer_revision` must also be 40-character lowercase hex commit ids. Branches, tags, and short ids are rejected.
 - For a hosted agent (`api`, `vendor`, `rehosted`, `platform`), `model_revision` is the provider's model id, with its snapshot id when one exists, or `provider-internal`.
 - No field may hold a value that identifies nothing: a moving ref such as `main`, or a placeholder such as `unknown`, `pinned`, `floating`, or `none`.

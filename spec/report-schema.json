@@ -529,6 +529,7 @@
         "precision",
         "hardware",
         "sdk_version",
+        "baseline_source_commit",
         "source_commit"
       ],
       "properties": {
@@ -602,10 +603,15 @@
           "minLength": 1,
           "description": "semq package version that encoded both captures; must equal environment.library_versions.semq when the report records it. Never 'provider-internal'."
         },
+        "baseline_source_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full 40-character lowercase hex git commit of the harness code that ran the baseline capture. Not held fixed: it may differ from source_commit. Never 'provider-internal': the harness is ours to record for every agent_class."
+        },
         "source_commit": {
           "type": "string",
           "pattern": "^[0-9a-f]{40}$",
-          "description": "Full 40-character lowercase hex git commit of the harness code that ran both captures. Never 'provider-internal': the harness is ours to record for every agent_class."
+          "description": "Full 40-character lowercase hex git commit of the harness code that ran the comparison capture. Never 'provider-internal'."
         },
         "deviations": {
           "type": "array",

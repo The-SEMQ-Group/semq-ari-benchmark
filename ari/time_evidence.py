@@ -24,15 +24,16 @@ PROBE_CALIBRATION = "ARI-Canonical-v0.2"
 REPO = Path(__file__).resolve().parents[1]
 TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 # Fields both captures must share. A difference is another condition (`lib`,
-# `prec`, `mach`) or another measurement, not `time`.
+# `prec`, `mach`) or another measurement, not `time`. The harness commit is
+# recorded for each capture but not held fixed: in an active repository it
+# changes between any two weekly runs.
 HELD_FIXED = ("agent_id", "agent_class", "input_content_hash", "dim", "probe_calibration",
               "model_revision", "tokenizer_revision", "precision", "hardware",
-              "sdk_version", "source_commit")
+              "sdk_version")
 # The held-fixed fields the time_evidence block carries (dim is checked
 # against encoder_fingerprint instead, agent_class against the report's).
 EVIDENCE_FIELDS = ("agent_id", "input_content_hash", "probe_calibration", "model_revision",
-                   "tokenizer_revision", "precision", "hardware", "sdk_version",
-                   "source_commit")
+                   "tokenizer_revision", "precision", "hardware", "sdk_version")
 _IDENTITIES = ("agent_id", "model_revision", "tokenizer_revision", "precision", "hardware",
                "sdk_version", "source_commit")
 
@@ -143,7 +144,7 @@ def baseline_record(*, agent_id: str, agent_class: str, input_content_hash: str,
 def check_baseline(baseline: dict, current: dict) -> None:
     """Raise when `baseline` lacks a held-fixed field, or differs from `current`
     in one that `current` records."""
-    missing = [f for f in HELD_FIXED if f not in baseline]
+    missing = [f for f in HELD_FIXED + ("source_commit",) if f not in baseline]
     if missing:
         raise TimeEvidenceError(f"the baseline does not record {', '.join(missing)}; "
                                 f"capture a new baseline")
@@ -172,4 +173,6 @@ def time_evidence(baseline: dict, comparison: dict) -> dict:
             "comparison_started_at": comparison["started_at"],
             "comparison_finished_at": comparison["finished_at"],
             "gap_hours": -(-seconds // 36) / 100,
-            **{f: baseline[f] for f in EVIDENCE_FIELDS}}
+            **{f: baseline[f] for f in EVIDENCE_FIELDS},
+            "baseline_source_commit": baseline["source_commit"],
+            "source_commit": comparison["source_commit"]}

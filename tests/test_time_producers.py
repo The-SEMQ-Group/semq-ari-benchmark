@@ -166,7 +166,7 @@ def test_gap_rounds_up_so_a_valid_gap_never_records_24():
         te.time_evidence(_record(), exact)
 
 
-@pytest.mark.parametrize("field", te.HELD_FIXED)
+@pytest.mark.parametrize("field", te.HELD_FIXED + ("source_commit",))
 def test_a_held_fixed_field_missing_from_the_baseline_is_refused(field):
     """A2: the comparison never fills in a value the baseline did not record."""
     base = _record()
@@ -182,6 +182,24 @@ def test_a_held_fixed_field_that_differs_is_refused(field):
     comp[field] = 999 if field == "dim" else comp[field] + "-other"
     with pytest.raises(te.TimeEvidenceError, match=f"{field} "):
         te.time_evidence(_record(), comp)
+
+
+def test_a_harness_commit_change_is_recorded_not_refused():
+    """The harness commit is not held fixed; both captures' commits are recorded."""
+    comp = _record(started_at="2026-09-03T00:00:00Z", finished_at="2026-09-03T00:01:00Z",
+                   source_commit="c" * 40)
+    ev = te.time_evidence(_record(), comp)
+    assert ev["baseline_source_commit"] == "b" * 40 and ev["source_commit"] == "c" * 40
+
+
+@pytest.mark.parametrize("commit", ["abc1234", "unknown", "B" * 40])
+def test_a_bad_baseline_commit_is_refused_at_capture_time(commit):
+    env = {"model_revision": REVISION, "tokenizer_revision": REVISION, "precision": "fp32",
+           "hardware": "x86_64 | Xeon", "sdk_version": "1.0.0", "source_commit": commit}
+    with pytest.raises(te.TimeEvidenceError, match="source_commit"):
+        te.baseline_record(agent_id="org/model", agent_class="self_hosted",
+                           input_content_hash="a" * 64, dim=DIM, started_at="",
+                           finished_at="", environment=env)
 
 
 # --------------------------------------------------------------------- refresh_leaderboard

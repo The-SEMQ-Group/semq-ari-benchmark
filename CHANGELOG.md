@@ -10,8 +10,9 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 - `spec/report-schema.json` gains an optional `time_evidence` object on a
   condition result (`$defs/timeEvidence`): UTC start and end of the baseline
   and comparison encodes, `gap_hours`, the agent id, input hash, probe id,
-  model and tokenizer revisions, precision, hardware, SDK version, harness
-  commit, and an optional `deviations` list. Optional, so reports signed
+  model and tokenizer revisions, precision, hardware, SDK version, the harness
+  commit of each capture (`baseline_source_commit`, `source_commit`; not held
+  fixed), and an optional `deviations` list. Optional, so reports signed
   before it existed still validate; `ari_version` stays `0.1`.
 - `ari.verify_report.check_time_condition` rejects a `time` result without the
   block, whose timestamps give a gap of 24 hours or less, whose `gap_hours`
@@ -19,7 +20,7 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   report's agent id, input hash, probe id, `environment.precision`,
   `environment.hardware` or `environment.library_versions.semq`. Under
   ARI-Canonical-v0.2 the report's `encoder_fingerprint.s` must be
-  `2/sqrt(dim)`. `source_commit`, and a self-hosted model's revisions, must be
+  `2/sqrt(dim)`. Both harness commits, and a self-hosted model's revisions, must be
   full 40-character lowercase hex commit ids. Placeholders (`main`, `unknown`,
   `pinned`, `floating`, `none`) are rejected in every identity field.
   `provider-internal` is accepted only from a hosted agent_class, and only in

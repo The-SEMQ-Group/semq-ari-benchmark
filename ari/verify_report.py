@@ -46,9 +46,10 @@ TIME_EVIDENCE_TIMESTAMPS = (
 TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
     "gap_hours", "agent_id", "input_content_hash", "probe_calibration",
     "model_revision", "tokenizer_revision", "precision", "hardware",
-    "sdk_version", "source_commit",
+    "sdk_version", "baseline_source_commit", "source_commit",
 )
-# The harness commit, and a self-hosted model or tokenizer revision, must be a
+_COMMIT_FIELDS = ("baseline_source_commit", "source_commit")
+# The harness commits, and a self-hosted model or tokenizer revision, must be a
 # full git commit id: 40 lowercase hex digits. A branch, a tag or a short id can
 # move or become ambiguous, so it does not pin what ran.
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -99,7 +100,7 @@ def identity_problem(field: str, value, hosted: bool) -> str | None:
             return None
         return (f"{PROVIDER_INTERNAL!r} is allowed only in {', '.join(_PROVIDER_FIELDS)} "
                 f"of a hosted agent_class ({', '.join(sorted(HOSTED_CLASSES))})")
-    if field == "source_commit" or (field in _REVISION_FIELDS and not hosted):
+    if field in _COMMIT_FIELDS or (field in _REVISION_FIELDS and not hosted):
         if not _COMMIT_RE.match(value):
             return (f"{value!r} does not name an immutable revision; expected a full "
                     f"40-character lowercase hex commit id")
@@ -180,7 +181,7 @@ def check_time_condition(report: dict, allow_deviations: bool = False) -> list[s
 
     hosted = report.get("agent_class", "self_hosted") in HOSTED_CLASSES
     for f in ("agent_id",) + _REVISION_FIELDS + ("precision", "hardware",
-                                                 "sdk_version", "source_commit"):
+                                                 "sdk_version") + _COMMIT_FIELDS:
         if f in ev:
             problem = identity_problem(f, ev[f], hosted)
             if problem:

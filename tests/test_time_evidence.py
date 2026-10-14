@@ -68,6 +68,7 @@ def _evidence(gap_hours=30.0):
         "precision": "fp32",
         "hardware": HARDWARE,
         "sdk_version": "1.0.0",
+        "baseline_source_commit": COMMIT,
         "source_commit": COMMIT,
     }
 
@@ -152,7 +153,8 @@ SENTINELS = ["main", "unknown", "UNKNOWN ", "latest", "HEAD", "", "pinned", "flo
 
 
 @pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit",
-                                   "hardware", "sdk_version", "agent_id"])
+                                   "baseline_source_commit", "hardware", "sdk_version",
+                                   "agent_id"])
 @pytest.mark.parametrize("sentinel", SENTINELS)
 def test_placeholders_identify_nothing(field, sentinel):
     rep = _report()
@@ -160,7 +162,8 @@ def test_placeholders_identify_nothing(field, sentinel):
     _violations_naming(rep, field)
 
 
-@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit"])
+@pytest.mark.parametrize("field", ["model_revision", "tokenizer_revision", "source_commit",
+                                   "baseline_source_commit"])
 @pytest.mark.parametrize("ref", ["refs/heads/dev", "release-v1", "v1.0", "c9745ed", "abc1234",
                                  "C9745ED1D9F207416BE6D2E6F8DE32D1F16199BF"])
 def test_self_hosted_revisions_must_be_full_commit_ids(field, ref):
@@ -200,7 +203,8 @@ def test_a_hosted_revision_is_not_a_placeholder(sentinel):
     _violations_naming(rep, "model_revision")
 
 
-@pytest.mark.parametrize("field", ["sdk_version", "source_commit", "agent_id"])
+@pytest.mark.parametrize("field", ["sdk_version", "source_commit", "baseline_source_commit",
+                                   "agent_id"])
 def test_provider_internal_only_in_the_four_provider_fields(field):
     """A4: a hosted agent may not hide the SDK version, the harness commit or itself."""
     rep = _hosted_report()

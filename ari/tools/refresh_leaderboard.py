@@ -28,7 +28,7 @@ The `time` axis is a rolling comparison: this run's re-encode vs the baseline ca
 one. So the leaderboard's `time` reflects the gap since the last run (weekly cadence -> ~7d
 gap, comfortably past the canonical 76h). The `time` cell carries `time_evidence`
 (ari/time_evidence.py). A baseline whose meta.json lacks a held-fixed field, or differs in
-one (harness commit, SDK version, ...), is recaptured like a first run; a gap of 24 h or
+one (SDK version, model id, ...), is recaptured like a first run; a gap of 24 h or
 less fails the agent and keeps the baseline.
 """
 from __future__ import annotations
