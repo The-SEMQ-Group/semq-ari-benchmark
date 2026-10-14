@@ -18,9 +18,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import hashlib
 import os
 import platform
 import subprocess
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,13 +37,16 @@ TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 # changes between any two weekly runs.
 HELD_FIXED = ("agent_id", "agent_class", "input_content_hash", "dim", "probe_calibration",
               "model_revision", "tokenizer_revision", "precision", "hardware",
-              "sdk_version")
+              "machine_id", "sdk_version")
 # The held-fixed fields the time_evidence block carries (dim is checked
 # against encoder_fingerprint instead, agent_class against the report's).
 EVIDENCE_FIELDS = ("agent_id", "input_content_hash", "probe_calibration", "model_revision",
-                   "tokenizer_revision", "precision", "hardware", "sdk_version")
+                   "tokenizer_revision", "precision", "hardware", "machine_id", "sdk_version")
 _IDENTITIES = ("agent_id", "model_revision", "tokenizer_revision", "precision", "hardware",
-               "sdk_version", "source_commit")
+               "machine_id", "sdk_version", "source_commit")
+# machine_id hashes the raw identifier with this prefix, so reports never publish
+# the machine's own id (systemd treats /etc/machine-id as confidential).
+MACHINE_ID_NAMESPACE = "ari-time-evidence/machine-id/v1:"
 
 
 class TimeEvidenceError(ValueError):
@@ -97,6 +102,56 @@ def hardware_id() -> str:
     return " | ".join(p for p in (platform.machine(), cpu_model(), ", ".join(gpu_names())) if p)
 
 
+def _ec2_instance_id(timeout: float = 0.3) -> str | None:
+    """The EC2 instance id through IMDSv2, or None off EC2."""
+    base = "http://169.254.169.254/latest"
+    try:
+        token_req = urllib.request.Request(f"{base}/api/token", method="PUT",
+                                           headers={"X-aws-ec2-metadata-token-ttl-seconds": "60"})
+        token = urllib.request.urlopen(token_req, timeout=timeout).read().decode()
+        id_req = urllib.request.Request(f"{base}/meta-data/instance-id",
+                                        headers={"X-aws-ec2-metadata-token": token})
+        return urllib.request.urlopen(id_req, timeout=timeout).read().decode().strip() or None
+    except (OSError, ValueError):
+        return None
+
+
+def _os_machine_id() -> str | None:
+    """The OS install's machine id: /etc/machine-id on Linux, IOPlatformUUID on macOS."""
+    system = platform.system()
+    if system == "Linux":
+        for p in ("/etc/machine-id", "/var/lib/dbus/machine-id"):
+            try:
+                v = Path(p).read_text().strip()
+            except OSError:
+                continue
+            if v:
+                return v
+    elif system == "Darwin":
+        r = subprocess.run(["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
+                           capture_output=True, text=True)
+        for line in r.stdout.splitlines():
+            if "IOPlatformUUID" in line:
+                return line.split("=", 1)[1].strip().strip('"') or None
+    return None
+
+
+def machine_id() -> str | None:
+    """A stable id for this machine instance, hashed: "sha256:<64 hex>".
+
+    The hardware description cannot tell two machines of one type apart, and a
+    move to another machine is the `mach` condition, not `time`. Sources, first
+    found wins: $ARI_MACHINE_ID (set it in a container, whose /etc/machine-id may
+    be missing or shared with its image), the EC2 instance id (survives stop and
+    start; unique even when instances share an image), the OS machine id. The
+    hostname is not used: it can be changed and is often reused.
+    """
+    raw = os.environ.get("ARI_MACHINE_ID") or _ec2_instance_id() or _os_machine_id()
+    if not raw:
+        return None
+    return "sha256:" + hashlib.sha256((MACHINE_ID_NAMESPACE + raw).encode()).hexdigest()
+
+
 def _sdk_version() -> str:
     from .semq_compat import sdk_version
     return sdk_version()
@@ -111,6 +166,7 @@ def hosted_environment(agent) -> dict:
         rev = f"{rev}@{snapshot}"
     return {"model_revision": rev, "tokenizer_revision": PROVIDER_INTERNAL,
             "precision": PROVIDER_INTERNAL, "hardware": PROVIDER_INTERNAL,
+            "machine_id": PROVIDER_INTERNAL,
             "sdk_version": _sdk_version(), "source_commit": source_commit()}
 
 
@@ -121,7 +177,7 @@ def self_hosted_environment(model, revision: str) -> dict:
     precision = {"torch.float32": "fp32", "torch.float16": "fp16",
                  "torch.bfloat16": "bf16"}.get(dtype, "mixed")
     return {"model_revision": revision, "tokenizer_revision": revision,
-            "precision": precision, "hardware": hardware_id(),
+            "precision": precision, "hardware": hardware_id(), "machine_id": machine_id(),
             "sdk_version": _sdk_version(), "source_commit": source_commit(),
             "os": platform.platform()}
 

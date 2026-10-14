@@ -112,7 +112,7 @@ Two tools produce `time` cells with their `time_evidence`:
 - `tools/selfhosted_conc_time.py` for a self-hosted model.
 - `tools/refresh_leaderboard.py` for the API panel. Each run compares against the baseline from the previous run and then records a new one.
 
-Both store a baseline record next to the baseline codes: the encode's UTC start and end, the agent, the input hash, the dimension, the probe id, the model and tokenizer revisions, the precision, the hardware, the SDK version, and the harness commit.
+Both store a baseline record next to the baseline codes: the encode's UTC start and end, the agent, the input hash, the dimension, the probe id, the model and tokenizer revisions, the precision, the hardware, the machine id, the SDK version, and the harness commit.
 The harness commit is recorded for each capture, not held fixed.
 They refuse a revision or harness commit that does not pin what ran when the baseline is captured, not after the wait.
 They refuse a comparison whose baseline lacks one of these settings or records a different value.
@@ -129,7 +129,7 @@ For a self-hosted model:
 
    The command writes `baseline_codes.npy` and `baseline_meta.json` under `~/ari_selfhosted_conc_time/BAAI_bge-large-en-v1.5/`.
    `--revision <hub commit>` loads a specific commit; without it, the command records the commit the local cache resolves and exits if there is none.
-   Keep the directory. Do not change the SDK, the model cache, the checkout, or the hardware before step 2.
+   Keep the directory. Do not change the SDK, the model cache, the checkout, or the hardware before step 2, and run step 2 on the same machine: another instance of the same type is the `mach` condition, and the comparison is refused.
 
 2. After more than 24 hours, run the same command with `--mode measure`.
    The command writes `conc_time_result.json`; its `time` entry carries `time_evidence`.

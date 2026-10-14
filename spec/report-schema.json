@@ -542,6 +542,7 @@
         "tokenizer_revision",
         "precision",
         "hardware",
+        "machine_id",
         "sdk_version",
         "baseline_source_commit",
         "source_commit"
@@ -611,6 +612,11 @@
           "type": "string",
           "minLength": 1,
           "description": "Hardware both captures ran on; must equal environment.hardware. Self-hosted: architecture, CPU model and GPU names, not the hostname or OS version. 'provider-internal' only for a hosted agent_class."
+        },
+        "machine_id": {
+          "type": "string",
+          "pattern": "^(sha256:[0-9a-f]{64}|provider-internal)$",
+          "description": "The machine instance both captures ran on: a salted SHA-256 of a stable instance id ($ARI_MACHINE_ID, else the EC2 instance id, else the OS machine id; never the hostname). Held fixed: another machine, even of the same type, is the mach condition, not time. 'provider-internal' only for a hosted agent_class."
         },
         "sdk_version": {
           "type": "string",

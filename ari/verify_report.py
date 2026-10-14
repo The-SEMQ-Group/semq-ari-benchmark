@@ -46,7 +46,7 @@ TIME_EVIDENCE_TIMESTAMPS = (
 TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
     "gap_hours", "agent_id", "input_content_hash", "probe_calibration",
     "model_revision", "tokenizer_revision", "precision", "hardware",
-    "sdk_version", "baseline_source_commit", "source_commit",
+    "machine_id", "sdk_version", "baseline_source_commit", "source_commit",
 )
 _COMMIT_FIELDS = ("baseline_source_commit", "source_commit")
 # A decoding-layer report (layer "decoding", spec/arid-bench-v0.1.md) has no
@@ -60,6 +60,8 @@ DECODING_TIME_EVIDENCE_FIELDS = TIME_EVIDENCE_TIMESTAMPS + (
     "model_versions", "baseline_source_commit", "source_commit",
 )
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+# A self-hosted machine_id: the salted SHA-256 that ari/time_evidence.py records.
+_MACHINE_ID_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 # The harness commits, and a self-hosted model or tokenizer revision, must be a
 # full git commit id: 40 lowercase hex digits. A branch, a tag or a short id can
 # move or become ambiguous, so it does not pin what ran.
@@ -69,7 +71,7 @@ _REVISION_FIELDS = ("model_revision", "tokenizer_revision")
 # Only these may record PROVIDER_INTERNAL, and only in _PROVIDER_FIELDS.
 HOSTED_CLASSES = frozenset({"api", "vendor", "rehosted", "platform"})
 PROVIDER_INTERNAL = "provider-internal"
-_PROVIDER_FIELDS = _REVISION_FIELDS + ("precision", "hardware")
+_PROVIDER_FIELDS = _REVISION_FIELDS + ("precision", "hardware", "machine_id")
 # Strings that identify nothing: moving refs, and the placeholders capture code
 # writes when it does not know a value. Compared after strip() and lower().
 # Extends ari.hub.NON_PINS, which this file cannot import.
@@ -111,6 +113,9 @@ def identity_problem(field: str, value, hosted: bool) -> str | None:
             return None
         return (f"{PROVIDER_INTERNAL!r} is allowed only in {', '.join(_PROVIDER_FIELDS)} "
                 f"of a hosted agent_class ({', '.join(sorted(HOSTED_CLASSES))})")
+    if field == "machine_id" and not _MACHINE_ID_RE.match(value):
+        return (f"{value!r} is not a machine id; expected 'sha256:' and 64 lowercase hex "
+                f"digits, as ari/time_evidence.py records it")
     if field in _COMMIT_FIELDS or (field in _REVISION_FIELDS and not hosted):
         if not _COMMIT_RE.match(value):
             return (f"{value!r} does not name an immutable revision; expected a full "
@@ -196,7 +201,8 @@ def check_time_condition(report: dict, allow_deviations: bool = False) -> list[s
 
     hosted = report.get("agent_class", "self_hosted") in HOSTED_CLASSES
     identities = (("agent_id", "model", "protocol", "precision", "hardware") if decoding else
-                  ("agent_id",) + _REVISION_FIELDS + ("precision", "hardware", "sdk_version"))
+                  ("agent_id",) + _REVISION_FIELDS + ("precision", "hardware", "machine_id",
+                                                     "sdk_version"))
     for f in identities + _COMMIT_FIELDS:
         if f in ev:
             problem = identity_problem(f, ev[f], hosted)

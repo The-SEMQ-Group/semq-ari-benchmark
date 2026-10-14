@@ -36,6 +36,13 @@ REVISION = "c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
 DIM = 64
 
 
+@pytest.fixture(autouse=True)
+def _one_machine(monkeypatch):
+    """Every capture in a test runs on one machine unless the test says otherwise,
+    so the tests do not depend on the host's own machine id."""
+    monkeypatch.setenv("ARI_MACHINE_ID", "test-machine")
+
+
 def _vectors(texts):
     x = np.random.default_rng(len(texts)).standard_normal((len(texts), DIM))
     return (x / np.linalg.norm(x, axis=1, keepdims=True)).astype(np.float32)
@@ -148,7 +155,8 @@ def test_hardware_id_names_the_cpu_and_gpus(monkeypatch, tmp_path):
 
 def _record(**changes):
     env = {"model_revision": REVISION, "tokenizer_revision": REVISION, "precision": "fp32",
-           "hardware": "x86_64 | Xeon", "sdk_version": "1.0.0", "source_commit": "b" * 40}
+           "hardware": "x86_64 | Xeon", "machine_id": "sha256:" + "7" * 64,
+           "sdk_version": "1.0.0", "source_commit": "b" * 40}
     rec = te.baseline_record(agent_id="org/model", agent_class="self_hosted",
                              input_content_hash="a" * 64, dim=DIM,
                              started_at="2026-09-01T12:00:00Z", finished_at="2026-09-01T12:02:00Z",
@@ -384,3 +392,63 @@ def test_merge_recomputes_ari_and_ari_r():
     assert merged["ARI_R"] == pytest.approx(0.8)
     no_rho = {"detectors": {"semq": {"HER": 0.2}}}
     assert "ARI_R" not in ctb.merge_time_cell(rep, no_rho, "d", record)
+
+
+# --------------------------------------------------------------------- machine instance
+def test_selfhosted_refuses_another_machine_of_the_same_type(monkeypatch, tmp_path, capsys):
+    """Identical hardware on a different instance is the `mach` condition, not `time`."""
+    import ari.st_load
+    monkeypatch.setattr(ari.st_load, "load_sentence_transformer", lambda *a, **k: _Model())
+    monkeypatch.setattr(sct, "STORE", tmp_path)
+    argv = ["--model", "org/model", "--inputs", str(INPUTS), "--n", "20",
+            "--burst-workers", "2", "--revision", REVISION]
+    monkeypatch.setenv("ARI_MACHINE_ID", "instance-a")
+    assert sct.main(["--mode", "baseline", *argv]) == 0
+    d = tmp_path / "org_model"
+    _age(d / "baseline_meta.json")
+    hardware = te.hardware_id()
+    monkeypatch.setenv("ARI_MACHINE_ID", "instance-b")
+    assert te.hardware_id() == hardware
+    assert sct.main(["--mode", "measure", *argv]) == 1
+    assert "machine_id" in capsys.readouterr().out
+    assert not (d / "conc_time_result.json").exists()
+    monkeypatch.setenv("ARI_MACHINE_ID", "instance-a")
+    assert sct.main(["--mode", "measure", *argv]) == 0
+
+
+def test_machine_id_is_a_salted_hash_of_a_stable_id(monkeypatch):
+    monkeypatch.setattr(te, "_ec2_instance_id", lambda: None)
+    monkeypatch.setattr(te, "_os_machine_id", lambda: None)
+    monkeypatch.setenv("ARI_MACHINE_ID", "4f1c0a9e")
+    a = te.machine_id()
+    assert a == te.machine_id() and a.startswith("sha256:") and len(a) == 71
+    assert "4f1c0a9e" not in a
+    monkeypatch.setenv("ARI_MACHINE_ID", "4f1c0a9f")
+    assert te.machine_id() != a
+
+
+def test_machine_id_sources_in_order(monkeypatch):
+    monkeypatch.delenv("ARI_MACHINE_ID", raising=False)
+    monkeypatch.setattr(te, "_ec2_instance_id", lambda: "i-0abc")
+    monkeypatch.setattr(te, "_os_machine_id", lambda: "os-id")
+    from_ec2 = te.machine_id()
+    monkeypatch.setattr(te, "_ec2_instance_id", lambda: None)
+    from_os = te.machine_id()
+    assert from_ec2 != from_os
+    monkeypatch.setattr(te.platform, "node", lambda: "renamed-host")
+    assert te.machine_id() == from_os                      # not the hostname
+    monkeypatch.setattr(te, "_os_machine_id", lambda: None)
+    assert te.machine_id() is None
+
+
+def test_a_self_hosted_capture_without_a_machine_id_is_refused(monkeypatch):
+    monkeypatch.delenv("ARI_MACHINE_ID", raising=False)
+    monkeypatch.setattr(te, "_ec2_instance_id", lambda: None)
+    monkeypatch.setattr(te, "_os_machine_id", lambda: None)
+    env = te.self_hosted_environment(_Model(), REVISION)
+    with pytest.raises(te.TimeEvidenceError, match="machine_id"):
+        te.check_identities("org/model", "self_hosted", env)
+
+
+def test_a_hosted_machine_id_is_provider_internal():
+    assert te.hosted_environment(_APIAgent())["machine_id"] == te.PROVIDER_INTERNAL

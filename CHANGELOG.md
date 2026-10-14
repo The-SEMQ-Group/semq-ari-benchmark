@@ -6,6 +6,13 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Time evidence names the machine instance
+- A self-hosted `time` comparison must run on the same machine instance as its
+  baseline. The baseline record and `time_evidence` carry `machine_id`, a salted
+  SHA-256 of `$ARI_MACHINE_ID`, the EC2 instance id or the OS machine id (never
+  the hostname), held fixed with the hardware. Hardware alone could not tell two
+  machines of one type apart, and such a move is the `mach` condition.
+
 ### The time condition carries its evidence
 - `spec/report-schema.json` gains an optional `time_evidence` object on a
   condition result (`$defs/timeEvidence`): UTC start and end of the baseline

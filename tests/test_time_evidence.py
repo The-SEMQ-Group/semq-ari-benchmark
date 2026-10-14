@@ -36,6 +36,7 @@ COMMIT = "73139c8f0e1d2c3b4a5968778695a4b3c2d1e0f9"
 REVISION = "c9745ed1d9f207416be6d2e6f8de32d1f16199bf"
 AGENT = "sentence-transformers/all-MiniLM-L6-v2"
 HARDWARE = "arm64 | Apple M2"
+MACHINE_ID = "sha256:" + "7" * 64
 DIM = 384
 
 
@@ -67,6 +68,7 @@ def _evidence(gap_hours=30.0):
         "tokenizer_revision": REVISION,
         "precision": "fp32",
         "hardware": HARDWARE,
+        "machine_id": MACHINE_ID,
         "sdk_version": "1.0.0",
         "baseline_source_commit": COMMIT,
         "source_commit": COMMIT,
@@ -429,3 +431,16 @@ def test_unknown_fields_are_rejected():
     rep = _report()
     _ev(rep)["note"] = "x"
     assert any("note" in v for v in schema_violations(rep))
+
+
+def test_a_self_hosted_machine_id_must_be_the_recorded_hash():
+    for bad in ("instance-a", "ip-172-31-15-55", "sha256:abc", "provider-internal"):
+        rep = _report()
+        rep["results_per_condition"]["time"]["time_evidence"]["machine_id"] = bad
+        assert any("machine_id" in v for v in check_report(rep)), bad
+
+
+def test_machine_id_is_required():
+    rep = _report()
+    del rep["results_per_condition"]["time"]["time_evidence"]["machine_id"]
+    assert any("machine_id" in v for v in check_report(rep))
