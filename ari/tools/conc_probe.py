@@ -52,7 +52,7 @@ def main(argv=None) -> int:
     calm = fixed_scale_codes(cls(model_id=model, max_workers=args.calm_workers).encode(inputs.texts), s, dim)
     burst = fixed_scale_codes(cls(model_id=model, max_workers=args.burst_workers).encode(inputs.texts), s, dim)
 
-    m = metrics.aggregate(calm, burst)
+    m = metrics.aggregate(calm, burst, dim=dim)
     result = {"HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
               "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],
               "digest": report.condition_digest(burst),

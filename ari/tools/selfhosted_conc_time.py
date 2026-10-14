@@ -94,8 +94,9 @@ def main(argv=None) -> int:
         parts = list(ex.map(lambda idx: enc([texts[i] for i in idx], 8), shards))
     conc = probe.encode(np.vstack(parts))
 
-    cm = metrics.aggregate(calm, conc)
-    tm = metrics.aggregate(base, calm)
+    dim = meta["dim"]
+    cm = metrics.aggregate(calm, conc, dim=dim)
+    tm = metrics.aggregate(base, calm, dim=dim)
     result = {"model": args.model, "n": len(texts), "semq": probe.version, "s": probe.s,
               "time_gap_hours": round(gap_h, 2), "baseline_host": meta["host"],
               "measure_host": platform.node(),

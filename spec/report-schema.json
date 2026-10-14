@@ -172,7 +172,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "description": "ARI-R = 1 - mean coordinate_change_rate over the present comparable-core conditions. The dimension-normalized score for comparing models; ARI keeps its exact-match (HER) meaning. Added in v0.2."
+      "description": "ARI-R = 1 - mean coordinate_change_rate over the present comparable-core conditions. Removes the dimension from the denominator; it does not make sensitivity model-independent (see spec/ari-canonical-v0.2.md). ARI keeps its exact-match (HER) meaning. Added in v0.2."
     },
     "drift_spectrum": {
       "type": "object",

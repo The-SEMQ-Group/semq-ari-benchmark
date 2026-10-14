@@ -130,7 +130,7 @@ def do_capture(args):
     cond = {}
     if "same" in conditions:
         c2, _ = _codes(_encode(model, inputs.texts, bs), s, dim)
-        cond["same"] = _agg(base_codes, c2)
+        cond["same"] = _agg(base_codes, c2, dim)
     if "proc" in conditions:
         with tempfile.TemporaryDirectory() as d:
             out, pj, wk = f"{d}/v.npy", f"{d}/p.json", f"{d}/w.py"
@@ -138,7 +138,7 @@ def do_capture(args):
             json.dump(_worker_payload(args, inputs.texts, out, bs), open(pj, "w"))
             subprocess.run([sys.executable, wk, pj], check=True, env={**os.environ})
             c3, _ = _codes(np.load(out), s, dim)
-            cond["proc"] = _agg(base_codes, c3)
+            cond["proc"] = _agg(base_codes, c3, dim)
 
     out = Path(os.path.expanduser(args.outdir))
     out.mkdir(parents=True, exist_ok=True)
@@ -156,8 +156,8 @@ def do_capture(args):
     return 0
 
 
-def _agg(a, b):
-    m = metrics.aggregate(a, b)
+def _agg(a, b, dim):
+    m = metrics.aggregate(a, b, dim=dim)
     return {"HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
             "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)]}
 
@@ -172,7 +172,9 @@ def do_compare(args):
               "strictly comparable; pass --scale-s to fix it on both captures.")
     a = np.load(Path(os.path.expanduser(args.dir_a)) / "codes.npy")
     b = np.load(Path(os.path.expanduser(args.dir_b)) / "codes.npy")
-    r = _agg(a, b)
+    if ma["dim"] != mb["dim"]:
+        print(f"ERROR: the two captures have different dimensions ({ma['dim']} vs {mb['dim']})"); return 1
+    r = _agg(a, b, ma["dim"])
     print(f"mach HER = {r['HER']:.4f}  95% CI {r['HER_ci']}  H̄={r['Hbar']:.2f}\n"
           f"  A: {ma['tag']} [{ma['sm_arch']} {ma['dtype']} tf32={ma['tf32']}]\n"
           f"  B: {mb['tag']} [{mb['sm_arch']} {mb['dtype']} tf32={mb['tf32']}]")

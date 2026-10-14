@@ -89,7 +89,7 @@ def main(argv=None) -> int:
     # re-encode with the stored scale so codes are comparable to the baseline
     time_codes = fixed_scale_codes(agent.encode(inputs.texts), meta["scale_s"], meta["dim"])
 
-    m = metrics.aggregate(base_codes, time_codes)
+    m = metrics.aggregate(base_codes, time_codes, dim=meta["dim"])
     hours = (time.time() - meta["unix_ts"]) / 3600
     result = {"HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
               "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],

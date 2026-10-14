@@ -79,6 +79,9 @@ def build_report(
     n_bits = int(dim) * bpc
     results = {}
     for cond, m in metrics_by_condition.items():
+        if m.dim is not None and m.dim != int(dim):
+            raise ValueError(f"{cond}: rho was computed over {m.dim} coordinates, "
+                             f"but fingerprint.dim is {dim}")
         results[cond] = {"detectors": {"semq": {
             "HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
             "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],

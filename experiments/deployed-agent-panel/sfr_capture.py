@@ -158,10 +158,10 @@ def main() -> int:
     vecs["prec"] = worker("prec", "bf16")
 
     cond_codes = {c: probe.encode(v) for c, v in vecs.items()}
-    metrics_by = {c: metrics.aggregate(base, codes) for c, codes in cond_codes.items()}
+    metrics_by = {c: metrics.aggregate(base, codes, dim=dim) for c, codes in cond_codes.items()}
     for c, m in metrics_by.items():
         print(f"{c}: HER={m.HER:.6f} Hbar={m.Hbar:.6f} CI={m.HER_ci}", flush=True)
-    repeat = metrics.aggregate(base, probe.encode(session_repeat))
+    repeat = metrics.aggregate(base, probe.encode(session_repeat), dim=dim)
     print(f"session_repeat (diagnostic, not time): HER={repeat.HER:.6f} "
           f"Hbar={repeat.Hbar:.6f}", flush=True)
 
