@@ -58,6 +58,10 @@ Normalising each chunk on its own ties every code in a chunk to that chunk's nor
 A change concentrated in a few logits can flip codes elsewhere in the same chunk.
 That coupling is why v0.2 tracks raw per-logit drift less closely than v0.1 did.
 
+Normalisation also removes a positive rescaling of the logits.
+Scaling every logit by 1.1 changed the code of 2.2% of rows, yet it changes the output distribution as a temperature change would.
+The probe does not reliably detect a uniform rescaling, and scores should not be read as evidence that none occurred.
+
 A chunk whose centred logits are all zero has no direction and cannot be encoded.
 
 The evidence covers one 0.5B model on one machine.

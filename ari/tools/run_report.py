@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """Generate a schema-valid ARI report for one agent and (optionally) add it to the
 leaderboard. Runs baseline E0 + the conditions we can measure now (`same`, `proc`), builds
 the report, scores it with the leaderboard scorer, and appends a row.

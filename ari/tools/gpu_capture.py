@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """GPU-determinism capture/compare for the self-hosted condition matrix.
 
 Encodes a SentenceTransformer model under a controlled (device, dtype, TF32, deterministic)
@@ -96,12 +95,23 @@ def _worker_src():
         "import json,sys,numpy as np,torch\n"
         "from sentence_transformers import SentenceTransformer\n"
         "p=json.load(open(sys.argv[1]))\n"
+        # The worker must run under the parent's numerics. Before 2026-10-13 it did not set these,
+        # so a `proc` capture with --tf32 on compared TF32 on against PyTorch's default (off).
+        "torch.backends.cuda.matmul.allow_tf32=p['tf32']; torch.backends.cudnn.allow_tf32=p['tf32']\n"
+        "if p['deterministic']: torch.use_deterministic_algorithms(True, warn_only=True)\n"
         "d=p['dtype']; mk={'fp32':torch.float32,'fp16':torch.float16,'bf16':torch.bfloat16}\n"
         "m=SentenceTransformer(p['model'],device=p['device'],trust_remote_code=True,model_kwargs={'torch_dtype':mk[d]})\n"
         "assert next(m.parameters()).dtype==mk[d], (next(m.parameters()).dtype, mk[d])\n"
         "v=np.asarray(m.encode(p['texts'],normalize_embeddings=True,convert_to_numpy=True,batch_size=p.get('batch',32)),dtype=np.float32)\n"
         "np.save(p['out'],v)\n"
     )
+
+
+def _worker_payload(args, texts, out, batch):
+    # Everything the `proc` worker needs, including the parent's numerics flags.
+    return {"model": args.model, "texts": texts, "out": out,
+            "device": args.device, "dtype": args.dtype, "batch": batch,
+            "tf32": args.tf32 == "on", "deterministic": bool(args.deterministic)}
 
 
 def do_capture(args):
@@ -125,8 +135,7 @@ def do_capture(args):
         with tempfile.TemporaryDirectory() as d:
             out, pj, wk = f"{d}/v.npy", f"{d}/p.json", f"{d}/w.py"
             Path(wk).write_text(_worker_src())
-            json.dump({"model": args.model, "texts": inputs.texts, "out": out,
-                       "device": args.device, "dtype": args.dtype, "batch": bs}, open(pj, "w"))
+            json.dump(_worker_payload(args, inputs.texts, out, bs), open(pj, "w"))
             subprocess.run([sys.executable, wk, pj], check=True, env={**os.environ})
             c3, _ = _codes(np.load(out), s, dim)
             cond["proc"] = _agg(base_codes, c3)

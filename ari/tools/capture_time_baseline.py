@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
 # This file calls the SEMQ SDK, a separate library licensed under the PolyForm
-# Noncommercial License 1.0.0 and patent pending. The SDK is not covered by the
-# Apache License.
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """The `time` condition: capture an agent's SEMQ codes now, re-measure after a wall-clock
 gap (≥24h) to get the `time` HER — the most real-world drift axis (silent infra/snapshot
 updates over time). Also gives temporal replication of the drift rate.
