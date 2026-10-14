@@ -30,7 +30,7 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   signed before the block existed still verify without re-signing.
   `--require-time-evidence` turns that warning into a failure.
 - `ari/tools/capture_time_baseline.py` records the block's baseline half in
-  `meta.json`, refuses a comparison whose revision, precision or SDK version
+  `meta.json`, refuses a comparison whose revision, precision, SDK version or hardware
   differs from the baseline, builds the `time` cell with `time_evidence`, and
   with `--report`/`--out` merges it into an existing report and recomputes ARI.
   `--agent st` captures a local sentence-transformers model on CPU with pinned
@@ -39,6 +39,40 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 - `ari.report.semq_condition_entry` and `ari.report.core_ari` are factored out
   of `build_report` so a tool can build one cell and recompute the aggregate.
 - `SentenceTransformerAgent` accepts a `revision` and reports its `precision()`.
+
+### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
+- The harness uses the public SEMQ SDK from PyPI, pinned to `semq==1.0.0`
+  and checked at import. The private 1.2–1.5 builds are no longer supported. Python 3.11
+  or later is required, the SDK's floor.
+- The probe changes: QUANT bins over the fixed range `2 / sqrt(dim)` instead
+  of a 99th-percentile calibration, and rows are rescaled to unit norm first.
+  v0.1 and v0.2 codes are not comparable; `fixed_scale_codes` refuses a v0.1
+  baseline scale. The packed layout is unchanged.
+- Evidence and open decisions are in `docs/proposals/public-sdk-port.md`.
+  Calibrating on a different subset of the frozen inputs changed 60–100% of
+  v0.1 codes for identical vectors. Against ground truth from raw vectors the
+  fixed range detected changes at least as often in most conditions.
+- Attestation no longer uses SEMQ: `ari/attest.py` writes the `NTRY` sidecar
+  directly, for a local key or the KMS key. The 10 committed reports, signed
+  with a demo key outside `spec/signers.json`, are re-signed with
+  `alias/semq-ari-attestation`; their manifests are unchanged.
+- `ari.change_profile` and `ari.bound_quality` are retired; they needed
+  `quant_regions`. The schema keeps the optional block, marked retired.
+- ARI-D-Logit-v0.2 (`spec/arid-logit-probe-v0.2.md`, `ari/logit_probe.py`)
+  replaces the calibrated logit probe: rows centred over the vocabulary,
+  fixed 65,536-wide chunks, each encoded by the public SDK. The decoding,
+  baselines, drift-rank-profile and matched-budget code uses it.
+- CI installs `semq` from PyPI in one job; the CodeArtifact job is removed.
+- The SDK is licensed under the PolyForm Noncommercial License 1.0.0. NOTICE,
+  README, CONTRIBUTING and source headers say so.
+
+### Paper revision
+- The paper leads with the measurement protocol, adds Figures 2 and 3 (hosted
+  decoding panel, batch invariance) with the scripts that draw them, and
+  states in its reproducibility section that computing a code requires the
+  SDK, which is commercially licensed, and what can be regenerated without it.
+  Figure 1 reads the trajectory curves from the archived L3_09 bundle, which
+  is fetched from the research archive and hash-checked, not committed.
 ### SciFact codes committed beside the results
 - `experiments/regime-discrimination/results/codes/` holds the packed QUANT
   codes for the reference and the six CPU conditions, with the calibration
@@ -58,7 +92,8 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
   to a stand-in silently. The mock *agent* stays; it fakes vectors, not codes.
   
 ### CI says when the probe was not tested
-- A new `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
+- (Historical: superseded by the public SDK on PyPI, see above.) A new
+  `sdk-tests` job fails by name until `CODEARTIFACT_ROLE_ARN` lets CI
   install the SDK; with it set, the job installs `semq`, runs the suite and
   fails if any test still skips for want of it. The public `pytest` job
   prints how many SDK-gated modules skipped. A green check no longer looks

@@ -1,9 +1,8 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """ARI harness orchestrator.
 
 Two stages, so the panel can fan out across instances:
@@ -62,8 +61,11 @@ def aggregate_report(
 ) -> dict:
     """Stage 2: diff each condition against baseline `same` and build the report."""
     baseline = codes_by_condition["same"]
+    dim = (fingerprint or {}).get("dim")
+    if dim is None:
+        raise ValueError("fingerprint.dim is required: rho's denominator is the true dimension")
     metrics_by_condition = {
-        cond: metrics.aggregate(baseline, codes, n_resamples=n_resamples, seed=seed)
+        cond: metrics.aggregate(baseline, codes, n_resamples=n_resamples, seed=seed, dim=dim)
         for cond, codes in codes_by_condition.items()
     }
     return report.build_report(
@@ -86,7 +88,8 @@ def run_mock_panel(inputs: InputSet | None = None, dim: int = 256) -> dict:
     codes = {c: encode_condition(agent, probe, inputs, c) for c in FULL_CONDITIONS}
     environment = {
         "blas": "mock", "threads": 1, "hardware": "mock", "precision": "fp32",
-        "library_versions": {"ari": report.ARI_VERSION, "probe_backend": probe.backend},
+        "library_versions": {"ari": report.ARI_VERSION, "probe_backend": probe.backend,
+                             "semq": getattr(probe, "version", "unknown")},
     }
     return aggregate_report(
         agent_id=agent.agent_id, input_set=inputs, environment=environment,

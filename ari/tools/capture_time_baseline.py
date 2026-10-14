@@ -1,9 +1,8 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """Capture the `time` condition baseline now; compare after more than 24 hours.
 
   python ari/tools/capture_time_baseline.py --mode capture|compare --agent <api|st> ...
@@ -36,14 +35,15 @@ from ari.verify_report import check_time_condition                    # noqa: E4
 
 API = DEFAULT_API_MODELS
 STORE = Path.home() / "ari_time_baseline"
-PROBE_CALIBRATION = "ARI-Canonical-v0.1"
+PROBE_CALIBRATION = "ARI-Canonical-v0.2"
 PROVIDER_INTERNAL = "provider-internal"
 # Same pins as run_report.py, set before torch is imported so both phases encode alike.
 PIN = {"OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
        "VECLIB_MAXIMUM_THREADS": "1", "NUMEXPR_NUM_THREADS": "1"}
 # Baseline settings the comparison must reproduce. A difference is a `lib`, `prec` or
-# `mach` change, not a `time` measurement.
-HELD_FIXED = ("model_revision", "tokenizer_revision", "precision", "sdk_version")
+# `mach` change, not a `time` measurement. For an API agent, hardware is
+# provider-internal on both sides.
+HELD_FIXED = ("model_revision", "tokenizer_revision", "precision", "sdk_version", "hardware")
 TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -109,7 +109,7 @@ def time_evidence(meta: dict, started_at: str, finished_at: str, current: dict) 
           "probe_calibration": meta.get("probe_calibration", PROBE_CALIBRATION),
           "calibration_scale": float(meta["scale_s"]),
           "input_content_hash": meta["content_hash"]}
-    for f in HELD_FIXED + ("hardware", "source_commit"):
+    for f in HELD_FIXED + ("source_commit",):
         if f in meta:
             ev[f] = meta[f]
         else:
@@ -131,6 +131,12 @@ def merge_time_cell(rep: dict, cell: dict, digest: str) -> dict:
     merged["results_per_condition"] = {**rep["results_per_condition"], "time": cell}
     merged["audit_hashes"] = {**rep.get("audit_hashes", {}), "time": digest}
     merged["ARI"] = round(report.core_ari(merged["results_per_condition"]), 6)
+    # ARI-R moves with the new cell too; drop it rather than keep a stale value when a
+    # core cell lacks rho.
+    ari_r = report.core_ari_r(merged["results_per_condition"])
+    merged.pop("ARI_R", None)
+    if ari_r is not None:
+        merged["ARI_R"] = round(ari_r, 9)
     return merged
 
 
@@ -197,7 +203,7 @@ def main(argv=None) -> int:
     # the stored scale, not a recalibration, so codes are comparable to the baseline
     time_codes = fixed_scale_codes(vecs, meta["scale_s"], meta["dim"])
 
-    m = metrics.aggregate(base_codes, time_codes)
+    m = metrics.aggregate(base_codes, time_codes, dim=meta["dim"])
     cell = report.semq_condition_entry(m, int(meta["dim"]))
     cell["time_evidence"] = time_evidence(meta, started_at, finished_at, current)
     digest = report.condition_digest(time_codes)
@@ -208,10 +214,13 @@ def main(argv=None) -> int:
         where = args.out
     else:
         payload = {"results_per_condition": {"time": cell}, "audit_hashes": {"time": digest}}
+        # The validator checks the evidence against this measurement, including its
+        # fingerprint scale, so the standalone payload carries the baseline's.
         checked = {"results_per_condition": {"time": cell}, "agent_class": agent_class,
                    "input_content_hash": inputs.content_hash,
                    "probe_calibration": cell["time_evidence"]["probe_calibration"],
-                   "environment": {"precision": current["precision"]}}
+                   "environment": {"precision": current["precision"]},
+                   "encoder_fingerprint": {"dim": int(meta["dim"]), "s": meta["scale_s"]}}
         where = d / "time_cell.json"
 
     ev = cell["time_evidence"]

@@ -1,9 +1,8 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
 #
-# This file calls the SEMQ SDK, a separate library that is subject to a
-# commercial license owned by The SEMQ Group Inc. and is patent pending.
-# The SDK is not covered by the Apache License.
+# This file calls the SEMQ SDK, a separate library licensed under the PolyForm
+# Noncommercial License 1.0.0. The SDK is not covered by the Apache License.
 """The `conc` condition for a black-box API: re-encode the inputs under a burst (high
 concurrency) and against a calm (low concurrency) pass — both now, so the difference isolates
 concurrency (does load route to a different backend?) rather than time. Uses the fixed
@@ -53,7 +52,7 @@ def main(argv=None) -> int:
     calm = fixed_scale_codes(cls(model_id=model, max_workers=args.calm_workers).encode(inputs.texts), s, dim)
     burst = fixed_scale_codes(cls(model_id=model, max_workers=args.burst_workers).encode(inputs.texts), s, dim)
 
-    m = metrics.aggregate(calm, burst)
+    m = metrics.aggregate(calm, burst, dim=dim)
     result = {"HER": round(m.HER, 6), "Hbar": round(m.Hbar, 6),
               "HER_ci": [round(m.HER_ci[0], 6), round(m.HER_ci[1], 6)],
               "digest": report.condition_digest(burst),

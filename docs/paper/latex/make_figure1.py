@@ -1,5 +1,9 @@
 # Copyright (c) 2026 The SEMQ Group Inc.
 # Licensed under the Apache License, Version 2.0. See LICENSE for terms.
+import hashlib
+import json
+from pathlib import Path
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -19,15 +23,35 @@ d_r10  = [0.0000, 0.0000, 0.0000, 0.0033, -0.0061]
 lo     = [0.0000, 0.0000, 0.0000, 0.0000, -0.0278]
 hi     = [0.0000, 0.0000, 0.0000, 0.0100,  0.0156]
 
-depth  = [0, 1, 5, 10, 15]
-curves = [(r"$\sigma=0$",       [0,0.000,0.000,0.000,0.000], "-",  "o"),
-          (r"$\sigma=10^{-4}$", [0,0.000,0.007,0.007,0.012], "--", "s"),
-          (r"$\sigma=10^{-3}$", [0,0.002,0.040,0.071,0.115], "-.", "^"),
-          (r"$\sigma=3\!\times\!10^{-3}$", [0,0.028,0.147,0.258,0.392], ":", "D")]
+# Read the archived retrieval aggregates, checking the bundle's content hashes.
+EVIDENCE = Path(__file__).resolve().parent.parent / "evidence" / "L3_09_agentic_compounding"
+FETCH_HELP = ("the L3_09_agentic_compounding bundle is not committed; fetch it into "
+              f"{EVIDENCE} following the instructions in docs/paper/evidence/README.md")
+MANIFEST = EVIDENCE / "MANIFEST.sha256"
+if not MANIFEST.exists():
+    raise SystemExit(f"{MANIFEST} not found: {FETCH_HELP}")
+for line in MANIFEST.read_text().splitlines():
+    expected, name = line.split()
+    if not (EVIDENCE / name).exists():
+        raise SystemExit(f"{EVIDENCE / name} not found (partial fetch): {FETCH_HELP}")
+    actual = hashlib.sha256((EVIDENCE / name).read_bytes()).hexdigest()
+    if actual != expected:
+        raise ValueError(f"Archived evidence hash mismatch: {name}")
+retrieval = json.loads((EVIDENCE / "analysis.json").read_text())
+depth = list(range(retrieval["summary"]["n_hops"] + 1))
+curves = [
+    (label, [0.0] + retrieval["divergence"][sigma], style, marker)
+    for sigma, label, style, marker in [
+        ("0.0", r"$\sigma=0$", "-", "o"),
+        ("0.0001", r"$\sigma=10^{-4}$", "--", "s"),
+        ("0.001", r"$\sigma=10^{-3}$", "-.", "^"),
+        ("0.003", r"$\sigma=3\!\times\!10^{-3}$", ":", "D"),
+    ]
+]
 
 INK, MID, PALE = "#1a1a1a", "#7a7a7a", "#c9c9c9"
 
-fig = plt.figure(figsize=(5.5, 1.80))
+fig = plt.figure(figsize=(5.5, 1.52))
 gs  = GridSpec(2, 2, figure=fig, width_ratios=[1.05, 1.0], height_ratios=[1.0, 0.92],
                hspace=0.18, wspace=0.30, left=0.085, right=0.985, top=0.885, bottom=0.28)
 
@@ -63,7 +87,7 @@ for sp in ("top","right"): axB.spines[sp].set_visible(False)
 # --- panel C: sequential compounding --------------------------------------
 axC = fig.add_subplot(gs[:, 1])
 for lab, ys, ls, mk in curves:
-    axC.plot(depth, ys, ls, marker=mk, markersize=3.0, linewidth=1.0,
+    axC.plot(depth, ys, ls, marker=mk, markersize=3.0, markevery=[0, 1, 5, 10, 15], linewidth=1.0,
              color=INK, markerfacecolor="white", markeredgewidth=0.7, zorder=3, label=lab)
 axC.set_xlim(-0.4, 16.2); axC.set_ylim(-0.015, 0.46)
 leg = axC.legend(loc="upper left", fontsize=5.9, frameon=False, handlelength=2.0,
@@ -80,5 +104,5 @@ fig.text(0.085, 0.012,
          " " r"int8 $-0.0061\ [-0.0278,\,0.0156]$",
          fontsize=5.6, color=INK, ha="left", va="bottom")
 
-fig.savefig("figure1.pdf", format="pdf")
+fig.savefig("figure1.pdf", format="pdf", bbox_inches="tight", pad_inches=0.02)
 print("wrote figure1.pdf")
