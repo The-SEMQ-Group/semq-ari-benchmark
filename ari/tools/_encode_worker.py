@@ -15,9 +15,8 @@ import numpy as np
 
 def main() -> int:
     payload = json.load(open(sys.argv[1]))
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(payload["model"], device="cpu", trust_remote_code=True)
+    from ari.st_load import load_sentence_transformer
+    model = load_sentence_transformer(payload["model"], device="cpu", trust_remote_code=True)
     vecs = model.encode(payload["texts"], normalize_embeddings=True, convert_to_numpy=True)
     np.save(payload["out"], np.asarray(vecs, dtype=np.float32))
     return 0

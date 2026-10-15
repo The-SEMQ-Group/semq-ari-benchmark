@@ -146,14 +146,18 @@ identical in structure to the self-hosted rows, adapted for a 7B model:
   bf16-born weights.
 - **Conditions**: fp32 base → `same` (in-process re-encode), `proc` (fresh
   subprocess with its own CUDA context), `conc` (8 threads, shard batches),
-  `time` (fresh-process re-encode), and the `prec` diagnostic (a fresh bf16
+  an end-of-session repeat, and the `prec` diagnostic (a fresh bf16
   load — never an in-place cast; casting a loaded model crushes fp32-born
   rotary buffers, which the instrument itself caught during this session as
   an 89.5% code change from a 1.2e-03 perturbation in two buffers, and the
   contaminated pass was discarded and remeasured cleanly).
-- **Result**: `same = proc = conc = time = 1.000` exact; `prec` HER 0.0,
+- **Result**: `same = proc = conc = 1.000` exact; `prec` HER 0.0,
   H̄ 24.4 bits — consistent with the other self-hosted rows at 4096
-  dimensions.
+  dimensions. The session's report also listed the end-of-session repeat
+  (1.000) as `time` and averaged it into ARI. It was a same-session repeat,
+  not the >24h `time` condition, so this row has no `time` cell; the script
+  now records the repeat as a diagnostic outside the report. ARI over the
+  measured core `{proc, conc}` is unchanged at 1.000.
 - **Script**: [`sfr_capture.py`](sfr_capture.py) (self-contained; reads the
   frozen input set, verifies its pin, writes the report via
   `ari.report.build_report`). **Evidence**: the report, its KMS attestation

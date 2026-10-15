@@ -23,18 +23,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      # semq is the public SEMQ SDK, an ordinary dependency from PyPI since
-      # 1.0.0, so this one job covers the probe, the packed layout and the
-      # pipeline. It no longer needs a CodeArtifact role.
+      # semq is the public SEMQ SDK, an ordinary dependency from PyPI, so this
+      # one job covers the probe, the packed layout and the pipeline.
       - name: Install the package and test dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -c "import semq; print('semq', semq.__version__)"
 
-      # -rs prints the reason for every skip. The remaining skips name the
-      # private-SDK features the public SDK lacks (notary, regions, calibrated
-      # chunking); see docs/proposals/public-sdk-port.md.
+      # -rs prints the reason for any skip; none is expected.
       # `shell: bash` runs with -o pipefail; the default shell does not, and
       # `| tee` would otherwise hide a failing pytest.
       - name: Run tests

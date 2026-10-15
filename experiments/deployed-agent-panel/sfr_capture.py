@@ -21,9 +21,13 @@ Conditions, all compared against the fp32 base E0:
   same  in-process fp32 re-encode
   proc  fresh-subprocess fp32 encode (worker below)
   conc  8 threads encode shards concurrently, batch 8 (vs calm batch 16)
-  time  fp32 re-encode at the end of the session (confirmatory for local
-        deterministic compute, per the panel's documented semantics)
   prec  bf16 encode (diagnostic, not in the comparable core)
+
+  session_repeat  fp32 re-encode at the end of the session. Diagnostic only: a
+        same-session repeat is not the >24h `time` condition of
+        spec/condition-set.md, so it is recorded in meta.json and kept out of
+        the report and the comparable core. The `time` cell needs a second
+        capture at least 24 hours later; this script does not produce it.
 """
 import json
 import os
@@ -41,7 +45,8 @@ os.environ.update(PIN)
 import numpy as np  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
+REPO = HERE.parents[1]
+sys.path.insert(0, str(REPO))
 
 from ari import metrics, report          # noqa: E402
 from ari.inputs import load_ari_bench    # noqa: E402
@@ -65,7 +70,10 @@ p = json.load(open(sys.argv[1]))
 m = SentenceTransformer(p["model"], device="cuda", trust_remote_code=True,
                         revision=p["revision"],
                         model_kwargs={"torch_dtype": torch.bfloat16, "low_cpu_mem_usage": True})
-m.to(torch.float32)
+# "fp32" mirrors the main process (bf16-born weights upcast); "bf16" is a fresh bf16 load,
+# never an in-place cast of a loaded fp32 model, which crushes fp32-born rotary buffers.
+if p.get("dtype", "fp32") == "fp32":
+    m.to(torch.float32)
 v = m.encode(p["texts"], normalize_embeddings=True, convert_to_numpy=True, batch_size=16)
 np.save(p["out"], np.asarray(v, dtype=np.float32))
 '''
@@ -77,7 +85,7 @@ def main() -> int:
     torch.backends.cudnn.allow_tf32 = False
     torch.use_deterministic_algorithms(True, warn_only=True)
 
-    inputs = load_ari_bench(HERE / "data" / "ari-bench-v0.1.jsonl")
+    inputs = load_ari_bench(REPO / "data" / "ari-bench-v0.1.jsonl")
     texts = inputs.texts
     print(f"inputs: {len(texts)}  hash={inputs.content_hash[:16]}", flush=True)
 
@@ -118,31 +126,44 @@ def main() -> int:
         return np.vstack(parts)
     vecs["conc"] = timed("conc", conc_pass)
 
-    # prec: bf16 diagnostic (cast back to fp32 afterwards; bf16-born weights roundtrip exactly)
-    model.to(torch.bfloat16)
-    vecs["prec"] = timed("prec", lambda: enc(texts))
-    model.to(torch.float32)
+    # session_repeat: end-of-session re-encode in the same process. It is not the >24h `time`
+    # condition of spec/condition-set.md, so it stays out of the report and the core.
+    session_repeat = timed("session_repeat", lambda: enc(texts))
 
-    # time: end-of-session re-encode (confirmatory for local deterministic compute)
-    vecs["time"] = timed("time", lambda: enc(texts))
+    # Free the GPU before any worker loads a second copy: two fp32 7B models do not fit
+    # a 48 GB card, which is how the first v0.2 run of `proc` failed (CUDA OOM).
+    import gc
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
 
-    # proc: fresh subprocess with its own CUDA context
     wpath = OUT / "_worker.py"
     wpath.write_text(WORKER_SRC)
-    payload = OUT / "_payload.json"
-    pout = OUT / "vecs_proc.npy"
-    payload.write_text(json.dumps({"model": MODEL_ID, "revision": REVISION,
-                                   "texts": texts, "out": str(pout)}))
-    t = time.time()
-    subprocess.run([sys.executable, str(wpath), str(payload)], check=True,
-                   env={**os.environ})
-    vecs["proc"] = np.load(pout)
-    print(f"proc: {vecs['proc'].shape} in {time.time()-t:.0f}s", flush=True)
+
+    def worker(name, dtype):
+        payload = OUT / f"_payload_{name}.json"
+        pout = OUT / f"vecs_{name}.npy"
+        payload.write_text(json.dumps({"model": MODEL_ID, "revision": REVISION, "dtype": dtype,
+                                       "texts": texts, "out": str(pout)}))
+        t = time.time()
+        subprocess.run([sys.executable, str(wpath), str(payload)], check=True,
+                       env={**os.environ})
+        v = np.load(pout)
+        print(f"{name}: {v.shape} in {time.time()-t:.0f}s", flush=True)
+        return v
+
+    # proc: fresh subprocess with its own CUDA context
+    vecs["proc"] = worker("proc", "fp32")
+    # prec: bf16 diagnostic from a fresh bf16 load in its own process
+    vecs["prec"] = worker("prec", "bf16")
 
     cond_codes = {c: probe.encode(v) for c, v in vecs.items()}
     metrics_by = {c: metrics.aggregate(base, codes) for c, codes in cond_codes.items()}
     for c, m in metrics_by.items():
         print(f"{c}: HER={m.HER:.6f} Hbar={m.Hbar:.6f} CI={m.HER_ci}", flush=True)
+    repeat = metrics.aggregate(base, probe.encode(session_repeat))
+    print(f"session_repeat (diagnostic, not time): HER={repeat.HER:.6f} "
+          f"Hbar={repeat.Hbar:.6f}", flush=True)
 
     environment = {
         "blas": "torch-default", "threads": torch.get_num_threads(),
@@ -162,7 +183,9 @@ def main() -> int:
     (OUT / "report.json").write_text(json.dumps(rep, indent=2) + "\n")
     meta = {"model": MODEL_ID, "revision": REVISION, "s": float(probe.s), "dim": dim,
             "n": len(texts), "input_content_hash": inputs.content_hash,
-            "gpu": torch.cuda.get_device_name(0)}
+            "gpu": torch.cuda.get_device_name(0),
+            "session_repeat": {"HER": repeat.HER, "Hbar": repeat.Hbar,
+                               "note": "same-session repeat; not the >24h time condition"}}
     (OUT / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     print(f"ARI={rep['ARI']:.4f} -> {OUT/'report.json'}", flush=True)
     return 0

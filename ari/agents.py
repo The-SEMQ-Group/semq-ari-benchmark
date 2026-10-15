@@ -82,9 +82,8 @@ class SentenceTransformerAgent:
 
     def _load(self):
         if self._model is None:
-            from sentence_transformers import SentenceTransformer
-
-            self._model = SentenceTransformer(self._model_id, device=self._device, trust_remote_code=True)
+            from ari.st_load import load_sentence_transformer
+            self._model = load_sentence_transformer(self._model_id, device=self._device, trust_remote_code=True)
             self.dim = self._model.get_sentence_embedding_dimension()
         return self._model
 
