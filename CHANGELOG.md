@@ -9,7 +9,9 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 ### ARI-E removed
 - ARI-E (harness effect on agent outcomes) is removed: `ari/harness.py`,
   `experiments/harness-effect/`, `experiments/harness-power/`, their tests,
-  and the ARI-E rows and slides in the docs and decks.
+  the ARI-E rows and slides in the docs and decks, and the paper's ARI-E
+  appendix, its limitation sentence and its Open-SWE-Traces reference (later
+  references renumbered). `docs/paper/latex/ari.pdf` still needs a rebuild.
 - It is outside the v0.2 scope, and the ARI-E results on main could not be
   reproduced: the dataset revision was not pinned, and the committed trajectory
   sample contains no eligible cases.
