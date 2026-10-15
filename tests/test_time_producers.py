@@ -28,6 +28,7 @@ from ari import time_evidence as te  # noqa: E402
 from ari.check_evidence import check_report  # noqa: E402
 from ari.inputs import InputSet, load_ari_bench  # noqa: E402
 from ari.tools import capture_time_baseline as ctb  # noqa: E402
+from ari.tools import conc_probe as cp  # noqa: E402
 from ari.tools import refresh_leaderboard as rl  # noqa: E402
 from ari.tools import selfhosted_conc_time as sct  # noqa: E402
 
@@ -376,6 +377,40 @@ def test_compare_refuses_a_legacy_baseline_before_encoding(ctb_dir, capsys):
                                                    "content_hash": "a" * 64, "n": 20}))
     assert _ctb("compare", ctb_dir) == 1
     assert "does not record" in capsys.readouterr().out
+
+
+def test_compare_without_meta_reports_no_baseline(ctb_dir, capsys):
+    """codes.npy without meta.json (a partial copy) is no baseline, not a traceback."""
+    np.save(ctb_dir / "codes.npy", np.zeros((20, 16), dtype=np.uint8))
+    assert _ctb("compare", ctb_dir) == 1
+    assert "no baseline" in capsys.readouterr().out
+
+
+def _conc(d, *extra):
+    return cp.main(["--agent", "openai", "--inputs", str(INPUTS), "--limit", "20",
+                    "--baseline-dir", str(d), *extra])
+
+
+def test_conc_probe_reads_the_baseline_the_capture_tool_writes(ctb_dir, monkeypatch):
+    monkeypatch.setattr(cp, "API", {"openai": (_APIAgent, "stub-embed")})
+    assert _ctb("capture", ctb_dir) == 0
+    assert _conc(ctb_dir) == 0
+    result = json.loads((ctb_dir / "conc_result.json").read_text())
+    assert result["n"] == 20 and result["HER"] == pytest.approx(1.0)
+
+
+def test_conc_probe_refuses_a_legacy_baseline(ctb_dir, monkeypatch, capsys):
+    monkeypatch.setattr(cp, "API", {"openai": (_APIAgent, "stub-embed")})
+    (ctb_dir / "meta.json").write_text(json.dumps({"unix_ts": 0, "scale_s": 0.25, "dim": DIM,
+                                                   "content_hash": "a" * 64, "n": 20}))
+    assert _conc(ctb_dir) == 1
+    assert "does not record" in capsys.readouterr().out
+
+
+def test_conc_probe_without_a_baseline(ctb_dir, monkeypatch, capsys):
+    monkeypatch.setattr(cp, "API", {"openai": (_APIAgent, "stub-embed")})
+    assert _conc(ctb_dir) == 1
+    assert "no baseline" in capsys.readouterr().out
 
 
 def test_merge_recomputes_ari_and_ari_r():

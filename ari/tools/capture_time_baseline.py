@@ -95,7 +95,7 @@ def main(argv=None) -> int:
         # Refuse a bad pin or an unusable baseline before encoding.
         te.check_identities(agent_id, "api", env)
         if args.mode == "compare":
-            if not codes_p.exists():
+            if not codes_p.exists() or not meta_p.exists():
                 print(f"no baseline for {slug} at {d}")
                 return 1
             meta = json.loads(meta_p.read_text())
