@@ -286,7 +286,8 @@ averaged into it.
 
 ## 8. Statistics, before any money is spent
 
-The harness-power analysis showed our earlier instinct (few cases, few repeats)
+The harness-power analysis (an ARI-E simulation, removed with ARI-E and archived
+at tag `arie-v0.1-f967cba3`) showed our earlier instinct (few cases, few repeats)
 would have missed a 20-point effect nine times out of ten, and that repeats
 sharpen the control more than cases do. The same discipline applies here: before
 the first paid panel run, a simulation over (n_prompts × k) grids must show the

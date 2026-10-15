@@ -51,7 +51,6 @@ Follow the [harness guide](ari/README.md). Provider calls incur charges. Model c
 | H̄ | Mean Hamming distance. Read the experiment's definition of its unit and normalization. |
 | ARI-R | Representation measurement; the embedding report schema retains the name `ARI`. |
 | ARI-D | Decoding measurement. The specification defines output comparisons; experiments also compare internal logits. |
-| ARI-E | Harness effect after adjustment for disagreement within each harness. |
 
 An ARI of `1.0` means complete code agreement on the measured inputs and conditions.
 It does not establish answer quality, semantic equivalence, or reproducibility under unmeasured conditions.

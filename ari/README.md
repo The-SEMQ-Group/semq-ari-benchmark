@@ -14,7 +14,6 @@ Run commands from the repository root.
 | `metrics.py` | Equality, Hamming distance, and bootstrap intervals. |
 | `report.py` | Report assembly and condition digests. |
 | `run.py` | Mock-agent pipeline and local schema validation. |
-| `harness.py` | Trajectory agreement and harness-effect measurement. |
 | `attest.py`, `kms_signer.py` | Artifact attestation and signature creation. |
 | `verify_report.py` | Signature and attestation verification. |
 
