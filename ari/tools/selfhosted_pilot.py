@@ -80,7 +80,7 @@ def main(argv=None) -> int:
     for kind, enc in (("same", encode_inproc), ("proc", encode_subproc)):
         hers, hbars = [], []
         for _ in range(args.resamples):
-            m = metrics.aggregate(base_codes, probe.encode(enc(inputs.texts)))
+            m = metrics.aggregate(base_codes, probe.encode(enc(inputs.texts)), dim=int(base.shape[1]))
             hers.append(m.HER); hbars.append(m.Hbar)
         conditions[kind] = {"HER_mean": round(st.mean(hers), 6),
                             "HER_min": round(min(hers), 6),
