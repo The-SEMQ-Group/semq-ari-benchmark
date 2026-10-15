@@ -101,8 +101,9 @@ def main(argv=None) -> int:
         probe, base_codes, cond_codes, dim = selfhosted_codes(model_id, inputs.texts)
         agent_id, agent_class = model_id, "self_hosted"
         import torch
+        from ari.time_evidence import hardware_id   # the same id a `time` baseline records
         environment = {"blas": "torch-default", "threads": torch.get_num_threads(),
-                       "hardware": os.uname().machine, "precision": "fp32",
+                       "hardware": hardware_id(), "precision": "fp32",
                        "library_versions": {"probe_backend": probe.backend, "threads_pinned": "true"}}
     else:
         cls, default_model = API[args.agent]

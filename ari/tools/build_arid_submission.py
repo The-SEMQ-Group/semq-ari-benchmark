@@ -13,6 +13,10 @@ experiment, not a submission. Audit hashes are the digests of the retained
 transcripts each condition was computed from, so a verifier holding the
 transcripts can rebuild every number.
 
+The `time` cell carries `time_evidence` built from the two `same` runs'
+manifest entries (ari/time_evidence.py). A run captured before run_dry.py
+recorded those fields has none, and the tool refuses to build: recapture it.
+
 The report then goes through the same gate as every Representation row:
 score.py (schema + decoding invariants), attest_submissions.py (KMS, bound
 to the ARI-D prompt set), verify_report.py.
@@ -25,6 +29,8 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO))
+from ari import time_evidence as te  # noqa: E402
 DRY = REPO / "experiments" / "arid-dry-run" / "results"
 ARID_HASH = "af5b1a2bb35b9fa5f8d4e8f05b85a98f495a3edeb93e95da9c9ced6d783e0d6f"
 
@@ -55,26 +61,32 @@ def _generic(value, ci, criterion, unit):
     return out
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="ARI-D submission from dry-run evidence.")
     ap.add_argument("--subject", required=True, choices=list(SUBJECTS))
     ap.add_argument("--agent-id", required=True,
                     help="e.g. openai/gpt-4o-mini (provider/model, as the board names rows)")
     ap.add_argument("--measured-at", required=True, help="YYYY-MM-DD of the measurement")
     ap.add_argument("--out", type=Path, default=REPO / "leaderboard" / "submissions")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     cfg = SUBJECTS[args.subject]
     analysis = json.loads((DRY / "analysis.json").read_text())
     by_transcript = {c["transcript"]: c for c in analysis["conditions"]}
     manifest = json.loads((DRY / "manifest.json").read_text())
     digests = {r["transcript"]: r["sha256"] for r in manifest["runs"]}
+    runs = {r["transcript"]: r for r in manifest["runs"]}
 
     time_path = DRY / cfg["time_pair"]
     if not time_path.exists():
         sys.exit(f"{cfg['time_pair']} does not exist yet — the line is incomplete, "
                  "and an incomplete line is a draft, not a submission (spec §7).")
     time_pair = json.loads(time_path.read_text())
+    try:
+        evidence = te.decoding_time_evidence(*(runs[t] for t in time_pair["batches"]),
+                                             agent_id=args.agent_id)
+    except (te.TimeEvidenceError, KeyError) as e:
+        sys.exit(f"time_evidence for {time_pair['batches']}: {e}")
 
     rpc = {}
     model = None
@@ -104,7 +116,7 @@ def main() -> int:
         "first_divergence": _generic(time_pair["first_divergence"]["mean"],
                                      time_pair["first_divergence"]["ci"],
                                      "interval", "byte_position"),
-    }}
+    }, "time_evidence": evidence}
 
     ari = round(sum(rpc[c]["detectors"]["exact_generation"]["value"]
                     for c in ("proc", "conc", "time")) / 3, 6)

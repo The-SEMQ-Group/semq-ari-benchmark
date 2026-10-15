@@ -6,6 +6,66 @@ v0.2, …); the leaderboard tracks a preview label until the spec is frozen.
 
 ## [Unreleased]
 
+### Time evidence names the machine instance
+- A self-hosted `time` comparison must run on the same machine instance as its
+  baseline. The baseline record and `time_evidence` carry `machine_id`, a salted
+  SHA-256 of `$ARI_MACHINE_ID`, the EC2 instance id or the OS machine id (never
+  the hostname), held fixed with the hardware. Hardware alone could not tell two
+  machines of one type apart, and such a move is the `mach` condition.
+
+### The time condition carries its evidence
+- `spec/report-schema.json` gains an optional `time_evidence` object on a
+  condition result (`$defs/timeEvidence`): UTC start and end of the baseline
+  and comparison encodes, `gap_hours`, the agent id, input hash, probe id,
+  model and tokenizer revisions, precision, hardware, SDK version, the harness
+  commit of each capture (`baseline_source_commit`, `source_commit`; not held
+  fixed), and an optional `deviations` list. Optional, so reports signed
+  before it existed still validate; `ari_version` stays `0.1`.
+- `ari.verify_report.check_time_condition` rejects a `time` result without the
+  block, whose timestamps give a gap of 24 hours or less, whose `gap_hours`
+  disagrees with them by more than 0.01, or whose block differs from the
+  report's agent id, input hash, probe id, `environment.precision`,
+  `environment.hardware` or `environment.library_versions.semq`. Under
+  ARI-Canonical-v0.2 the report's `encoder_fingerprint.s` must be
+  `2/sqrt(dim)`. Both harness commits, and a self-hosted model's revisions, must be
+  full 40-character lowercase hex commit ids. Placeholders (`main`, `unknown`,
+  `pinned`, `floating`, `none`) are rejected in every identity field.
+  `provider-internal` is accepted only from a hosted agent_class, and only in
+  the revisions, precision and hardware. Each violation names the field.
+- `python -m ari.check_evidence <report>` runs schema validation and the same
+  function. It is the conformance gate: a `time` cell without the block, or
+  with `deviations`, fails. `ari/verify_report.py` fails on a bad block and
+  warns on a missing block or on deviations, so reports signed before the
+  block existed still verify without re-signing; `--require-time-evidence`
+  turns the missing-block warning into a failure.
+- `ari/time_evidence.py` builds the baseline record and the block. It refuses
+  a bad pin when the baseline is captured, and a comparison whose baseline
+  lacks a held-fixed setting or records a different one. `gap_hours` is
+  rounded up to 0.01 h. Self-hosted hardware is the architecture, CPU model
+  and GPU names, not the hostname or OS version; `run_report.py` records the
+  same id. An API agent's model revision is its model id, not `pinned`.
+- `refresh_leaderboard.py` (API panel) and `selfhosted_conc_time.py`
+  (self-hosted) emit `time_evidence`. A baseline written before this change is
+  recaptured by `refresh_leaderboard.py` and refused by
+  `selfhosted_conc_time.py`. `selfhosted_conc_time.py` gains `--revision`,
+  hashes only the `--n` inputs it encodes, and drops `--min-gap-hours`.
+- ARI-D: `experiments/arid-dry-run/run_dry.py` records in each manifest
+  run its UTC start and end, the harness commit (an unresolved one is refused
+  before any request), the protocol id `arid-bench-v0.1`, the request template
+  and its SHA-256, and the model versions the provider reported.
+  `build_arid_submission.py` builds the `time` cell's evidence in the new
+  decoding form (`$defs/decodingTimeEvidence`), and the verifier selects the
+  form by the report's `layer`. The form holds fixed the requested model,
+  prompt set, protocol and request, and records the reported model versions
+  and harness commits. ARI-D `time` cells captured before this change carry no
+  evidence and fail the gate until recaptured; `build_arid_submission.py`
+  refuses to build from them.
+- `capture_time_baseline.py` captures and compares one API agent; its
+  `--report` merge refuses a report for another agent, inputs or dimension and
+  recomputes ARI and ARI-R. Self-hosted models use `selfhosted_conc_time.py`.
+- `ari.report.semq_condition_entry`, `core_ari` and `core_ari_r` are factored
+  out of `build_report` so a tool can build one cell and recompute the scores.
+
 ### Port to the public SEMQ SDK (ARI-Canonical-v0.2, draft)
 - The harness uses the public SEMQ SDK from PyPI, pinned to `semq==1.0.0`
   and checked at import. The private 1.2–1.5 builds are no longer supported. Python 3.11

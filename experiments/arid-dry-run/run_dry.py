@@ -12,7 +12,9 @@ Writes one transcript per (subject, condition[, burst]) under
 raw response included (§5: transcripts retained and bound) — and updates
 ``results/manifest.json`` with the transcript digests, the prompt-set hash,
 and the request parameters. The transcripts are the evidence; ``analyze_dry.py``
-is pure over them.
+is pure over them. Each run entry also records what a `time` comparison needs
+(ari/time_evidence.py): UTC start and end, the harness commit, the protocol id,
+the request template and its digest, and the model versions the provider reported.
 
 The prompt-set hash is verified against the frozen pin before any call is
 made; ``--limit N`` runs the first N prompts and records ``prefix:N``
@@ -35,6 +37,8 @@ from providers import SUBJECTS, Caller, SalesforceAuth, StaticToken, MAX_TOKENS,
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+sys.path.insert(0, str(REPO))
+from ari import time_evidence as te  # noqa: E402
 PROMPTS = REPO / "data" / "arid-bench-v0.1.jsonl"
 FROZEN_HASH = "af5b1a2bb35b9fa5f8d4e8f05b85a98f495a3edeb93e95da9c9ced6d783e0d6f"
 
@@ -130,15 +134,24 @@ def run_conc(subject, auth, prompts: list[dict], k: int, burst: int, out) -> Non
     out.meta["achieved_in_flight_peak"] = peak
 
 
+def reported_model(rec: dict) -> str | None:
+    """The model version the provider says served the call, if it says."""
+    raw = rec.get("raw") or {}
+    return ((rec.get("parsed") or {}).get("upstream_model")
+            or raw.get("modelVersion") or raw.get("model"))
+
+
 class Writer:
     def __init__(self, path: Path):
         self.path = path
         self.n = 0
         self.meta: dict = {}
+        self.model_versions: set = set()
         self._f = gzip.open(path, "wt")
 
     def __call__(self, rec: dict) -> None:
         self._f.write(json.dumps(rec) + "\n")
+        self.model_versions.add(reported_model(rec))
         self.n += 1
         if self.n % 50 == 0:
             print(f"  {self.n} calls", flush=True)
@@ -149,7 +162,7 @@ class Writer:
 
 
 def run_one(subject, auth, prompts, scope, condition: str, burst: int | None,
-            pace: float = 0.0, label: str | None = None) -> dict:
+            pace: float = 0.0, label: str | None = None, commit: str | None = None) -> dict:
     tag = f"{subject.name}_{condition}" + (f"_b{burst}" if condition == "conc" else "")
     if subject.endpoint_kind == "chat" and not subject.supports_seed:
         tag += "_noseed"
@@ -163,6 +176,9 @@ def run_one(subject, auth, prompts, scope, condition: str, burst: int | None,
     tdir.mkdir(parents=True, exist_ok=True)
     w = Writer(tdir / f"{tag}.jsonl.gz")
     print(f"== {tag}: {len(prompts)} prompts x k={K[condition]}", flush=True)
+    request = {"endpoint": f"https://{subject.host}{subject.path}",
+               "body": subject.build_body("{prompt}")}
+    started_at = te.utc_now()
     t0 = time.monotonic()
     caller = Caller(subject, auth)
     try:
@@ -175,6 +191,7 @@ def run_one(subject, auth, prompts, scope, condition: str, burst: int | None,
     finally:
         caller.close()
     digest = w.close()
+    finished_at = te.utc_now()
     entry = {
         "transcript": w.path.name,
         "sha256": digest,
@@ -193,6 +210,13 @@ def run_one(subject, auth, prompts, scope, condition: str, burst: int | None,
         "prompt_content_hash": FROZEN_HASH,
         "reconnects": caller.reconnects,
         "wall_s": round(time.monotonic() - t0, 1),
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "source_commit": commit,
+        "protocol": te.DECODING_PROTOCOL,
+        "request": request,
+        "request_sha256": te.request_digest(request),
+        "model_versions": sorted(v for v in w.model_versions if v),
         **w.meta,
     }
     print(f"   done: {w.n} calls in {entry['wall_s']}s, sha256={digest[:16]}...", flush=True)
@@ -216,6 +240,12 @@ def main(argv=None) -> int:
                          "second pass never overwrites the first pass's digest-bound evidence)")
     args = ap.parse_args(argv)
 
+    # Refuse an unresolved harness commit before any request is made.
+    commit = te.source_commit()
+    problem = te.identity_problem("source_commit", commit, True)
+    if problem:
+        sys.exit(f"harness commit: {problem}")
+
     subject = SUBJECTS[args.subject]
     if args.model:
         subject.model = args.model
@@ -229,11 +259,11 @@ def main(argv=None) -> int:
         if subject.klass != "rehosted":
             sys.exit("the burst sweep runs on the open-model rehosted row (§6)")
         for burst in (16, 64, 128):
-            entries.append(run_one(subject, auth, prompts, scope, "conc", burst))
+            entries.append(run_one(subject, auth, prompts, scope, "conc", burst, commit=commit))
     else:
         entries.append(run_one(subject, auth, prompts, scope, args.condition,
                                args.burst if args.condition == "conc" else None,
-                               pace=args.pace, label=args.label))
+                               pace=args.pace, label=args.label, commit=commit))
 
     mpath = HERE / "results" / "manifest.json"
     manifest = json.loads(mpath.read_text()) if mpath.exists() else {"runs": []}
