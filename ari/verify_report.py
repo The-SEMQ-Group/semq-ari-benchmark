@@ -11,7 +11,7 @@ running this file on its own is the whole point.
 Copy it anywhere. It needs the report, the `.attestation.json` manifest, the
 `.attestation.notary` sidecar, and whichever input files the manifest names.
 
-    python verify_report.py harness_effect.json
+    python verify_report.py regime_matrix.json
 
 Exit status is 0 when every check passes and 1 when any check fails.
 

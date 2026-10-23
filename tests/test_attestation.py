@@ -34,12 +34,12 @@ VERIFIER = Path(__file__).resolve().parents[1] / "ari" / "verify_report.py"
 @pytest.fixture
 def signed(tmp_path):
     """A signed report with one input file beside it."""
-    inp = tmp_path / "trajectories.jsonl"
-    inp.write_text('{"case_id":"a","harness":"h1","run":0,"outcome":true}\n')
-    report = tmp_path / "harness_effect.json"
-    report.write_text(json.dumps({"effect": 0.089, "n_cases": 10788}) + "\n")
+    inp = tmp_path / "inputs.jsonl"
+    inp.write_text('{"id":"a","value":1}\n')
+    report = tmp_path / "report.json"
+    report.write_text(json.dumps({"value": 0.089, "n": 10788}) + "\n")
 
-    att = attest(metric="ARI-E", report_path=report, input_paths=[inp],
+    att = attest(metric="test-metric", report_path=report, input_paths=[inp],
                  signing_key=Ed25519PrivateKey.generate(),
                  signer_identity="test@example.com")
     return tmp_path, report, inp, att
@@ -55,7 +55,7 @@ def test_round_trip_verifies(signed):
 def test_edited_report_fails(signed):
     """The obvious attack: change the number after signing."""
     _, report, _, _ = signed
-    report.write_text(json.dumps({"effect": 0.5, "n_cases": 10788}) + "\n")
+    report.write_text(json.dumps({"value": 0.5, "n": 10788}) + "\n")
     assert verify(report) is False
 
 
@@ -66,7 +66,7 @@ def test_edited_input_fails_even_though_report_is_untouched(signed):
     report is byte-identical and the data underneath it is not.
     """
     _, report, inp, _ = signed
-    inp.write_text('{"case_id":"a","harness":"h1","run":0,"outcome":false}\n')
+    inp.write_text('{"id":"a","value":2}\n')
     assert verify(report) is False
 
 
@@ -81,11 +81,11 @@ def test_swapped_manifest_fails(signed, tmp_path):
     _, report, _, att = signed
     other = tmp_path / "other"
     other.mkdir()
-    inp2 = other / "trajectories.jsonl"
-    inp2.write_text('{"case_id":"z","harness":"h9","run":0,"outcome":true}\n')
-    report2 = other / "harness_effect.json"
-    report2.write_text(json.dumps({"effect": 0.999}) + "\n")
-    att2 = attest(metric="ARI-E", report_path=report2, input_paths=[inp2],
+    inp2 = other / "inputs.jsonl"
+    inp2.write_text('{"id":"z","value":9}\n')
+    report2 = other / "report.json"
+    report2.write_text(json.dumps({"value": 0.999}) + "\n")
+    att2 = attest(metric="test-metric", report_path=report2, input_paths=[inp2],
                   signing_key=Ed25519PrivateKey.generate())
     shutil.copy(att2.manifest_path, att.manifest_path)
     assert verify(report) is False
@@ -111,7 +111,7 @@ def test_forged_signature_fails(signed):
 def test_manifest_records_inputs_and_metric(signed):
     _, _, inp, att = signed
     m = json.loads(att.manifest_path.read_text())
-    assert m["metric"] == "ARI-E"
+    assert m["metric"] == "test-metric"
     assert [i["name"] for i in m["inputs"]] == [inp.name]
     assert m["report"]["sha256"] and m["schema"] == 2
 

@@ -12,7 +12,6 @@ Detailed methods, tables, and limitations belong to the linked experiments.
 | Detector baselines | The top-2 margin used less reference storage for the tested perturbations. It missed perturbations confined below the selected ranks. | [Baseline comparison](../experiments/decoding-reproducibility/BASELINES.md). |
 | Drift profile | The rank profile tests whether measured changes affect low-ranked logits. | [Rank-profile results](../experiments/drift-rank-profile/RESULTS.md). |
 | Hosted decoding | The dry run measured repeated-call variability and calibrated the concurrency procedure. | [Dry-run results](../experiments/arid-dry-run/RESULTS.md). |
-| Harness effect | Cross-harness disagreement exceeded within-harness disagreement in the public trace dataset. | [Harness results](../experiments/harness-effect/RESULTS.md). |
 | Probe verification | Frozen vector quantizers can satisfy the tested reconstruction property. SEMQ is not necessary for the index. | [Verification results](../experiments/probe-verifiability/RESULTS.md). |
 
 ## Interpretation limits
@@ -22,10 +21,9 @@ Detailed methods, tables, and limitations belong to the linked experiments.
 - Identical Recall@10 values do not establish identical retrieval lists.
 - Synthetic sensitivity does not establish the frequency of real deployment changes.
 - Historical panel results do not guarantee future provider behavior.
-- Grading exclusions and limited repeated runs affect the harness comparison.
 
 See [methodology](methodology.md) for repeated-call controls and [retractions](retractions.md) for withdrawn claims.
-The [scope record](proposals/ari-decomposition.md) distinguishes embedding, decoding, and harness measurements.
+The [scope record](proposals/ari-decomposition.md) distinguishes embedding and decoding measurements.
 
 ## Evidence gaps
 
@@ -34,4 +32,3 @@ See [raw evidence availability](analysis/float-detector-gate.md).
 
 The approximately 14-fold LSH sensitivity comparison remains a single synthetic result.
 It requires replication on real model outputs.
-Controlled harness experiments also require more repeated runs and accessible grading evidence.
