@@ -142,8 +142,8 @@ def test_verifier_runs_standalone_without_importing_semq(signed):
             modules.add(node.module.split(".")[0])
     assert "semq" not in modules, f"verifier imports semq: {sorted(modules)}"
     assert "ari" not in modules, f"verifier imports the package: {sorted(modules)}"
-    assert modules <= {"argparse", "base64", "hashlib", "json", "sys",
-                       "pathlib", "cryptography", "__future__", "ast"}, sorted(modules)
+    assert modules <= {"argparse", "base64", "hashlib", "json", "math", "re", "sys",
+                       "datetime", "pathlib", "cryptography", "__future__", "ast"}, sorted(modules)
 
 
 # ---------------------------------------------------------------------------

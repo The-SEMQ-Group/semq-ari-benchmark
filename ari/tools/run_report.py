@@ -101,8 +101,9 @@ def main(argv=None) -> int:
         probe, base_codes, cond_codes, dim = selfhosted_codes(model_id, inputs.texts)
         agent_id, agent_class = model_id, "self_hosted"
         import torch
+        from ari.time_evidence import hardware_id   # the same id a `time` baseline records
         environment = {"blas": "torch-default", "threads": torch.get_num_threads(),
-                       "hardware": os.uname().machine, "precision": "fp32",
+                       "hardware": hardware_id(), "precision": "fp32",
                        "library_versions": {"probe_backend": probe.backend, "threads_pinned": "true"}}
     else:
         cls, default_model = API[args.agent]
@@ -120,7 +121,7 @@ def main(argv=None) -> int:
                        "precision": "provider-internal",
                        "library_versions": {"probe_backend": probe.backend, "snapshot": str(agent.snapshot)}}
 
-    metrics_by = {c: metrics.aggregate(base_codes, codes) for c, codes in cond_codes.items()}
+    metrics_by = {c: metrics.aggregate(base_codes, codes, dim=dim) for c, codes in cond_codes.items()}
     rep = report.build_report(
         agent_id=agent_id, input_set=inputs.name, input_content_hash=inputs.content_hash,
         environment=environment, metrics_by_condition=metrics_by, codes_by_condition=cond_codes,

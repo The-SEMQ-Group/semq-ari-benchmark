@@ -61,8 +61,11 @@ def aggregate_report(
 ) -> dict:
     """Stage 2: diff each condition against baseline `same` and build the report."""
     baseline = codes_by_condition["same"]
+    dim = (fingerprint or {}).get("dim")
+    if dim is None:
+        raise ValueError("fingerprint.dim is required: rho's denominator is the true dimension")
     metrics_by_condition = {
-        cond: metrics.aggregate(baseline, codes, n_resamples=n_resamples, seed=seed)
+        cond: metrics.aggregate(baseline, codes, n_resamples=n_resamples, seed=seed, dim=dim)
         for cond, codes in codes_by_condition.items()
     }
     return report.build_report(
