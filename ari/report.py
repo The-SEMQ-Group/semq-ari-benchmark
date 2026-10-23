@@ -14,7 +14,6 @@ from pathlib import Path
 
 import numpy as np
 
-from .change_profile import ChangeProfile
 from .code_metrics import bits_per_coordinate
 from .metrics import ConditionMetrics
 from .probe import N_BINS
@@ -52,7 +51,6 @@ def build_report(
     input_content_hash: str | None = None,
     probe_calibration: str = "ARI-Canonical-v0.2",
     fingerprint: dict | None = None,
-    change_profiles: dict[str, "ChangeProfile"] | None = None,
 ) -> dict:
     present_averaged = [c for c in AVERAGED_CONDITIONS if c in metrics_by_condition]
     if not present_averaged:
@@ -83,11 +81,6 @@ def build_report(
             "bytes_of_reference_state": bors,
             "unit": "code",
         }}}
-        # Extent and location, when the caller had a probe to compute them
-        # with. Absent for a build without Context.quant_regions, and for
-        # every report written before 2026-09-10.
-        if change_profiles and cond in change_profiles:
-            results[cond]["change_profile"] = change_profiles[cond].as_dict()
 
     audit = {cond: condition_digest(codes) for cond, codes in codes_by_condition.items()}
 

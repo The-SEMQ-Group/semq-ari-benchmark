@@ -13,7 +13,9 @@ authors = [{ name = "The SEMQ Group" }]
 keywords = ["reproducibility", "embeddings", "benchmark", "ARI", "SEMQ", "AI-governance"]
 # semq is the public SEMQ SDK, licensed under the PolyForm Noncommercial License
 # 1.0.0 (not Apache-2.0); it computes every code. 3.11 is its Python floor.
-dependencies = ["numpy>=1.24", "semq>=1.0,<2"]
+# Pinned exactly so every capture uses the same build; ari/semq_compat.py
+# checks it at import. Bump both together.
+dependencies = ["numpy>=1.24", "semq==1.0.0"]
 
 [project.optional-dependencies]
 dev = ["jsonschema>=4.20", "pytest>=7", "cryptography>=41", "build>=1"]

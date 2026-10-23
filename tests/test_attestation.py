@@ -20,8 +20,6 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("semq.notary", reason="semq.notary is not in the public SEMQ SDK "
-                    "(docs/proposals/public-sdk-port.md)")
 pytest.importorskip("cryptography")
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -42,7 +40,6 @@ def signed(tmp_path):
     report.write_text(json.dumps({"effect": 0.089, "n_cases": 10788}) + "\n")
 
     att = attest(metric="ARI-E", report_path=report, input_paths=[inp],
-                 repo_path=tmp_path / "repo",
                  signing_key=Ed25519PrivateKey.generate(),
                  signer_identity="test@example.com")
     return tmp_path, report, inp, att
@@ -89,7 +86,6 @@ def test_swapped_manifest_fails(signed, tmp_path):
     report2 = other / "harness_effect.json"
     report2.write_text(json.dumps({"effect": 0.999}) + "\n")
     att2 = attest(metric="ARI-E", report_path=report2, input_paths=[inp2],
-                  repo_path=other / "repo",
                   signing_key=Ed25519PrivateKey.generate())
     shutil.copy(att2.manifest_path, att.manifest_path)
     assert verify(report) is False
@@ -223,7 +219,6 @@ def test_attest_refuses_to_bind_nothing(tmp_path):
     report.write_text("{}\n")
     with pytest.raises(ValueError, match="would bind no inputs"):
         attest(metric="ARI-R", report_path=report, input_paths=[],
-               repo_path=tmp_path / "repo",
                signing_key=Ed25519PrivateKey.generate())
 
 
@@ -235,8 +230,7 @@ def test_attest_with_references_only_round_trips(tmp_path):
         datasets=[dataset_ref("BeIR/scifact", "abc123", config="corpus")],
         models=[model_ref("all-MiniLM-L6-v2", "def456")])
     att = attest(metric="ARI-R", report_path=report, input_paths=[],
-                 references=refs, repo_path=tmp_path / "repo",
-                 signing_key=Ed25519PrivateKey.generate(),
+                 references=refs, signing_key=Ed25519PrivateKey.generate(),
                  signer_identity="test@example.com")
     assert att.manifest_path.exists()
     assert verify(report) is True

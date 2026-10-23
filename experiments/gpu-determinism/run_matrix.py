@@ -10,21 +10,25 @@ reference captures are produced locally (off-instance); `mach` is compared offli
 import argparse, subprocess, sys, os
 from pathlib import Path
 
-# Canonical QUANT scales from spec/fingerprints-v0.1.csv (calibrated on ARI-Bench-v0.1) — fixed
-# so every capture across every machine quantizes with identical bin edges.
-S = {
-    "BAAI/bge-large-en-v1.5": 0.077546, "BAAI/bge-m3": 0.082476,
-    "intfloat/multilingual-e5-large": 0.076236,
-    "sentence-transformers/all-mpnet-base-v2": 0.096253,
-    "sentence-transformers/all-MiniLM-L6-v2": 0.132349,
-    "nomic-ai/nomic-embed-text-v1.5": 0.093399,
-    "mixedbread-ai/mxbai-embed-large-v1": 0.078308,
-    "Snowflake/snowflake-arctic-embed-l": 0.082256,
-}
+# The encoders. Under the v0.2 probe every capture of a model quantizes over the same
+# fixed range 2/sqrt(dim), so bin edges match across machines without a registry scale.
+S = (  # v0.2 probe: the range is 2/sqrt(dim), so no per-model scale
+    "BAAI/bge-large-en-v1.5",
+    "BAAI/bge-m3",
+    "intfloat/multilingual-e5-large",
+    "sentence-transformers/all-mpnet-base-v2",
+    "sentence-transformers/all-MiniLM-L6-v2",
+    "nomic-ai/nomic-embed-text-v1.5",
+    "mixedbread-ai/mxbai-embed-large-v1",
+    "Snowflake/snowflake-arctic-embed-l",
+)
 SEVENB = "intfloat/e5-mistral-7b-instruct"   # fp32 OOMs a 24GB card -> bf16 only
 HERE = Path(__file__).resolve().parent
 TOOL = HERE.parent.parent / "ari" / "tools" / "gpu_capture.py"
 INPUTS = HERE.parent.parent / "data" / "ari-bench-v0.1.jsonl"
+
+
+FAILED: list[str] = []
 
 
 def cap(model, tag, device, dtype, tf32, det, s, conds, n, out):
@@ -40,7 +44,10 @@ def cap(model, tag, device, dtype, tf32, det, s, conds, n, out):
     if conds:
         cmd += ["--conditions", conds]
     print(f">>> {tag}: {model}", flush=True)
-    subprocess.run(cmd, check=True)
+    # One model failing (e.g. a .bin-only checkpoint on an old torch) must not
+    # discard the rest of the matrix; failures are reported at the end.
+    if subprocess.run(cmd).returncode != 0:
+        FAILED.append(tag + " " + model)
 
 
 def main():
@@ -55,7 +62,7 @@ def main():
     Path(a.out).mkdir(parents=True, exist_ok=True)
 
     for m in S:
-        s = S[m]
+        s = None  # gpu_capture uses the probe's fixed range
         # fp32 at true precision (TF32 off), deterministic — the GPU<->GPU mach reference + H5
         cap(m, f"{a.label}_fp32_det", "cuda", "fp32", "off", True, s, "same,proc", a.n, a.out)
         if tf32_ok:
@@ -76,3 +83,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    if FAILED:
+        print("FAILED captures:\n  " + "\n  ".join(FAILED), flush=True)
+        sys.exit(1)
