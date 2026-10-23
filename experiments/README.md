@@ -3,6 +3,7 @@
 Start with the [development setup](../README.md#build-and-test).
 Run commands from the repository root unless a procedure specifies another directory.
 Experiment scripts can overwrite their result files. Use a separate checkout to reproduce a published run.
+Results committed before ARI-Canonical-v0.2 were produced with v0.1 code. Reproduce them from tag `ari-v0.1`.
 
 | Experiment | Purpose | Procedure and results |
 | --- | --- | --- |
