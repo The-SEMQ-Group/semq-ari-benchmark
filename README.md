@@ -4,6 +4,10 @@ ARI measures changes in model representations under different deployment conditi
 This repository contains the Python harness, frozen inputs, specifications, and experiment results.
 The [leaderboard repository](https://github.com/The-SEMQ-Group/ari-leaderboard) maintains submission scoring and publication.
 
+The harness implements ARI-Canonical-v0.2 (draft).
+Committed results and the paper were produced with v0.1 code; reproduce them from tag [`ari-v0.1`](https://github.com/The-SEMQ-Group/semq-ari-benchmark/tree/ari-v0.1).
+v0.1 and v0.2 codes are not comparable.
+
 ## Build and test
 
 Use Python 3.12 to match CI. The package declares support for Python 3.11 and later, the floor of the SEMQ SDK.
