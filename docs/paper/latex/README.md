@@ -3,6 +3,9 @@
 `ari.tex` is the only paper source in this checkout. The removed Markdown and HTML
 drafts are preserved in Git history, but are not maintained copies.
 
+The paper reports v0.1 results. Reproduce them from tag `ari-v0.1`; the
+harness on main implements v0.2, whose codes are not comparable.
+
 ## Build
 
     pdflatex ari.tex && pdflatex ari.tex

@@ -50,7 +50,7 @@ def build_report(
     codes_by_condition: dict[str, np.ndarray],
     agent_class: str = "self_hosted",
     input_content_hash: str | None = None,
-    probe_calibration: str = "ARI-Canonical-v0.1",
+    probe_calibration: str = "ARI-Canonical-v0.2",
     fingerprint: dict | None = None,
     change_profiles: dict[str, "ChangeProfile"] | None = None,
 ) -> dict:
