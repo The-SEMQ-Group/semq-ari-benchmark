@@ -70,9 +70,6 @@ def facts() -> dict:
         f["storage"] = b["storage_bytes"]
         f["sens"] = {k: v[1] for k, v in b["sensitivity"].items()}
         f["tail"] = b["tail_only"]
-    e = load(EXP / "harness-effect/results/harness_effect.json")
-    if e:
-        f["e_contrasts"] = [c for c in e["contrasts"] if c.get("n_cases")]
     return f
 
 
@@ -188,7 +185,7 @@ def build_overview(f: dict, out: Path):
 
     title_slide(
         prs, "Measuring whether an AI system does the same thing twice",
-        "ARI: three indices for agent reproducibility",
+        "ARI: two indices for agent reproducibility",
         "Every number in this deck is read from a signed measurement. "
         "Verification instructions on the last slide.")
 
@@ -207,19 +204,17 @@ def build_overview(f: dict, out: Path):
     note(s, "This is the gap ARI fills.")
 
     s = blank(prs)
-    header(s, "Three layers, three different questions", "THE PRODUCT")
+    header(s, "Two layers, two different questions", "THE PRODUCT")
     table(s, [
         ["Index", "Question it answers", "Who buys it"],
         ["ARI-R", "Does the same input give the same internal representation?",
          "Risk, compliance, platform"],
         ["ARI-D", "Does the same context produce the same next token?",
          "Anyone on a hosted model API"],
-        ["ARI-E", "Does the scaffold or the model decide the outcome?",
-         "Anyone publishing agent benchmarks"],
     ], top=Inches(2.1), height=Inches(0.75), size=15)
     bullets(s, [
-        ("Why three and not one: an index called 'agent reproducibility' that "
-         "only measures embeddings overstates what it covers.", INK, False),
+        ("Why two and not one: an index that only measures embeddings "
+         "overstates what it covers.", INK, False),
         ("Splitting it turns every gap into a roadmap item instead of a hole.",
          GREEN, True),
     ], top=Inches(5.0), size=16)
@@ -268,46 +263,6 @@ def build_overview(f: dict, out: Path):
                 "customer.", top=Inches(5.3), color=INK, size=15)
 
     s = blank(prs)
-    header(s, "ARI-E: was it the model, or the wrapper?", "USE CASE 3")
-    bullets(s, [
-        ("Two agent products run the identical model. One scores higher. "
-         "Which one did the work?", INK, True),
-        "Measured on 22,000 real agent runs across two widely used scaffolds.",
-    ], top=Inches(1.8), size=17)
-    if f.get("e_contrasts"):
-        sc = [c for c in f["e_contrasts"] if c["title"].startswith("scaffold")]
-        mo = [c for c in f["e_contrasts"] if c["title"].startswith("model")]
-        avg = lambda xs: sum(c["effect"] for c in xs) / len(xs)
-        table(s, [
-            ["What changed", "How much it decided the outcome"],
-            ["The scaffold around the model", f"{avg(sc):+.3f}"],
-            ["The model itself", f"{avg(mo):+.3f}"],
-        ], top=Inches(3.2), height=Inches(0.7), size=16, highlight={1: GREEN})
-        note(s, "The wrapper mattered more than the model. Benchmark tables "
-                "that name only the model are not comparable.",
-             top=Inches(5.4), color=INK, size=15)
-
-    s = blank(prs)
-    header(s, "The control is the product", "WHY THIS IS HARD TO COPY")
-    bullets(s, [
-        ("Agents disagree with themselves 10-13% of the time. Anyone can diff "
-         "two systems. Almost nobody subtracts that noise.", INK, True),
-        "",
-    ], top=Inches(1.8), size=17)
-    if f.get("e_contrasts"):
-        c = f["e_contrasts"][0]
-        apparent = 1 - c["cross_agreement"]
-        table(s, [
-            ["Method", "Reported effect"],
-            ["Naive difference between the two scaffolds", f"{apparent:.1%}"],
-            ["ARI-E, after removing the agent's own noise", f"{c['effect']:.1%}"],
-        ], top=Inches(3.0), height=Inches(0.7), size=16, highlight={1: RED, 2: GREEN})
-        note(s, "The naive number is 2.4x too large. Across every comparison we "
-                "ran, the control removed 59-74% of the apparent effect. A "
-                "competitor without it reports noise as signal.",
-             top=Inches(5.2), color=INK, size=15)
-
-    s = blank(prs)
     header(s, "Anyone can check our numbers without trusting us",
            "WHY IT IS CREDIBLE")
     bullets(s, [
@@ -317,7 +272,7 @@ def build_overview(f: dict, out: Path):
         ("The verifier is 175 lines and does not use our software.", GREEN, True),
         "A standard whose verification requires the vendor's code is not a standard.",
     ])
-    note(s, "python verify_report.py harness_effect.json --expect-key <key>   "
+    note(s, "python verify_report.py regime_matrix.json --expect-key <key>   "
             "->   ALL CHECKS PASSED", top=Inches(5.6), color=GREEN, size=14)
 
     s = blank(prs)
@@ -327,14 +282,13 @@ def build_overview(f: dict, out: Path):
         ["ARI-R", "Measured on CPU and GPU", "Strong. The TF32 result is clean"],
         ["ARI-D", "Measured on two models",
          "Real, but a cheaper statistic competes"],
-        ["ARI-E", "22,000 real agent runs", "Strong. Largest effect of the three"],
     ], top=Inches(2.0), height=Inches(0.75), size=15)
     bullets(s, [
         ("Known weakness, stated up front: at the decoding layer a simple "
          "top-2 margin statistic gets 86% of the signal for a fraction of the "
          "storage.", RED, True),
         ("What survives is coverage. It sees changes the cheap statistic is "
-         "structurally blind to. Slide 12 has the evidence.", INK, False),
+         "structurally blind to. The technical deck has the evidence.", INK, False),
     ], top=Inches(4.9), size=15)
 
     prs.save(out)
@@ -442,61 +396,6 @@ def build_technical(f: dict, out: Path):
          "drift? A precision change does not. A token-suppression filter or an "
          "adapter might.", RED, False),
     ], top=Inches(1.9), left=Inches(8.4), width=Inches(4.4), size=13)
-
-    s = blank(prs)
-    header(s, "ARI-E: the estimator and its control", "METHOD")
-    bullets(s, [
-        ("Cross-harness disagreement means nothing until you know how often one "
-         "harness disagrees with itself.", INK, True),
-        "",
-        ("E(h1, h2)  =  mean self-consistency  -  cross-harness agreement",
-         BLUE, True),
-        "",
-        "Zero means the harnesses are interchangeable on those cases.",
-        ("If a harness has one run per case, self-consistency is unmeasurable. "
-         "The code refuses to report an effect rather than assuming 1.0.",
-         INK, False),
-        ("Intervals resample cases, not runs, because runs of one case are not "
-         "independent.", INK, False),
-    ], size=16)
-
-    s = blank(prs)
-    header(s, "ARI-E: measured on 22,000 real agent runs", "MEASUREMENT")
-    if f.get("e_contrasts"):
-        rows = [["Contrast", "Cases", "Self", "Cross", "Effect", "95% CI"]]
-        for c in f["e_contrasts"]:
-            selves = sum(c["self_consistency"].values()) / len(c["self_consistency"])
-            rows.append([
-                c["title"].replace(" effect", "").replace("scaffold, ", "scaffold "),
-                f"{c['n_cases']:,}", f"{selves:.3f}",
-                f"{c['cross_agreement']:.3f}", f"{c['effect']:+.3f}",
-                f"[{c['effect_ci'][0]:+.3f}, {c['effect_ci'][1]:+.3f}]"])
-        table(s, rows, top=Inches(2.0), height=Inches(0.62), size=12)
-    bullets(s, [
-        ("Source: nvidia/Open-SWE-Traces. SWE-agent and OpenHands, crossed with "
-         "two models. Neither scaffold was built by us.", INK, False),
-        ("Outcome is the repository's own test suite, which the agent never saw.",
-         INK, False),
-        ("Largest threat: 22% of rows were ungraded and dropped. If grading "
-         "failure tracks difficulty, the surviving set is easier.", RED, True),
-    ], top=Inches(4.9), size=14)
-
-    s = blank(prs)
-    header(s, "ARI-E: why the earlier plan would have failed", "POWER")
-    table(s, [
-        ["Pass-rate gap", "Repeats", "25 cases", "100 cases", "200 cases"],
-        ["0.00 (null)", "2", "8%", "6%", "6%"],
-        ["0.20", "2", "8%", "11%", "37%"],
-        ["0.20", "5", "23%", "74%", "96%"],
-        ["0.40", "5", "99%", "100%", "100%"],
-    ], top=Inches(2.0), height=Inches(0.65), size=14, highlight={2: RED})
-    bullets(s, [
-        ("We planned to run 25 cases at 2 repeats. That design detects a "
-         "20-point gap 8% of the time.", RED, True),
-        ("The published result that motivated the work, 24/25 against 19/25, is "
-         "a 20-point gap. We would have missed it nine times in ten.", INK, False),
-        ("Simulated before spending the compute, not after.", GREEN, True),
-    ], top=Inches(4.5), size=15)
 
     s = blank(prs)
     header(s, "Verification architecture", "ATTESTATION")

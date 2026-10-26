@@ -2,8 +2,8 @@ name: tests
 
 # Runs the pytest suite. The existing validate-submissions check only runs the
 # scorer over the submissions, so before this nothing ran the tests -- a report
-# generator / scorer contract break, or a regression in the harness statistics
-# or the attestation binding, could land green.
+# generator / scorer contract break, or a regression in the statistics or the
+# attestation binding, could land green.
 
 on:
   pull_request:

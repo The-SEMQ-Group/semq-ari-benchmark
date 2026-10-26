@@ -190,39 +190,35 @@ Matrix Multiplication.
 \emph{arXiv preprint arXiv:2511.00025}, 2025.
 \url{https://arxiv.org/abs/2511.00025}.
 
-[9] Ahmad, W. U., Ludwig, N., Majumdar, S., and Ginsburg, B.
-Open-SWE-Traces: Advancing Dual-Mode Multilingual Distillation for Software Engineering Agents.
-\emph{arXiv preprint arXiv:2606.16038}, 2026.
-\url{https://arxiv.org/abs/2606.16038}.
 
-[10] The SEMQ Group.
+[9] The SEMQ Group.
 ARI: An Auditable Retrieval Instability Harness.
 Software repository, 2026.
 \url{https://github.com/The-SEMQ-Group/semq-ari-benchmark}.
 Tag \texttt{v0.1-preview}.
 
-[11] Riach, D.
+[10] Riach, D.
 Determinism in Deep Learning.
 GPU Technology Conference (GTC) Silicon Valley, talk S9911, 2019.
 \url{https://developer.nvidia.com/gtc/2019/video/s9911}.
 See also NVIDIA, \texttt{framework-reproducibility},
 \url{https://github.com/NVIDIA/framework-reproducibility}.
 
-[12] Somepalli, G., Fowl, L., Bansal, A., Yeh-Chiang, P., Dar, Y.,
+[11] Somepalli, G., Fowl, L., Bansal, A., Yeh-Chiang, P., Dar, Y.,
 Baraniuk, R., Goldblum, M., and Goldstein, T.
 Can Neural Nets Learn the Same Model Twice? Investigating Reproducibility
 and Double Descent from the Decision Boundary Perspective.
 \emph{arXiv preprint arXiv:2203.08124}, 2022.
 \url{https://arxiv.org/abs/2203.08124}.
 
-[13] Hochlehnert, A., Bhatnagar, H., Udandarao, V., Albanie, S.,
+[12] Hochlehnert, A., Bhatnagar, H., Udandarao, V., Albanie, S.,
 Prabhu, A., and Bethge, M.
 A Sober Look at Progress in Language Model Reasoning: Pitfalls and Paths
 to Reproducibility.
 \emph{arXiv preprint arXiv:2504.07086}, 2025.
 \url{https://arxiv.org/abs/2504.07086}.
 
-[14] Iakymchuk, R., Defour, D., Collange, S., and Graillat, S.
+[13] Iakymchuk, R., Defour, D., Collange, S., and Graillat, S.
 Reproducible and Accurate Matrix Multiplication.
 In \emph{SCAN: Scientific Computing, Computer Arithmetic and Validated
 Numerics}, W\"urzburg, Germany, pages 126--137, 2014.
@@ -325,28 +321,6 @@ A two-encoder boundary sweep under TF32 places the effect precisely: all-MiniLM-
 A self-avoiding nearest-neighbor walk over NFCorpus (3{,}633 documents), using bge-large-en-v1.5, selects the nearest unvisited document and uses its cached embedding as the next query. The corpus embeddings are fixed; synthetic isotropic Gaussian noise is added independently to the query at each hop. Over 100 seed documents and 30 runs per seed, 11.5\% of trajectories differ from the noiseless reference by hop 15 at $\sigma=10^{-3}$ (Figure~\ref{fig:overview}, right). This is the largest tested noise level meeting a predefined clean top-10 overlap threshold of 0.98; the measured overlap is 0.9879 on a separate 200-document sample with 30 noise draws each. This overlap is not relevance-based Recall@10 as used on SciFact. Divergence counts the fraction of 3{,}000 seed/run prefixes that differ by each depth and is necessarily nondecreasing; monotonicity alone is not evidence of amplification. The noiseless control has zero divergence. GPU residuals can be structured rather than isotropic [8], so this illustrates possible accumulation in a retrieval walk, not predicted API or agent behavior. The experiment is \texttt{L3\_09\_agentic\_compounding} in the companion \texttt{semq-research} repository; its archived run is identified in the review notes.
 
 The archived analysis, configuration, environment, replay instructions and checksum manifest are fetched from the research archive into \texttt{docs/paper/evidence/L3\_09\_agentic\_compounding} and hash-checked against the bundle's manifest; the bundle is not committed to the repository, and \texttt{docs/paper/evidence/README.md} gives the fetch instructions. Figure~\ref{fig:overview} verifies the manifest hashes before reading the aggregate curves. The bundle does not retain individual trajectories, so seed-level uncertainty cannot be reconstructed. Its configuration requests a 3{,}000-document limit while its analysis reports 3{,}633 documents; exact replay requires resolving the historical handling of this setting. Replay identifies a container digest but no source Git revision.
-
-\section{Outcome-layer reproducibility (ARI-E)}\label{app:arie}
-
-ARI-E applies the same discipline --- repeat, control, attribute --- to agent outcomes on \texttt{nvidia/Open-SWE-Traces} [9]: two scaffolds (SWE-agent, OpenHands) crossed with two models over ${\sim}18{,}000$ SWE-bench-style instances, up to three rollouts each, graded by each repository's own test suite. An outcome is the recorded test verdict. Agreement on this binary outcome does not establish identical patches, trajectories or task correctness beyond the tests; judge-based grading would introduce a different source of measurement variability.
-
-The estimator is an agreement gap, not a corrected success rate. On instances with at least two rollouts per side, let $D_{\text{cross}}$ be the rate at which paired verdicts differ across the two conditions and $D_{\text{self}}$ the rate at which repeated rollouts differ within one; we report $\Delta=D_{\text{cross}}-D_{\text{self}}$.
-
-\begin{table}[h]
-\centering\caption{Self-consistency and cross-condition agreement across four scaffold and model contrasts. The last column is the share of the raw cross-condition disagreement that the self-consistency control removes.}\label{tab:arie}\scriptsize\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lrrrrlr}
-\toprule
-contrast & cases & self-consistency & cross agreement & $\Delta$ & 95\% CI & removed \\
-\midrule
-scaffold, model = Qwen3.5-122B & 10{,}788 & 0.874 & 0.785 & \textbf{+0.089} & [+0.083, +0.094] & 59\% \\
-scaffold, model = Minimax-M2.5 & 12{,}195 & 0.899 & 0.849 & \textbf{+0.050} & [+0.044, +0.052] & 67\% \\
-model, scaffold = SWE-agent & 10{,}674 & 0.880 & 0.839 & \textbf{+0.041} & [+0.039, +0.046] & 74\% \\
-model, scaffold = OpenHands & 11{,}933 & 0.892 & 0.833 & \textbf{+0.059} & [+0.054, +0.062] & 65\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The mean scaffold effect is $+0.069$ and the mean model effect $+0.050$, and the control removes 59--74\% of the unadjusted disagreement, so most of what looks like a scaffold difference is the agent disagreeing with itself. $\Delta$ is descriptive, not causal. It assumes rollouts within a condition are exchangeable, so that $D_{\text{self}}$ estimates the disagreement a fixed condition generates against itself; it is defined only where both sides have at least two rollouts; and it does not estimate a scaffold's effect on task success. A separate power simulation bounds what this design can see: at 200 cases and five repeats a 0.20 pass-probability gap is detected in 96.5\% of trials, but a 0.10 gap in 17.5\%, and at 25 cases and two repeats even the 0.20 gap is detected in 7.5\% --- small-case claims are not supported. About 22\% of rows were ungraded and dropped.
 
 \section{Full SciFact condition table}\label{app:scifact}
 
@@ -473,13 +447,13 @@ Additional ablations show that the quantizer is not the only viable probe. At th
 
 \section{Remaining limitations}\label{app:limits}
 
-\texttt{lib} is unmeasured, and \texttt{mach} is unmeasured in the self-hosted panel reports, although the repository's GPU-determinism experiment records \texttt{mach} across T4 and A10G for eight encoders, seven at HER 0.996 or above and mxbai-embed-large-v1 at 0.537 against the CPU reference; one provider's \texttt{conc} ran at burst 16 rather than 64 due to rate limits; GPU coverage is four architectures (T4, A10G, L40S, H100). The hosted decoding panel is a dry run: it is the harness shakedown and calibration pass the specification calls for, an exploratory capture rather than a completed benchmark, and two of its five subjects still lack a \texttt{time} cell. Drift rates are input-distribution dependent, which is exactly why the input set is frozen and hash-pinned. Reports are attested by the leaderboard operator's own key, so attestation proves integrity and origin without making the operator a neutral party. About 22\% of ARI-E rows were ungraded and dropped; if grading failure tracks task difficulty, the surviving set is easier than the whole. The pre-registered sensitivity hypothesis that SEMQ is ${\sim}300$x more sensitive than retrieval is withdrawn: its gate was a slope ratio, and Recall@10 can be exactly flat, which sends the ratio to infinity or collapses it toward one. The measured ratios ran 1.1--4.2 and the claim does not survive; what survives is that the two are different classes of instrument, one continuous and one a threshold detector.
+\texttt{lib} is unmeasured, and \texttt{mach} is unmeasured in the self-hosted panel reports, although the repository's GPU-determinism experiment records \texttt{mach} across T4 and A10G for eight encoders, seven at HER 0.996 or above and mxbai-embed-large-v1 at 0.537 against the CPU reference; one provider's \texttt{conc} ran at burst 16 rather than 64 due to rate limits; GPU coverage is four architectures (T4, A10G, L40S, H100). The hosted decoding panel is a dry run: it is the harness shakedown and calibration pass the specification calls for, an exploratory capture rather than a completed benchmark, and two of its five subjects still lack a \texttt{time} cell. Drift rates are input-distribution dependent, which is exactly why the input set is frozen and hash-pinned. Reports are attested by the leaderboard operator's own key, so attestation proves integrity and origin without making the operator a neutral party. The pre-registered sensitivity hypothesis that SEMQ is ${\sim}300$x more sensitive than retrieval is withdrawn: its gate was a slope ratio, and Recall@10 can be exactly flat, which sends the ratio to infinity or collapses it toward one. The measured ratios ran 1.1--4.2 and the claim does not survive; what survives is that the two are different classes of instrument, one continuous and one a threshold detector.
 
 \section*{Reproducibility statement}
 
-The specification (probe, calibration rule, condition set, report schema, per-model fingerprints), the frozen 1{,}000-item input set with its content hash, the measurement harness, the independent verifier, and experimental protocols and machine-readable results are in the accompanying repository [10]; each experiment directory carries a reproduce command. The harness is Apache-2.0; the specification and input set are CC-BY-4.0, with BEIR text retaining its original licenses.
+The specification (probe, calibration rule, condition set, report schema, per-model fingerprints), the frozen 1{,}000-item input set with its content hash, the measurement harness, the independent verifier, and experimental protocols and machine-readable results are in the accompanying repository [9]; each experiment directory carries a reproduce command. The harness is Apache-2.0; the specification and input set are CC-BY-4.0, with BEIR text retaining its original licenses.
 
-Computing a code requires the SEMQ SDK, which implements the quantizer of Appendix~\ref{app:calib} and is a separate library subject to a commercial license owned by The SEMQ Group Inc.\ and patent pending; it is not open source, and the repository states how to obtain it. The repository contains no substitute for the quantizer, so without the SDK no code can be computed and no code-level number in this paper can be regenerated. So that the code-level results remain checkable without the SDK, the repository commits the packed code matrices behind the SciFact results of Section~\ref{sec:blind} and Appendix~\ref{app:scifact}, with the calibration scale and a hash manifest; exact-code agreement, changed-coordinate rates and change profiles can be recomputed from those codes with the harness's numpy routines, and only re-encoding requires the SDK. The independent verifier imports neither the harness nor the SDK. The hosted decoding panel (Figure~\ref{fig:arid}, Appendix~\ref{app:arid}) and ARI-E (Appendix~\ref{app:arie}) compare bytes and verdicts and do not use the probe.
+Computing a code requires the SEMQ SDK, which implements the quantizer of Appendix~\ref{app:calib} and is a separate library subject to a commercial license owned by The SEMQ Group Inc.\ and patent pending; it is not open source, and the repository states how to obtain it. The repository contains no substitute for the quantizer, so without the SDK no code can be computed and no code-level number in this paper can be regenerated. So that the code-level results remain checkable without the SDK, the repository commits the packed code matrices behind the SciFact results of Section~\ref{sec:blind} and Appendix~\ref{app:scifact}, with the calibration scale and a hash manifest; exact-code agreement, changed-coordinate rates and change profiles can be recomputed from those codes with the harness's numpy routines, and only re-encoding requires the SDK. The independent verifier imports neither the harness nor the SDK. The hosted decoding panel (Figure~\ref{fig:arid}, Appendix~\ref{app:arid}) compares bytes and does not use the probe.
 
 Figures~\ref{fig:arid} and~\ref{fig:batch} are generated from the experiments' own JSON output by scripts in the paper directory, while Figure~\ref{fig:overview} reads its trajectory curves from the archived analysis, fetched from the research archive into \texttt{docs/paper/evidence} and hash-checked before use; its SciFact values remain inline.
 
