@@ -1,6 +1,6 @@
 # Port to the public SEMQ SDK
 
-Status: in progress.
+Status: ported; results to be regenerated.
 The SEMQ SDK became public on 2026-10-05 as `semq` 1.0.0 (https://github.com/The-SEMQ-Group/semq).
 This document records why the harness moves to it, what the move changes, and what remains undecided.
 
@@ -74,20 +74,21 @@ Capture tools should pass the intended dtype explicitly and assert it after load
 - `ari/probe.py`: the v0.2 probe; `fixed_scale_codes` refuses a v0.1 baseline scale.
 - Every capture tool through `load_probe` and `fixed_scale_codes`, unchanged.
 - `experiments/regime-discrimination`: `run_matrix.py`, `export_codes.py`.
-- `pyproject.toml`: `semq>=1.0,<2` is a dependency; Python 3.11 or later.
+- `pyproject.toml`: `semq==1.0.0` is a dependency, checked again at import; Python 3.11 or later.
 - CI: one job, no CodeArtifact role; it fails if a test skips for want of `semq`.
 
-## Not ported: decisions needed
+## Decisions
 
-1. **Attestation** (`ari/attest.py`, `ari/kms_signer.py`).
-   They use `semq.notary` and `semq.Repo`, which the public SDK lacks.
-   Options: keep the existing Ed25519/KMS signer and sign the report hash together with `Encoding.state_id`, or wait for notarization in the public SDK.
-2. **Change profiles and bound quality** (`ari/change_profile.py`, `ari/bound_quality.py`).
-   They need `quant_regions`. For the fixed range the bin edges follow from the published contract, but computing them here would reimplement the operator.
-   Options: request a regions API upstream, or retire the modules.
-3. **Logit experiments** (`decoding-reproducibility`, `drift-rank-profile`, `matched-budget-detectors`).
-   They quantize logit vectors, which are not unit-norm and can exceed 65,536 dimensions, in chunks under one shared calibrated scale.
-   Per-chunk renormalization would change what ARI-D measures.
-   Options: define an ARI-D v0.2 probe on renormalized chunks, or keep these experiments on the v0.1 probe as historical.
-
-Their tests skip with a reason that names this document.
+1. **Attestation: signed with the KMS key, without SEMQ.**
+   `ari/attest.py` writes the `NTRY` sidecar itself. That sidecar is a PureEdDSA signature over the raw manifest digest, which `verify_report.py` already defines.
+   A local key and the AWS KMS key produce the same format.
+   The `semq.Repo` copy of each input is dropped, because the manifest binds every input by SHA-256.
+   The 10 committed reports were signed with a demo key that is not in `spec/signers.json`.
+   They are re-signed with `alias/semq-ari-attestation`, with their manifests kept byte for byte (`ari/tools/resign_attestations.py`).
+2. **Change profiles and bound quality: retired.**
+   They need `quant_regions`, and computing bin edges here would reimplement the operator.
+   The modules and their tests are removed.
+   The optional `change_profile` block stays in the report schema, marked retired, so existing reports still validate.
+3. **Logit experiments: a new probe, ARI-D-Logit-v0.2** (`spec/arid-logit-probe-v0.2.md`, `ari/logit_probe.py`).
+   Rows are centred over the vocabulary, split into fixed 65,536-wide chunks, and each chunk is encoded by the public SDK.
+   The decoding-reproducibility, baselines, drift-rank-profile and matched-budget code uses it.

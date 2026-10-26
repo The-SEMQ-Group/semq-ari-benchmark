@@ -55,13 +55,12 @@ def _apply_torch_flags(tf32: bool, deterministic: bool):
 
 
 def _load(model_id, device, dtype):
-    import torch
-    from sentence_transformers import SentenceTransformer
-    # Load directly in the target dtype via model_kwargs so a large model never materialises
-    # in fp32 first (a 7B in fp32 is ~28GB and OOMs a 24GB card before .bfloat16() can run).
-    mk = {"fp16": torch.float16, "bf16": torch.bfloat16}
-    kwargs = {"model_kwargs": {"torch_dtype": mk[dtype]}} if dtype in mk else {}
-    return SentenceTransformer(model_id, device=device, trust_remote_code=True, **kwargs)
+    from ari.st_load import load_sentence_transformer
+    # Load directly in the target dtype so a large model never materialises in fp32 first
+    # (a 7B in fp32 is ~28GB and OOMs a 24GB card before .bfloat16() can run), and name
+    # fp32 explicitly too: transformers 5 otherwise uses the checkpoint's declared dtype,
+    # which made mxbai-embed-large-v1's "fp32" cells fp16.
+    return load_sentence_transformer(model_id, device=device, dtype=dtype, trust_remote_code=True)
 
 
 def _encode(model, texts, batch_size=32):
@@ -96,12 +95,23 @@ def _worker_src():
         "import json,sys,numpy as np,torch\n"
         "from sentence_transformers import SentenceTransformer\n"
         "p=json.load(open(sys.argv[1]))\n"
-        "d=p['dtype']; mk={'fp16':torch.float16,'bf16':torch.bfloat16}\n"
-        "kw={'model_kwargs':{'torch_dtype':mk[d]}} if d in mk else {}\n"
-        "m=SentenceTransformer(p['model'],device=p['device'],trust_remote_code=True,**kw)\n"
+        # The worker must run under the parent's numerics. Before 2026-10-13 it did not set these,
+        # so a `proc` capture with --tf32 on compared TF32 on against PyTorch's default (off).
+        "torch.backends.cuda.matmul.allow_tf32=p['tf32']; torch.backends.cudnn.allow_tf32=p['tf32']\n"
+        "if p['deterministic']: torch.use_deterministic_algorithms(True, warn_only=True)\n"
+        "d=p['dtype']; mk={'fp32':torch.float32,'fp16':torch.float16,'bf16':torch.bfloat16}\n"
+        "m=SentenceTransformer(p['model'],device=p['device'],trust_remote_code=True,model_kwargs={'torch_dtype':mk[d]})\n"
+        "assert next(m.parameters()).dtype==mk[d], (next(m.parameters()).dtype, mk[d])\n"
         "v=np.asarray(m.encode(p['texts'],normalize_embeddings=True,convert_to_numpy=True,batch_size=p.get('batch',32)),dtype=np.float32)\n"
         "np.save(p['out'],v)\n"
     )
+
+
+def _worker_payload(args, texts, out, batch):
+    # Everything the `proc` worker needs, including the parent's numerics flags.
+    return {"model": args.model, "texts": texts, "out": out,
+            "device": args.device, "dtype": args.dtype, "batch": batch,
+            "tf32": args.tf32 == "on", "deterministic": bool(args.deterministic)}
 
 
 def do_capture(args):
@@ -125,8 +135,7 @@ def do_capture(args):
         with tempfile.TemporaryDirectory() as d:
             out, pj, wk = f"{d}/v.npy", f"{d}/p.json", f"{d}/w.py"
             Path(wk).write_text(_worker_src())
-            json.dump({"model": args.model, "texts": inputs.texts, "out": out,
-                       "device": args.device, "dtype": args.dtype, "batch": bs}, open(pj, "w"))
+            json.dump(_worker_payload(args, inputs.texts, out, bs), open(pj, "w"))
             subprocess.run([sys.executable, wk, pj], check=True, env={**os.environ})
             c3, _ = _codes(np.load(out), s, dim)
             cond["proc"] = _agg(base_codes, c3)

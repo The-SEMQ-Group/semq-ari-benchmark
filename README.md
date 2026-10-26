@@ -22,8 +22,7 @@ python -m pytest -q -rs
 python -m build
 ```
 
-Tests must finish without failures. The `-rs` option lists skipped tests and their reasons.
-Some tests skip because they need private-SDK features that the public `semq` SDK lacks; see the [port proposal](docs/proposals/public-sdk-port.md).
+Tests must finish without failures or skips. The `-rs` option lists any skipped test and its reason.
 The build writes a wheel and source archive to `dist/`.
 
 These commands require no API credentials, model downloads, or GPU.

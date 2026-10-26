@@ -49,6 +49,12 @@ diagnostics. Confirmatory collection must write a manifest.
 The probes are specified and reported separately; storage and detection results
 are never combined across probes.
 
+From ARI v0.2 the logit probe is `ARI-D-Logit-v0.2` (`ari/logit_probe.py`,
+`spec/arid-logit-probe-v0.2.md`): rows centred over the vocabulary, fixed
+65,536-wide chunks, each encoded by the public SEMQ SDK over its fixed range.
+It replaces the globally calibrated scale, so pilot results from the two
+probes are not comparable.
+
 ### 0.4 The published ARI score compares packed bytes, not symbols
 
 Measured directly against the SDK: `batch_encode` returns packed bytes at
@@ -68,7 +74,7 @@ Report these quantities separately:
 - `ari_symbol_mismatch` — fraction of coordinates whose decoded symbol changed
 - `ari_byte_mismatch` — the published quantity, retained for continuity
 
-### 0.5 The committed pilot cannot be checked against the current scoring
+### 0.5 The committed pilot re-scores identically under the v0.1 scoring path
 
 `results/pilot.json` and `results/pilot.scores.npz` were produced by an earlier
 `_ari_scores` that unpacked symbols itself and calibrated with
@@ -91,16 +97,39 @@ a property of the data, not of the change: on the cache in
 the two scales are bit-identical (`9.41488265991211`) and every rate is
 unchanged, while at dim 384, `n_bins=8`, percentile 0.999 they diverge.
 
-**The pilot's own inputs are not in this repository.** `pilot.json` records its
-cache as `/home/ubuntu/mbd/cache`, which is not the cache above and is not
-committed, and the scale it recorded (`9.414882678985599`) is not what either
-path produces on the cache that is here. Nothing in `pilot.json` can be
-re-derived, so no claim that its numbers survive the change can be checked.
+**The pilot's inputs are the local decoding cache.** `pilot.json` records
+its cache as `/home/ubuntu/mbd/cache`, a copy of
+`experiments/decoding-reproducibility/results/cache/`. That directory is
+ignored by git and is not archived anywhere; it exists only on the machines
+that produced it, so a clean checkout cannot re-score the pilot. The recorded
+scale `9.414882678985599` is the float64 `numpy.percentile` of that cache; its
+float32 value equals the SDK's `calibrate` output `9.41488265991211`.
 
-**Consequence.** Treat `pilot.json` as a record that a run happened, not as a
-result. It is retained unregenerated, and no number in it is comparable with a
-number produced by the current scoring path. Confirmatory collection starts
-from freshly collected episodes with manifests.
+The v0.1 scoring path is `_ari_scores` in
+`experiments/matched-budget-detectors/run_pilot.py` with
+`ari/semq_compat.py::quant_context`, at commit `0027e4a`: one global float32
+scale from `Context.calibrate`, equal chunks. Re-scoring the local cache with
+that path reproduces every ARI, hash and distance array bit-for-bit; only three
+float64 distances move, by at most 2.2e-18, from summation order. From the
+repository root, with the package installed (`pip install -e .`):
+
+```
+git checkout 0027e4a
+python experiments/matched-budget-detectors/run_pilot.py \
+  --cache experiments/decoding-reproducibility/results/cache \
+  --out /tmp/pilot-rescore.json
+```
+
+`--out` defaults to `results/pilot.json`, so it is set to keep the committed
+file. The cache itself is still unmanifested and is still pilot data.
+
+**Consequence.** `pilot.json` is retained as committed. It is comparable with
+the v0.1 scoring path at `0027e4a`, on this cache only. It says nothing about
+the v0.2 logit probe (`ari/logit_probe.py`), which centres rows and normalises
+each chunk on its own, so its codes differ from the v0.1 codes and the pilot is
+not comparable with its results. It remains pilot data: twelve prompts bound a
+false-alarm rate only below 22.1%. Confirmatory collection still starts from
+freshly collected episodes with manifests.
 
 ---
 
